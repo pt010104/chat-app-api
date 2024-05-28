@@ -3,6 +3,7 @@
 const JWT = require('jsonwebtoken')
 const {asyncHandler} = require('../helpers/asyncHandler')
 const {NotFoundError,AuthFailureError } = require('../core/error.response')
+const { findKeyByUserID } = require('../models/repository/key.repository')
 
 const HEADER = {
     AUTHORIZATION: "authorization",
@@ -45,11 +46,13 @@ const createTokenPair = async (payLoad, publicKey, privateKey) => {
 const authentication = asyncHandler(async (req,res,next) => {
 
     const userId = req.headers[HEADER.CLIENT_ID] 
+    const accessToken = req.headers[HEADER.AUTHORIZATION]
+
     if(!userId) {
-        throw new AuthFailureError("Invalid User Id Header")
+        throw new AuthFailureError("Authentication Failed")
     }
 
-    const keyStore = await findByUserId (userId)
+    const keyStore = await findKeyByUserID(userId)
     if(!keyStore) {
         throw new NotFoundError("Not found KeyStore")
     }
@@ -57,7 +60,7 @@ const authentication = asyncHandler(async (req,res,next) => {
     //check if use refresh token
     const refreshToken = req.headers[HEADER.REFRESHTOKEN]
     if (refreshToken) {
-        const decodeUser = JWT.verify(accessToken, keyStore.publickey)
+        const decodeUser = JWT.verify(accessToken, keyStore.public_key)
         if (userId != decodeUser.userId) {
             throw new AuthFailureError("Authentication Failed")  
         }
@@ -69,13 +72,12 @@ const authentication = asyncHandler(async (req,res,next) => {
         }
     
     }
-    const accessToken = req.headers[HEADER.AUTHORIZATION]
     if(!accessToken) {
         throw new AuthFailureError("Null AccessToken Header")
     }
 
     try {
-        const decodeUser = JWT.verify(accessToken, keyStore.publickey)
+        const decodeUser = JWT.verify(accessToken, keyStore.public_key)
 
         if (userId != decodeUser.userId) {
             throw new AuthFailureError("Authentication Failed")  
