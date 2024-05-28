@@ -8,13 +8,12 @@ const router = require ("./routes/index")
 //init middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(morgan("combined"))
+app.use(morgan("dev"))
 app.use(helmet())
 app.use(compression())
 
 //init db
 require("./dbs/init.mongodb")
-require('./models/user.model');
 
 //init routes
 app.use(router)

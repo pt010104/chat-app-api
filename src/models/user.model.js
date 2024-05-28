@@ -1,23 +1,27 @@
 'use strict'
 
+const { MinKey } = require('mongodb')
 const {model, Schema, Types} = require('mongoose')
 
-const DOCUMENT_NAME = 'user'
-const COLLECTION_NAME = 'users'
+const DOCUMENT_NAME = 'User'
 
-const userSchema = new Schema({
+const user = new Schema({
   name: {
     type: String,
     trim: true,
     maxLength: 50
   },
-  email: {
+  phone: {
     type: String,
     trim: true,
-    unique: true
+    unique: true,
+    maxLength: 10,
+    required: true
   },
   password: {
     type: String,
+    required: true,
+    minLength: 8,
     trim: true
   },
   status: {
@@ -35,7 +39,6 @@ const userSchema = new Schema({
   },
 }, {
   timestamps: true,
-  collection: COLLECTION_NAME
 })
 
-module.exports = model(DOCUMENT_NAME, userSchema)
+module.exports = model(DOCUMENT_NAME, user)
