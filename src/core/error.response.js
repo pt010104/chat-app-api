@@ -8,6 +8,9 @@ class ErrorResponse extends Error {
         super(message)
         this.status = status
     }
+    send(res,headers ={}) {
+        return res.status(this.status).json(this)
+    }
 }
 
 class ConflictRequestError extends ErrorResponse {
