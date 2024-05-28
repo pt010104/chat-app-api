@@ -1,6 +1,4 @@
 'use strict'
-
-const { MinKey } = require('mongodb')
 const {model, Schema, Types} = require('mongoose')
 
 const DOCUMENT_NAME = 'User'
