@@ -1,40 +1,37 @@
-    const express = require ("express")
-    const { default: helmet } = require("helmet")
-    const morgan = require("morgan")
-    const compression = require ("compression")
-    const app = express()
-    const router = require ("./routes/index")
-    const config = require("./configs/db.config").db;
-    //Test for creating new model in database
-    // const User = require('./models/user_test.model');
-    // const mongoose = require('mongoose');
-    //init middleware
-    app.use(express.json())
-    app.use(express.urlencoded({ extended: true }))
-    app.use(morgan("combined"))
-    app.use(helmet())
-    app.use(compression())
+const express = require ("express")
+const { default: helmet } = require("helmet")
+const morgan = require("morgan")
+const compression = require ("compression")
+const app = express()
+const router = require ("./routes/index")
 
-    //init db
-    config.connect();
+//init middleware
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(morgan("dev"))
+app.use(helmet())
+app.use(compression())
 
-    //init routes
-    app.use(router)
+//init db
+require("./dbs/init.mongodb")
 
-    //handling error
-    app.use((req,res,next) => {
-        const error = new Error("Not Found The Router")
-        error.status = 404
-        next(error)
+//init routes
+app.use(router)
+
+//handling error
+app.use((req,res,next) => {
+    const error = new Error("Not Found The Router")
+    error.status = 404
+    next(error)
+})
+
+app.use((error,req,res,next) => {
+    const statusCode = error.status || 500;
+    return res.status(statusCode).json({
+        status: 'error',
+        code: statusCode,
+        message: error.message || 'Internal Server Error'
     })
+})
 
-    app.use((error,req,res,next) => {
-        const statusCode = error.status || 500;
-        return res.status(statusCode).json({
-            status: 'error',
-            code: statusCode,
-            message: error.message || 'Internal Server Error'
-        })
-    })
-
-    module.exports = app
+module.exports = app
