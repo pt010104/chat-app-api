@@ -1,7 +1,7 @@
 # ChatApp-API
 # Requirements:
 - Using node v22.x
-- Deploy API: https://chat-app-api-nf8m.onrender.com/
+- Deploy API: https://chat-app-api2-25ff8770302e.herokuapp.com/
 - NoSQLBooster
 
 # Coding rule: 
