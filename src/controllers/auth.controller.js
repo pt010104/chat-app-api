@@ -11,7 +11,7 @@ class AuthController {
         const signUpValidate = Joi.object({
             name: Joi.string().alphanum().min(3).max(30).required(),
             password: Joi.string().min(8).max(30).required(),
-            phone: Joi.string().min(10).max(10).required(),
+            email: Joi.string().email().required(),
         });
 
         const { error } = signUpValidate.validate(req.body);    

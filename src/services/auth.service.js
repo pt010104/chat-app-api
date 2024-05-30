@@ -11,7 +11,7 @@ class AuthService
     static signUp = async (body) => {
 
         const checkUser = await user.findOne({
-            phone: body.phone
+            email: body.email
         }).lean();
 
         if (checkUser) {
@@ -41,7 +41,7 @@ class AuthService
         const tokens = await createTokenPair(
             {
                 userId: newUser._id,
-                phone: newUser.phone,
+                email: newUser.email,
             }, 
             publicKey, 
             privateKey
