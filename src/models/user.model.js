@@ -9,11 +9,10 @@ const user = new Schema({
     trim: true,
     maxLength: 50
   },
-  phone: {
+  email: {
     type: String,
     trim: true,
     unique: true,
-    maxLength: 10,
     required: true
   },
   password: {
