@@ -13,7 +13,17 @@ class KeyTokenService
                 refresh_token: data.refreshToken
             }
 
-            const tokens = await keyToken.create(tokenData);
+            const tokens = await keyToken.findOneAndUpdate(
+                {
+                    user_id: data._id
+                },
+                tokenData, 
+                {
+                    upsert: true,
+                    new: true,
+                    runValidators: true,
+                }
+            )
             return tokens;
 
         } catch (error) {
