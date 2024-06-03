@@ -1,6 +1,10 @@
 const app = require("./src/app")
-require('dotenv').config();
+const PORT = 5050
 
-const server = app.listen (process.env.DEV_PORT, () =>{
-    console.log(`Start with ${process.env.DEV_PORT}`)
+const server = app.listen (PORT, () =>{
+    console.log(`Start with ${PORT}`)
+})
+
+process.on('SIGINT', ()=>{
+    server.close( () => console.log("Exist server express") )
 })
