@@ -7,5 +7,7 @@ router.use("/v1/api/auth", require ("./auth"))
 
 //handling error 
 
+// user profile
+router.use("/v1/api/profile", require ("./profile"))
 module.exports = router
 
