@@ -2,12 +2,11 @@
 
 const express = require ("express")
 const router = express.Router()
-//check apiKey
-router.use("/v1/api/auth", require ("./auth"))
 
-//handling error 
+router.use("/v1/api/auth", require ("./auth"))
+router.use("/v1/api/profile", require ("./profile"))
+router.use("/v1/api/upload", require ("./upload"))
 
 // user profile
-router.use("/v1/api/profile", require ("./profile"))
 module.exports = router
 
