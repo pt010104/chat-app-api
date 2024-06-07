@@ -43,6 +43,8 @@ const user = new Schema({
     type: [String],
     default: []
   },
+  avatar: String,
+  thumb_avatar: String
 }, {
   timestamps: true,
 })
