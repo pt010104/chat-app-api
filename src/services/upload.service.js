@@ -2,6 +2,7 @@
 
 const cloudinary = require("../dbs/init.cloudinary");
 const CONSTANT = require('../helpers/constants');
+const User = require("../models/user.model");
 
 class UploadService {
     uploadImageFromLocal = async ({
@@ -16,26 +17,43 @@ class UploadService {
                 public_id: `${user_id}_${Date.now()}`, 
                 folder: folderName,
             })
+            let url = {};
 
-            const avt_url = await cloudinary.url(uploadImage.public_id, {
-                width: CONSTANT.WIDTH_AVATAR,
-                height: CONSTANT.HEIGHT_AVATAR,
-                crop: "fill",
-                format: 'jpg'
-            })
+            if (type == "avatar") {
+                const avt_url = await cloudinary.url(uploadImage.public_id, {
+                    width: CONSTANT.WIDTH_AVATAR,
+                    height: CONSTANT.HEIGHT_AVATAR,
+                    crop: "fill",
+                    format: 'jpg'
+                })
+                const avt_thumb_url = await cloudinary.url(uploadImage.public_id, {
+                    width: CONSTANT.WIDTH_THUMB_AVATAR,
+                    height: CONSTANT.HEIGHT_THUMB_AVATAR,
+                    crop: "fill",
+                    format: 'jpg'
+                })
+                url['avt_url'] = avt_url;
+                url['avt_thumb_url'] = avt_thumb_url;
 
-            const avt_thumb_url = await cloudinary.url(uploadImage.public_id, {
-                width: CONSTANT.WIDTH_THUMB_AVATAR,
-                height: CONSTANT.HEIGHT_THUMB_AVATAR,
-                crop: "fill",
-                format: 'jpg'
-            })
-
+                const uploadAvt = await User.updateOne(
+                    { _id: user_id }, 
+                    {
+                        '$set': {
+                            avatar: avt_url,
+                            thumb_avatar: avt_thumb_url
+                        }
+                    }, 
+                    {
+                        upsert: true,
+                        runValidators: true,
+                    }
+                );                
+            }
+           
             return {
                 code: 200,
                 metadata: {
-                    avt_url: uploadImage.url,
-                    avt_thumb_url,
+                    url,
                     user_id: user_id,
                     type: type,
                 }
