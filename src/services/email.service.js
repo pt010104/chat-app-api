@@ -1,27 +1,32 @@
 const { google } = require('googleapis');
 const { getOAuth2Client } = require('../configs/oauth2.config');
+const { getTemplate } = require('./template.service');
+const { NotFoundError } = require('../core/error.response');
+const { newOTP } = require('./otp.service');
 
-async function sendEmail(to, subject, otp) {
+async function sendEmailOTP(to, subject) {
+    //Get Oauth client from credentials
     const oAuth2Client = getOAuth2Client();
     const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
-    // Email HTML
-    const htmlMessage = `
-    <div style="font-family: 'Arial', sans-serif; color: #333;">
-        <h2 style="color: #598DFA;">Chat App</h2>
-        <p>Xin chào,</p>
-        <p>Đây là mã xác thực Chat App của bạn. Mã có hiệu lực trong vòng 5 phút:</p>
-        <div style="background-color: #f2f2f2; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
-            ${otp}
-        </div>
-        <p>Trân trọng,<br>Thịnh đz</p>
-    </div>`;
+    //Get New OTP
+    const otp = await newOTP({ email: to });
+
+    //get Email Template
+    const template = await getTemplate ({name: 'NEW_USER_OTP'});
+
+    if (!template) {
+        throw new NotFoundError('Template not found');
+    }
+
+    //
+    const htmlMessage = template.html.replace('{{otp}}', otp.otp);
 
     const emailParts = [
         `To: ${to}`,
         'Content-Type: text/html; charset=utf-8',
         'MIME-Version: 1.0',
-        `Subject: ${subject}`,
+        `Subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
         '',
         htmlMessage
     ];
@@ -49,4 +54,4 @@ async function sendEmail(to, subject, otp) {
 }
 
 
-module.exports = { sendEmail };
+module.exports = { sendEmailOTP };
