@@ -8,8 +8,6 @@ const bcrypt = require("bcrypt");
 const crypto = require("node:crypto");
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
-const { sendEmail } = require('./email.service');
-const { generateOTP } = require('../utils');
 
 class AuthService {
 
@@ -53,15 +51,6 @@ class AuthService {
       privateKey
     );
     
-    //Send OTP
-    const otp = generateOTP();
-    try {
-      await sendEmail('thinhfb1278@gmail.com', 'OTP Sign Up', otp)
-    }
-    catch (error) {
-      throw new AuthFailureError(error);
-    }
-
     return {
       code: 201,
       metadata: {
