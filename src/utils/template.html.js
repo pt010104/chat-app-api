@@ -28,11 +28,11 @@ const htmlEmailToken = () => {
             text-align: center;
         }
         .header img {
-            height: 100px;
+            height: 130px;
             border-radius: 50%; /* Makes the image round */
         }
         .content {
-            padding: 45px;
+            padding: 65px;
             text-align: center;
         }
         .button {

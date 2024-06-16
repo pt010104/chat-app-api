@@ -3,7 +3,7 @@
 const OTP = require("../models/otp.model")
 
 const generateOTPRandom = () => {
-    return Math.floor(1000 + Math.random() * 9000)
+    return Math.floor(100000 + Math.random() * 900000)
 }
 
 const newOTP = async ({
@@ -20,6 +20,24 @@ const newOTP = async ({
 
 }
 
-module.exports = {
-    newOTP
+const checkOTP = async (email, otp) => {
+    const _otp = await OTP.findOne({
+        email: email,
+        otp: otp
+    })
+    if (!_otp) {
+        throw new Error("OTP not found")
+    }
+
+    await OTP.deleteOne({
+        email: email,
+        otp: otp
+    })
+
+    return _otp
 }
+module.exports = {
+    newOTP,
+    checkOTP
+}
+
