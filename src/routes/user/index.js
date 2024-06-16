@@ -7,6 +7,6 @@ const { asyncHandler } = require("../../helpers/asyncHandler");
 
 //New uSer
 router.post("/new-user", asyncHandler(UserController.newUser));
-
+router.post("/check-otp", asyncHandler(UserController.checkOTP));
 
 module.exports = router;
