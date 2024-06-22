@@ -3,6 +3,7 @@ const { BadRequestError } = require('../core/error.response')
 const User = require('../models/user.model')
 const { sendEmailOTP } = require('./email.service')
 const { NotFoundError } = require('../core/error.response')
+const { checkOTP } = require('./otp.service')
 
 const newUser = async (
     email = null, capcha = null
@@ -20,13 +21,15 @@ const newUser = async (
 
     //3. Send email otp
     //Send OTP
-    const result = await sendEmailOTP('thinhfb1278@gmail.com', 'Xác thực Email')
-    return {
-        message: "Email sent successfully", 
-        metadata: {
-            result
-        }
-    }
+    const result = await sendEmailOTP(email, 'Xác thực Email')
+    return result
 }
 
-module.exports = {newUser}
+const checkOTPService = async (
+    email = null, otp = null
+) => {
+    const isOTP = await checkOTP(email, otp)
+    return isOTP
+}
+
+module.exports = {newUser, checkOTPService}
