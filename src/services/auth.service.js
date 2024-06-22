@@ -10,6 +10,7 @@ const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
 
 class AuthService {
+
   static signUp = async (body) => {
     const checkUser = await user
       .findOne({
@@ -49,7 +50,7 @@ class AuthService {
       publicKey,
       privateKey
     );
-
+    
     return {
       code: 201,
       metadata: {
@@ -64,6 +65,7 @@ class AuthService {
         email: body.email,
       })
       .lean();
+      
     const checkPassword = await bcrypt.compare(
       body.password,
       checkEmail.password
