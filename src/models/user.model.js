@@ -21,6 +21,15 @@ const user = new Schema({
     minLength: 8,
     trim: true
   },
+  phone: {
+    type: String,
+    minLength: 10,
+    trim: true
+  },
+  gender:{
+    type: String,
+    trim: true
+  },
   status: {
     type: String,
     enum: ['active', 'inactive', 'deleted'],
@@ -34,6 +43,8 @@ const user = new Schema({
     type: [String],
     default: []
   },
+  avatar: String,
+  thumb_avatar: String
 }, {
   timestamps: true,
 })

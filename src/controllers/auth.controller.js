@@ -5,6 +5,7 @@ const Joi = require("joi");
 const AuthService = require("../services/auth.service");
 
 class AuthController {
+  
   signUp = async (req, res, next) => {
     const signUpValidate = Joi.object({
       name: Joi.string().alphanum().min(3).max(30).required(),
@@ -26,6 +27,7 @@ class AuthController {
       metadata: await AuthService.signUp(body),
     }).send(res);
   };
+
   signIn = async (req, res, next) => {
     const signInValidate = Joi.object({
       password: Joi.string().min(8).max(30).required(),
