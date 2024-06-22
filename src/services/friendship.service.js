@@ -16,14 +16,13 @@ class FriendShip {
             status: "pending"
         }).lean();
         if (listRequests.length === 0) {
-            throw new NotFoundError("No pending friend requests found.");
+            return;
         }
 
         const results = [];
         for (let request of listRequests) {
             try {
                 const user_send_info = await UserProfile.infoProfile(request.user_id_send);
-                console.log(user_send_info)
                 results.push({
                     user_id_send: user_send_info.user._id,
                     user_name_send: user_send_info.user.name,
@@ -35,6 +34,7 @@ class FriendShip {
                 continue;
             }  
         }
+        
         return results
     }
 
