@@ -1,7 +1,6 @@
 'use strict'
 
 const {model, Schema} = require('mongoose')
-const { collection } = require('./user.model')
 
 const DOCUMENT_NAME = 'otp_log'
 const COLLECTION_NAME = 'otp_logs'

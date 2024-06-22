@@ -4,8 +4,6 @@ const {
     NotFoundError,
   } = require("../core/error.response");
 const user = require("../models/user.model");
-
-  
   class ProfileService {
     static infoProfile = async (id) => {
         const userInfo = await user.findOne({
@@ -16,11 +14,8 @@ const user = require("../models/user.model");
         }
         else{
             return {
-                code: 200,
-                metadata: {
-                  user: userInfo
-                },
-              };
+              user: userInfo
+            };
         }
     }
   }
