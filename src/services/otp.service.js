@@ -36,6 +36,7 @@ const checkOTP = async (email, otp) => {
 
     return _otp
 }
+
 module.exports = {
     newOTP,
     checkOTP

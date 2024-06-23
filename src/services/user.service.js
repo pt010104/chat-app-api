@@ -33,12 +33,11 @@ const newUser = async (
 const checkOTPService = async (
     email = null, otp = null
 ) => {
+
     const isOTP = await checkOTP(email, otp)
-    return {
-        metadata: {
-            isOTP
-        }
-    }
+    
+    return isOTP
+
 }
 
 module.exports = {newUser, checkOTPService}
