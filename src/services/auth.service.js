@@ -3,16 +3,16 @@ const {
   ForbiddenError,
   AuthFailureError,
 } = require("../core/error.response");
-const user = require("../models/user.model");
+const UserModel = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const crypto = require("node:crypto");
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
-
+const RedisService = require('./redis.service'); 
 class AuthService {
 
   static signUp = async (body) => {
-    const checkUser = await user
+    const checkUser = await UserModel
       .findOne({
         email: body.email,
       })
@@ -23,7 +23,7 @@ class AuthService {
     }
 
     body.password = await bcrypt.hash(body.password, 10);
-    let newUser = await user.create(body);
+    let newUser = await UserModel.create(body);
 
     const publicKey = crypto.randomBytes(64).toString("hex");
     const privateKey = crypto.randomBytes(64).toString("hex");
@@ -59,55 +59,69 @@ class AuthService {
       },
     };
   };
+
   static signIn = async (body) => {
-    const checkEmail = await user
-      .findOne({
+
+    //Check in redis first
+    const redisKey = `user:${body.email}`;
+
+    let user;
+    const cachedUser = await RedisService.get(redisKey);
+    user = cachedUser ? JSON.parse(cachedUser) : null;
+
+    if (!user) {
+      user = await UserModel.findOne({
         email: body.email,
-      })
-      .lean();
-      
+      }).lean();
+      if (user) {
+        await RedisService.set(redisKey, JSON.stringify(user), 300); // 5 min
+      }    
+    }
+
+    if (!user) {
+      throw new AuthFailureError("Invalid email");
+    }
+
     const checkPassword = await bcrypt.compare(
       body.password,
-      checkEmail.password
+      user.password
     );
-    if (!checkEmail || !checkPassword) {
-      throw new AuthFailureError("Invalid email or password");
-    } else {
-      const publicKey = crypto.randomBytes(64).toString("hex");
-      const privateKey = crypto.randomBytes(64).toString("hex");
-      const refreshToken = crypto.randomBytes(64).toString("hex");
+    if (!checkPassword) {
+      throw new AuthFailureError("Invalid password");
+    } 
 
-      const data = {
-        ...checkEmail,
-        publicKey,
-        privateKey,
-        refreshToken,
-      };
+    const publicKey = crypto.randomBytes(64).toString("hex");
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const refreshToken = crypto.randomBytes(64).toString("hex");
 
-      const keyStore = await KeyTokenService.createKeyToken(data);
+    const data = {
+      ...user,
+      publicKey,
+      privateKey,
+      refreshToken,
+    };
 
-      if (!keyStore) {
-        throw new ForbiddenError("Key store not created");
-      }
+    const keyStore = await KeyTokenService.createKeyToken(data);
 
-      const tokens = await createTokenPair(
-        {
-          userId: checkEmail._id,
-          email: checkEmail.email,
-        },
-        publicKey,
-        privateKey
-      );
-
-      return {
-        code: 200,
-        metadata: {
-          user: checkEmail,
-          tokens,
-        },
-      };
+    if (!keyStore) {
+      throw new ForbiddenError("Key store not created");
     }
-  };
+
+    const tokens = await createTokenPair(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      publicKey,
+      privateKey
+    );
+
+    return {
+        user: user,
+        tokens,
+    };
+  }
+
 }
 
 module.exports = AuthService;
