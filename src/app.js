@@ -14,8 +14,6 @@ app.use(compression())
 
 //init db
 require("./dbs/init.mongodb")
-const { initRedis } = require("./dbs/init.redis");
-initRedis()
 
 //init routes
 app.use(router)
