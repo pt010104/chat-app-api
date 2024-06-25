@@ -45,7 +45,7 @@ class FriendshipController {
     acceptFriendRequest = async(req, res, next) =>  {
 
         const friendValidate = Joi.object({
-            user_id_send: Joi.string().required()
+            request_id: Joi.string().required()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -56,10 +56,10 @@ class FriendshipController {
         }
 
         const user_id = req.user.userId
-        const { user_id_send } = req.body
+        const { request_id } = req.body
         new SuccessResponse({
             message: "Friend request accepted",
-            metadata: await FriendShip.acceptFriendRequest(user_id, user_id_send)
+            metadata: await FriendShip.acceptFriendRequest(user_id, request_id)
         }).send(res)
     }
 
@@ -67,7 +67,7 @@ class FriendshipController {
     cancelFriendRequest = async(req, res, next) => {
 
         const friendValidate = Joi.object({
-            user_id_recieve: Joi.string().required()
+            request_id: Joi.string().required()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -78,10 +78,10 @@ class FriendshipController {
         }
 
         const user_id = req.user.userId
-        const { user_id_recieve } = req.body
+        const { request_id } = req.body
         new SuccessResponse({
             message: "Friend request canceled",
-            metadata: await FriendShip.cancelFriendRequest(user_id, user_id_recieve)
+            metadata: await FriendShip.cancelFriendRequest(user_id, request_id)
         }).send(res)
 
     }
