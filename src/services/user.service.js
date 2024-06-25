@@ -22,22 +22,14 @@ const newUser = async (
     //3. Send email otp
     //Send OTP
     const result = await sendEmailOTP(email, 'Xác thực Email')
-    return {
-        message: "Email sent successfully", 
-        metadata: {
-            result
-        }
-    }
+    return result
 }
 
 const checkOTPService = async (
     email = null, otp = null
 ) => {
-
     const isOTP = await checkOTP(email, otp)
-    
     return isOTP
-
 }
 
 module.exports = {newUser, checkOTPService}
