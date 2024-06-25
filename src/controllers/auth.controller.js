@@ -35,12 +35,11 @@ class AuthController {
     });
 
     const { error } = signInValidate.validate(req.body);
-
     if (error) {
       return res.status(400).json({
         message: error.details[0].message,
       });
-    } // go to authservice signin
+    } 
     else {
       new SuccessResponse({
         message: "User signed in successfully",

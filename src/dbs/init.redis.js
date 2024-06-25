@@ -3,17 +3,15 @@
 const redis = require('redis')
 require('dotenv').config();
 
-let client = {}
-let statusConnectRedis = {
+let client = null;
+const statusConnectRedis = {
     CONNECT: 'connect',
     END: 'end',
     RECONNECT: 'reconnect',
     ERROR: 'error'
 }
 
-const handleEventConnect = ({
-    connectionRedis
-}) => {
+const handleEventConnect = (connectionRedis) => {
     connectionRedis.on(statusConnectRedis.CONNECT, () => {
         console.log('Redis connected')
     })
@@ -24,37 +22,46 @@ const handleEventConnect = ({
 
     connectionRedis.on(statusConnectRedis.RECONNECT, () => {
         console.log('Redis attempting to reconnect');
-    });
-    
+    })
 
     connectionRedis.on(statusConnectRedis.ERROR, (err) => {
         console.log('Redis error: ', err)
     })
-
 }
 
 const initRedis = async () => {
     const redis_url = `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
-    const instanceRedis = redis.createClient({
-        url: redis_url,
-    });
+    try {
+        const instanceRedis = redis.createClient({
+            url: redis_url,
+        });
+        
+        handleEventConnect(instanceRedis);
 
-    client.instanceRedis = instanceRedis;
-    handleEventConnect({ connectionRedis: instanceRedis });
-
-    await instanceRedis.connect().catch(err => {
-        console.error('Failed to connect to Redis:', err);
-    });
-
+        await instanceRedis.connect();
+        
+        client = instanceRedis;
+        console.log('Redis initialized successfully');
+    } catch (err) {
+        console.error('Failed to initialize Redis:', err);
+        throw err;
+    }
 }
 
 const getRedis = () => {
-    return client.instanceRedis;
+    if (!client) {
+        throw new Error('Redis client not initialized. Call initRedis() first.');
+    }
+    return client;
 }
 
-const closeRedis = () => {
-    client.instanceRedis.quit();
+const closeRedis = async () => {
+    if (client) {
+        await client.quit();
+        client = null;
+        console.log('Redis connection closed');
+    }
 }
 
 module.exports = {

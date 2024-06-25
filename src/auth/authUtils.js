@@ -85,8 +85,6 @@ const authentication = asyncHandler(async (req,res,next) => {
         req.user = decodeUser
         req.keyStore = keyStore
 
-        console.log(keyStore)
-
         return next()
     }
     catch (error) {
