@@ -24,6 +24,7 @@ class FriendShip {
             try {
                 const user_send_info = await UserProfile.infoProfile(request.user_id_send);
                 results.push({
+                    request_id: request._id,
                     user_id_send: user_send_info.user._id,
                     user_name_send: user_send_info.user.name,
                     avatar: user_send_info.user.avatar,
@@ -66,10 +67,10 @@ class FriendShip {
         }
     }
 
-    static acceptFriendRequest = async (user_id, user_id_send) => {
+    static acceptFriendRequest = async (user_id, request_id) => {
 
         const acceptRequest = await FriendShipModel.findOneAndUpdate({
-            user_id_send: user_id_send,
+            _id: request_id,
             user_id_receive: user_id,
             status: "pending"
         }, {
@@ -88,10 +89,10 @@ class FriendShip {
 
     }
 
-    static cancelFriendRequest = async (user_id, user_id_recieve) => {
+    static cancelFriendRequest = async (user_id, request_id) => {
         const cancelRequest = await FriendShipModel.findOneAndDelete({
             user_id_send: user_id,
-            user_id_receive: user_id_recieve,
+            _id: request_id,
             status: "pending"
         }).lean()
 
