@@ -5,8 +5,7 @@ const router = express.Router();
 const UserController = require("../../controllers/user.controller");
 const { asyncHandler } = require("../../helpers/asyncHandler");
 
-//New uSer
-router.post("/new-user", asyncHandler(UserController.newUser));
+router.post("/send-otp", asyncHandler(UserController.sendOTP));
 router.post("/check-otp", asyncHandler(UserController.checkOTP));
 
 module.exports = router;

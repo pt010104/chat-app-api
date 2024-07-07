@@ -1,43 +1,44 @@
-'use strict'
+'use strict';
 
-const OTP = require("../models/otp.model")
+const OTP = require("../models/otp.model");
 
 const generateOTPRandom = () => {
-    return Math.floor(100000 + Math.random() * 900000)
-}
+    return Math.floor(100000 + Math.random() * 900000);
+};
 
-const newOTP = async ({
-    email = null
-}) => {
-
-    const otp = generateOTPRandom()
+const newOTP = async ({ email, type }) => {
+    console.log("dddddddddddd  ", type)
+    const otp = generateOTPRandom();
     const newOTP = await OTP.create({
         otp: otp,
-        email: email
-    })
+        email: email,
+        type: type
+    });
 
-    return newOTP
+    return newOTP;
+};
 
-}
-
-const checkOTP = async (email, otp) => {
+const checkOTP = async (email, otp, type) => {
     const _otp = await OTP.findOne({
         email: email,
-        otp: otp
-    })
+        otp: otp,
+        type: type,
+    });
+
     if (!_otp) {
-        throw new Error("OTP not found")
+        throw new Error("OTP not found or invalid");
     }
 
     await OTP.deleteOne({
         email: email,
-        otp: otp
+        otp: otp,
+        type: type
     })
+    
+    return _otp;
+};
 
-    return _otp
-}
 module.exports = {
     newOTP,
     checkOTP
-}
-
+};

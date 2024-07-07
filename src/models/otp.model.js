@@ -9,7 +9,8 @@ const otpSchema = new Schema({
     otp: {type: String, required: true},
     email: {type: String, required: true},
     status: {type: String, default: 'pending', enum: ['pending', 'verified', 'block']},
-    expireAt: {type: Date, default: Date.now, expires: 120}
+    type: {type: String, defaultL: 'new-user', enum: ['new-user', 'reset-password']},
+    expire_at: {type: Date, default: Date.now, expires: 120}
 }, {
     timestamps: true,
     collection: COLLECTION_NAME
