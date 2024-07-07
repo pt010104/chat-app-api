@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: #3498db;
+            font-size: 1.8em;
+        }
+        h3 {
+            color: #070707;
+            font-size: 1.2em;
+            text-decoration: underline;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        code {
+            font-family: monospace;
+        }
+        .indent {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Documentation</h1>
+        
+        <h2>Auth Routes</h2>
+        
+        <h3>POST /v1/api/auth/signup</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Register a new user.</p>
+            <p><strong>URL:</strong> <code>/v1/api/auth/signup</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "name": "string (required)",
+  "password": "string (required, min: 8, max: 30)",
+  "email": "string (required, valid email)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>201 CREATED:
+{
+  "message": "User created successfully",
+  "metadata": { ...userDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/auth/signin</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Sign in an existing user.</p>
+            <p><strong>URL:</strong> <code>/v1/api/auth/signin</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "password": "string (required, min: 8, max: 30)",
+  "email": "string (required, valid email)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "User signed in successfully",
+  "metadata": { ...userDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/auth/signout</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Sign out the currently authenticated user.</p>
+            <p><strong>URL:</strong> <code>/v1/api/auth/signout</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json
+Authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "userId": "string (required)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "User signed out successfully",
+  "metadata": { ...signOutDetails }
+}</code></pre>
+        </div>
+
+        <h2>User Routes</h2>
+        
+        <h3>POST /v1/api/user/send-otp</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Send OTP to user's email for either new user registration or password reset.</p>
+            <p><strong>URL:</strong> <code>/v1/api/user/send-otp</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "email": "string (required, valid email)",
+  "type": "string (required, 'new-user' or 'reset-password')"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Email sent successfully for new user",
+  "metadata": { ...otpDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/user/check-otp</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Verify the OTP sent to the user's email.</p>
+            <p><strong>URL:</strong> <code>/v1/api/user/check-otp</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "email": "string (required, valid email)",
+  "otp": "string (required)",
+  "type": "string (required, 'new-user' or 'reset-password')"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "OTP verified successfully",
+  "metadata": { ...verificationDetails }
+}</code></pre>
+        </div>
+
+        <h2>Upload Routes</h2>
+        
+        <h3>POST /v1/api/upload/image/avatar</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Upload an avatar image for the user.</p>
+            <p><strong>URL:</strong> <code>/v1/api/upload/image/avatar</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Request:</strong></p>
+            <pre><code>Form Data:
+  - file: Image file (required)
+</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Upload file successfully",
+  "metadata": { ...uploadDetails }
+}
+404 Not Found:
+{
+  "message": "File not found"
+}</code></pre>
+        </div>
+
+        <h2>Profile Routes</h2>
+        
+        <h3>GET /v1/api/profile/info</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Get user profile information.</p>
+            <p><strong>URL:</strong> <code>/v1/api/profile/info</code></p>
+            <p><strong>Method:</strong> GET</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Get user profile successfully",
+  "metadata": { ...profileDetails }
+}</code></pre>
+        </div>
+
+        <h2>Friendship Routes</h2>
+        
+        <h3>GET /v1/api/friends/list/all</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Get a list of all friends.</p>
+            <p><strong>URL:</strong> <code>/v1/api/friends/list/all</code></p>
+            <p><strong>Method:</strong> GET</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "List of friends",
+  "metadata": { ...friendsList }
+}</code></pre>
+        </div>
+
+        <h3>GET /v1/api/friends/list/requests</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Get a list of all friend requests.</p>
+            <p><strong>URL:</strong> <code>/v1/api/friends/list/requests</code></p>
+            <p><strong>Method:</strong> GET</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "List of friend requests",
+  "metadata": { ...friendRequests }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/friends/send-request</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Send a friend request to another user.</p>
+            <p><strong>URL:</strong> <code>/v1/api/friends/send-request</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;
+Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "user_id_recieve": "string (required)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Friend request sent",
+  "metadata": { ...friendRequestDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/friends/accept-request</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Accept a friend request.</p>
+            <p><strong>URL:</strong> <code>/v1/api/friends/accept-request</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;
+Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "request_id": "string (required)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Friend request accepted",
+  "metadata": { ...acceptRequestDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/friends/cancel-request</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Cancel a friend request.</p>
+            <p><strong>URL:</strong> <code>/v1/api/friends/cancel-request</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Authorization: Bearer &lt;token&gt;
+Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "request_id": "string (required)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Friend request canceled",
+  "metadata": { ...cancelRequestDetails }
+}</code></pre>
+        </div>
+
+        <h2>Email Routes</h2>
+        
+        <h3>POST /v1/api/email/new-template</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Create a new email template.</p>
+            <p><strong>URL:</strong> <code>/v1/api/email/new-template</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "type": "string (required)",
+  "tem_id": "string (required)",
+  "name": "string (required)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Template created successfully",
+  "metadata": { ...templateDetails }
+}</code></pre>
+        </div>
+    </div>
+</body>
+</html>

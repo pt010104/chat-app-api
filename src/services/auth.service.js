@@ -11,6 +11,7 @@ const { createTokenPair } = require("../auth/authUtils");
 const RedisService = require('./redis.service'); 
 class AuthService {
 
+
   static signUp = async (body) => {
     const checkUser = await UserModel
       .findOne({
@@ -52,11 +53,7 @@ class AuthService {
     );
     
     return {
-      code: 201,
-      metadata: {
-        user: newUser,
-        tokens,
-      },
+      message: "User created successfully",
     };
   };
 
@@ -95,7 +92,7 @@ class AuthService {
     const refreshToken = crypto.randomBytes(64).toString("hex");
 
     const data = {
-      ...user,
+      _id: user._id,
       publicKey,
       privateKey,
       refreshToken,
