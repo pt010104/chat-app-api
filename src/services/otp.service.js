@@ -1,43 +1,57 @@
-'use strict'
+'use strict';
 
-const OTP = require("../models/otp.model")
+const OTP = require("../models/otp.model");
 
 const generateOTPRandom = () => {
-    return Math.floor(100000 + Math.random() * 900000)
-}
+    return Math.floor(100000 + Math.random() * 900000);
+};
 
-const newOTP = async ({
-    email = null
-}) => {
+const newOTP = async ({ email, type }) => {
+    const checkOTP = await OTP.findOne({
+        email: email,
+        type: type
+    });
 
-    const otp = generateOTPRandom()
+    if (checkOTP) {
+        await checkOTP.updateOne({
+            otp: generateOTPRandom(),
+            expire_at: new Date(Date.now() + 120000)
+        });
+        checkOTP.save();
+        return checkOTP;
+    }
+
+    const otp = generateOTPRandom();
     const newOTP = await OTP.create({
         otp: otp,
-        email: email
-    })
+        email: email,
+        type: type,
+    });
 
-    return newOTP
+    return newOTP;
+};
 
-}
-
-const checkOTP = async (email, otp) => {
+const checkOTP = async (email, otp, type) => {
     const _otp = await OTP.findOne({
         email: email,
-        otp: otp
-    })
+        otp: otp,
+        type: type,
+    });
+
     if (!_otp) {
-        throw new Error("OTP not found")
+        throw new Error("OTP not found or invalid");
     }
 
     await OTP.deleteOne({
         email: email,
-        otp: otp
+        otp: otp,
+        type: type
     })
+    
+    return _otp;
+};
 
-    return _otp
-}
 module.exports = {
     newOTP,
     checkOTP
-}
-
+};
