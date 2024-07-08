@@ -4,9 +4,12 @@ const express = require("express");
 const router = express.Router();
 const UserController = require("../../controllers/user.controller");
 const { asyncHandler } = require("../../helpers/asyncHandler");
+const { authentication } = require("../../auth/authUtils");
 
-//New uSer
-router.post("/new-user", asyncHandler(UserController.newUser));
+router.post("/send-otp", asyncHandler(UserController.sendOTP));
 router.post("/check-otp", asyncHandler(UserController.checkOTP));
+
+router.use(authentication);
+router.post("/send-otp-change-password", asyncHandler(UserController.sendOTPChangePassword));
 
 module.exports = router;

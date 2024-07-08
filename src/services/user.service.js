@@ -1,35 +1,40 @@
-'use strict'
-const { BadRequestError } = require('../core/error.response')
-const User = require('../models/user.model')
-const { sendEmailOTP } = require('./email.service')
-const { NotFoundError } = require('../core/error.response')
-const { checkOTP } = require('./otp.service')
+'use strict';
+const { BadRequestError, NotFoundError, ForbiddenError } = require('../core/error.response');
+const User = require('../models/user.model');
+const { sendEmailOTP } = require('./email.service');
+const { checkOTP, newOTP } = require('./otp.service');
 
-const newUser = async (
-    email = null, capcha = null
-) => {
+const sendOTPService = async (email, type, emailUser = '') => {
 
-    // 1. Check email exists in dbs or not
-    const user = await User.findOne({
-        email: email
-    }).lean()
-
-    // 2. if exists
-    if (user) {
-        throw new BadRequestError("Email already exists")
+    // Nếu user muốn thay đổi mật khẩu thì emailUser phải trùng với email của user đó
+    if (type === 'change-password') {
+        if (email !== emailUser) {
+            throw new ForbiddenError("Permission denied");
+        }
     }
 
-    //3. Send email otp
-    //Send OTP
-    const result = await sendEmailOTP(email, 'Xác thực Email')
-    return result
-}
+    // Check if email exists
+    const user = await User.findOne({ email }).lean();
 
-const checkOTPService = async (
-    email = null, otp = null
-) => {
-    const isOTP = await checkOTP(email, otp)
-    return isOTP
-}
+    if (type === 'new-user') {
+        if (user) {
+            throw new BadRequestError("Email already exists");
+        }
+    } else if (type === 'reset-password' || type === 'change-password') {
+        if (!user) {
+            throw new NotFoundError("User with this email does not exist");
+        }
+    }
 
-module.exports = {newUser, checkOTPService}
+
+    // Send OTP
+    const result = await sendEmailOTP(email, type);
+    return result;
+};
+
+const checkOTPService = async (email, otp, type) => {
+    const isOTP = await checkOTP(email, otp, type);
+    return isOTP;
+};
+
+module.exports = { sendOTPService, checkOTPService };
