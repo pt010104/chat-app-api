@@ -10,27 +10,27 @@ class RoomRepository {
         return rooms;
     }
 
-    createRoom = async (name, avt_link, users) => {
+    createRoom = async (name, avt_url, user_ids) => {
         const newRoom = await RoomModel.create({
             name: name,
-            avt_link: avt_link,
-            users: users,
-            isGroup: users.length > 2 ? true : false
+            avt_url: avt_url,
+            user_ids: user_ids,
+            isGroup: user_ids.length > 2 ? true : false
         });
         return newRoom;
     }
 
-    getRoomByUsers = async (users) => {
+    getRoomByUserIDs = async (user_ids) => {
         return await RoomModel.findOne({
-            users: { $all: users },
-            isGroup: false
+            user_ids: { $all: user_ids }
         });
+        
     }
 
     addUsersToRoom = async (room_id, usersID) => {
         return await RoomModel.findByIdAndUpdate(room_id, {
             $addToSet: {
-                users: { $each: usersID }
+                user_ids: { $each: usersID }
             }
         }, { new: true });
     }
