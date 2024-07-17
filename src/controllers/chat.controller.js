@@ -1,6 +1,6 @@
 'use strict'
 
-const { SuccessResponse } = require("../core/success.response")
+const { CREATED } = require("../core/success.response")
 const ChatService = require("../services/chat.service")
 const Joi = require("joi");
 
@@ -8,8 +8,8 @@ class ChatController {
     createRoom = async (req, res, next) => {
         const roomValidate = Joi.object({
             name: Joi.string().required(),
-            avt_link: Joi.string().required(),
-            users: Joi.array().required()
+            avt_url: Joi.string().required(),
+            user_ids: Joi.array().required()
         });
         const { error } = roomValidate.validate(req.body);
         if (error) {
@@ -18,12 +18,11 @@ class ChatController {
             });
         }
 
-        const { name, avt_link, users } = req.body;
-        const user_id = req.user.userId
-
-        new SuccessResponse ({
+        const { name, avt_url, user_ids } = req.body;
+        
+        new CREATED ({
             message: "Message sent successfully",
-            metadata: await ChatService.createRoom(name, avt_link, users)
+            metadata: await ChatService.createRoom(name, avt_url, user_ids)
         }).send(res)
     }
 }

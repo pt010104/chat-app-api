@@ -9,11 +9,11 @@ const roomSchema = new Schema({
         type: String,
         required: true
     },
-    avt_link: {
+    avt_url: {
         type: String,
         default: ''
     },
-    users: {
+    user_ids: {
         type: [Types.ObjectId],
         required: true,
     },

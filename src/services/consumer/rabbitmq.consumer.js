@@ -6,9 +6,10 @@ class RabbitMQConsumer {
     static listenForMessages = async() => {
         await RabbitMQService.connect();
         const rooms = await RoomRepository.getAllRooms(); 
-
+        
         rooms.forEach(room => {
-            RabbitMQService.reciveMessage(room._id, async (message) => {
+            const queueName = String(room._id);
+            RabbitMQService.reciveMessage(queueName, async (message) => {
 
                 await ChatRepository.saveMessage(message.user_id, room._id, message.message);
 

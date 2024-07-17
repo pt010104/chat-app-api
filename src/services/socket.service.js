@@ -1,4 +1,5 @@
 const ChatService = require("./chat.service");
+const RedisService = require("./redis.service");
 
 class SocketServices {
     constructor(io) {
@@ -7,21 +8,21 @@ class SocketServices {
     }
 
     async connection(socket) {
-        const user_id = socket.handShake.query.user_id;
+        const user_id = socket.handshake.query.user_id;
         console.log(`User connected with id ${socket.id} and user_id ${user_id}`);
 
-        await redisService.setUserStatus(user_id, 'online');
-        console.log(`User connected with id ${socket.id}`);
+        await RedisService.setUserStatus(user_id, 'online');
+        console.log(`User status set to online for user_id ${user_id}`);
 
-        const unreadMessage = await ChatService.getUnreadMessages(user_id);
+        const unreadMessages = await ChatService.getUnreadMessages(user_id);
         unreadMessages.forEach(message => {
             socket.emit('chat message', message);
         });
 
-        socket.on('chat message', this.handleChatMessage.bind(this, socket));
-        socket.on('disconnect', this.handleDisconnect.bind(this, socket));
-        socket.on('join room', this.handleJoinRoom.bind(this, socket));
-        socket.on('error', this.handleError.bind(this, socket));
+        socket.on('chat message', (msg) => this.handleChatMessage(socket, user_id, msg));
+        socket.on('disconnect', () => this.handleDisconnect(socket, user_id));
+        socket.on('join room', (room) => this.handleJoinRoom(socket, room));
+        socket.on('error', (error) => this.handleError(socket, error));
     }
 
     async handleChatMessage(socket, user_id, msg) {
@@ -31,13 +32,13 @@ class SocketServices {
             const { room_id, message } = msg;
             const savedMessage = await ChatService.sendMessage(user_id, room_id, message);
 
-            this.io.emit('chat message', savedMessage);  
+            this.io.to(room_id).emit('chat message', savedMessage);  // Emit to the specific room
         } catch (error) {
             console.error(`Error handling message from ${socket.id}: ${error.message}`);
         }
     }
 
-    async handleDisconnect(socket) {
+    async handleDisconnect(socket, user_id) {
         console.log(`User disconnected with id ${socket.id}`);
 
         await RedisService.setUserStatus(user_id, 'offline');
@@ -53,4 +54,4 @@ class SocketServices {
     }
 }
 
-module.exports = SocketServices;  
+module.exports = SocketServices;
