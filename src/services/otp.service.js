@@ -7,12 +7,25 @@ const generateOTPRandom = () => {
 };
 
 const newOTP = async ({ email, type }) => {
-    console.log("dddddddddddd  ", type)
+    const checkOTP = await OTP.findOne({
+        email: email,
+        type: type
+    });
+
+    if (checkOTP) {
+        await checkOTP.updateOne({
+            otp: generateOTPRandom(),
+            expire_at: new Date(Date.now() + 120000)
+        });
+        checkOTP.save();
+        return checkOTP;
+    }
+
     const otp = generateOTPRandom();
     const newOTP = await OTP.create({
         otp: otp,
         email: email,
-        type: type
+        type: type,
     });
 
     return newOTP;

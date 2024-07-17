@@ -47,6 +47,7 @@ class AuthController {
       }).send(res);
     }
   };
+  
   signOut = async (req, res, next) => {
     new OK({
       message: "User signed out successfully",

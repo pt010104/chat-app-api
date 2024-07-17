@@ -1,6 +1,7 @@
 'use strict'
 
 const Template = require("../models/template.model")
+const { htmlChangePassword } = require("../utils/template/templateChangePasssword")
 const {htmlEmailToken} = require("../utils/template/templateEmail.html")
 const {htmlResetPassword} = require("../utils/template/templateResetPassword")
 
@@ -12,6 +13,8 @@ const newTemplate = async (tem_id, name, type) => {
         html = htmlEmailToken()
     } else if (type === 'reset-password') {
         html = htmlResetPassword()
+    } else if (type === 'change-password') {
+        html = htmlChangePassword()
     }
 
     const newTem = await Template.create({
