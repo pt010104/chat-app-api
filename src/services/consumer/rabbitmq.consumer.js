@@ -13,11 +13,11 @@ class RabbitMQConsumer {
                 await ChatRepository.saveMessage(message.user_id, room._id, message.message);
 
                 //Check if user is online
-                if (global._io.sockets.adapter.rooms[room.id]) {
-                    global._io.to(room.id).emit("chat message", message);
+                const userStatus = await RedisService.getUserStatus(message.user_id);
+                if (userStatus === 'online') {
+                    global._io.to(message.room_id).emit("chat message", message);
                 } else {
-                    //Store unread message in redis
-                    await RedisService.set(room.id, JSON.stringify(message));
+                    await RedisService.storeUnreadMessage(room.id, JSON.stringify(message));
                 }
             });
         })

@@ -1,4 +1,5 @@
 const amqp = require ('amqplib');
+require('dotenv').config();
 
 class RabbitMQService {
     constructor() {
@@ -8,9 +9,10 @@ class RabbitMQService {
 
     connect = async () => {
         try {
-            this.connection = await amqp.connect('amqp://localhost');
+            const amqpUrl = process.env.CLOUDAMQP_URL  || 'amqp://localhost';
+            this.connection = await amqp.connect(amqpUrl);
             this.channel = await this.connection.createChannel();
-            console.log('RabbitMQ connected')
+            console.info("connect to RabbitMQ success");
         } catch {
             console.error('Failed to connect RabbitMQ')
         }
