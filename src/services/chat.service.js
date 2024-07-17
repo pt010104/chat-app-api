@@ -13,11 +13,16 @@ class ChatService {
             throw new NotFoundError("Room not found")
         }
 
-        const saveMessage = await ChatRepository.saveMessage(user_id, room_id, message);
+        const chatMessage = {
+            user_id,
+            message,
+            room_id,
+            recipient_id: message.recipient_id
+        }
 
-        await RabbitMQService.sendMessage(room_id, saveMessage);
+        await RabbitMQService.sendMessage(room_id, chatMessage);
 
-        return saveMessage
+        return chatMessage 
     }
 
     static createRoom = async (name, avt_link, users) => {
@@ -33,6 +38,10 @@ class ChatService {
         const newRoom = await RoomRepository.createRoom(name, avt_link, users);
 
         return newRoom
+    }
+
+    static async getUnreadMessages(user_id) {
+        return await RedisService.getUnreadMessages(user_id);
     }
 }
 

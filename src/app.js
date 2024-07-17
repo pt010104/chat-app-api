@@ -27,6 +27,10 @@ require("./dbs/init.mongodb")
 const SocketServices = require('./services/socket.service');
 new SocketServices(io)
 
+//Rabbitmq
+const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
+RabbitMQConsumer.listenForMessages();
+
 //init routes
 app.use(router)
 

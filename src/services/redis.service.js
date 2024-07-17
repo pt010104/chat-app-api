@@ -70,6 +70,48 @@ class RedisService {
         }
     }
 
+    async setUserStatus(userId, status) {
+        const client = await this.getClient();
+        try {
+            await client.set(userId, status);
+        } catch (error) {
+            console.error('Redis set user status error:', error);
+            throw error;
+        }
+    }
+
+    async getUserStatus(userId) {
+        const client = await this.getClient();
+        try {
+            return await client.get(userId);
+        } catch (error) {
+            console.error('Redis get user status error:', error);
+            throw error;
+        }
+    }
+
+    async storeUnreadMessage(userId, message) {
+        const client = await this.getClient();
+        try {
+            await client.rpush(`unread:${userId}`, JSON.stringify(message));
+        } catch (error) {
+            console.error('Redis store unread message error:', error);
+            throw error;
+        }
+    }
+
+    async getUnreadMessages(userId) {
+        const client = await this.getClient();
+        try {
+            const messages = await client.lrange(`unread:${user_id}`, 0, -1);
+            await client.delAsync(`unread:${user_id}`);
+            return messages.map(msg => JSON.parse(msg));
+        } catch (error) {
+            console.error('Redis get unread messages error:', error);
+            throw error;
+        }
+    }
+
     async close() {
         await closeRedis();
     }
