@@ -3,6 +3,13 @@
 const RoomModel = require('../room.model');
 
 class RoomRepository {
+    // Get all rooms
+    // Return: Array of room_id
+    getAllRooms = async () => {
+        const rooms = await RoomModel.find();
+        return rooms;
+    }
+
     createRoom = async (name, avt_link, users) => {
         const newRoom = await RoomModel.create({
             name: name,
