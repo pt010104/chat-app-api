@@ -4,7 +4,7 @@ const { NotFoundError } = require("../core/error.response")
 const ChatModel = require("../models/chat.model")
 const ChatRepository = require("../models/repository/chat.repository")
 const RoomRepository = require("../models/repository/room.repository")
-
+const RabbitMQService = require("./rabbitmq.service")
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
         
@@ -14,7 +14,8 @@ class ChatService {
         }
 
         const saveMessage = await ChatRepository.saveMessage(user_id, room_id, message);
-        global._io.to(room_id).emit("chat message", saveMessage)
+
+        await RabbitMQService.sendMessage(room_id, saveMessage);
 
         return saveMessage
     }
