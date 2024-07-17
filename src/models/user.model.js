@@ -4,6 +4,10 @@ const {model, Schema, Types} = require('mongoose')
 const DOCUMENT_NAME = 'User'
 
 const user = new Schema({
+  _id: {
+    type: Types.ObjectId,
+    auto: true
+  },
   name: {
     type: String,
     trim: true,

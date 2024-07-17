@@ -10,8 +10,27 @@ async function sendEmailOTP(to, type) {
 
     const otp = await newOTP({email: to, type});
 
-    const Subject = type === 'new-user' ? 'Xác thực Email' : 'Đặt lại mật khẩu'
-    const templateName = type === 'new-user' ? 'NEW_USER_OTP' : 'RESET_PASSWORD_OTP';
+    let Subject, templateName;
+
+    switch (type) {
+        case 'new-user': {
+            Subject = 'Xác thực Email';
+            templateName = 'NEW_USER_OTP';
+            break;
+        }
+        case 'reset-password': {
+            Subject = 'Đặt lại mật khẩu';
+            templateName = 'RESET_PASSWORD_OTP';
+            break;
+        }
+        case 'change-password': {
+            Subject = 'Đổi mật khẩu';
+            templateName = 'CHANGE_PASSWORD_OTP';
+            break;
+        }
+        default:
+            throw new Error('Invalid type');
+    }  
     const template = await getTemplate({ name: templateName });
 
     if (!template) {

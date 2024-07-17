@@ -1,6 +1,6 @@
 const {
   BadRequestError,
-  ForbiddenError,
+  ConflictRequestError,
   AuthFailureError,
 } = require("../core/error.response");
 const UserModel = require("../models/user.model");
@@ -20,7 +20,7 @@ class AuthService {
       .lean();
 
     if (checkUser) {
-      throw new BadRequestError("User already exists");
+      throw new ConflictRequestError("User already exists");
     }
 
     body.password = await bcrypt.hash(body.password, 10);
@@ -40,7 +40,7 @@ class AuthService {
     const keyStore = await KeyTokenService.createKeyToken(data);
 
     if (!keyStore) {
-      throw new ForbiddenError("Key store not created");
+      throw new BadRequestError ("Key store not created");
     }
 
     const tokens = await createTokenPair(
@@ -53,7 +53,8 @@ class AuthService {
     );
     
     return {
-      message: "User created successfully",
+      user: newUser,
+      tokens,
     };
   };
 
@@ -101,7 +102,7 @@ class AuthService {
     const keyStore = await KeyTokenService.createKeyToken(data);
 
     if (!keyStore) {
-      throw new ForbiddenError("Key store not created");
+      throw new BadRequestError ("Key store not created");
     }
 
     const tokens = await createTokenPair(
@@ -118,6 +119,20 @@ class AuthService {
         tokens,
     };
   }
+
+  static signOut = async (userId) => {
+    // remove by userId
+    const checkUser = await UserModel.findOne({ _id: userId });
+    if (!checkUser) {
+      throw new BadRequestError("User not found");
+    }
+    const keyStore = await KeyTokenService.removeKeyToken(checkUser._id);
+    if (!keyStore) {
+      throw new ForbiddenError("Key store not removed");
+    }
+    
+    return 
+  };
 
 }
 

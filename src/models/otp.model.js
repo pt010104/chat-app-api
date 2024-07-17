@@ -8,8 +8,7 @@ const COLLECTION_NAME = 'otp_logs'
 const otpSchema = new Schema({
     otp: {type: String, required: true},
     email: {type: String, required: true},
-    status: {type: String, default: 'pending', enum: ['pending', 'verified', 'block']},
-    type: {type: String, defaultL: 'new-user', enum: ['new-user', 'reset-password']},
+    type: {type: String, defaultL: 'new-user', enum: ['new-user', 'reset-password', 'change-password']},
     expire_at: {type: Date, default: Date.now, expires: 120}
 }, {
     timestamps: true,
