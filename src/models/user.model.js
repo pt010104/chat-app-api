@@ -32,6 +32,7 @@ const user = new Schema({
   },
   gender:{
     type: String,
+    enum :['Female','Male','None'],
     trim: true
   },
   status: {
