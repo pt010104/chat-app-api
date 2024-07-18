@@ -6,7 +6,7 @@ class RoomRepository {
     // Get all rooms
     // Return: Array of room_id
     getAllRooms = async () => {
-        const rooms = await RoomModel.find();
+        const rooms = await RoomModel.find({});
         return rooms;
     }
 

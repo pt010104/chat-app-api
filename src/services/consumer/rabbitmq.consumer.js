@@ -7,21 +7,24 @@ class RabbitMQConsumer {
         await RabbitMQService.connect();
         const rooms = await RoomRepository.getAllRooms(); 
         
-        rooms.forEach(room => {
-            const queueName = String(room._id);
-            RabbitMQService.reciveMessage(queueName, async (message) => {
+        if (rooms) {
+            rooms.forEach(room => {
+                const queueName = String(room._id);
+                RabbitMQService.reciveMessage(queueName, async (message) => {
 
-                await ChatRepository.saveMessage(message.user_id, room._id, message.message);
+                    await ChatRepository.saveMessage(message.user_id, room._id, message.message);
 
-                //Check if user is online
-                const userStatus = await RedisService.getUserStatus(message.user_id);
-                if (userStatus === 'online') {
-                    global._io.to(message.room_id).emit("chat message", message);
-                } else {
-                    await RedisService.storeUnreadMessage(room.id, JSON.stringify(message));
-                }
-            });
-        })
+                    //Check if user is online
+                    const userStatus = await RedisService.getUserStatus(message.user_id);
+                    if (userStatus === 'online') {
+                        global._io.to(message.room_id).emit("chat message", message);
+                    } else {
+                        await RedisService.storeUnreadMessage(room.id, JSON.stringify(message));
+                    }
+                });
+            })
+        }
+
     }
 }
 
