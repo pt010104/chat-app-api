@@ -4,6 +4,7 @@ const { NotFoundError } = require("../core/error.response")
 const RoomRepository = require("../models/repository/room.repository")
 const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
+const RedisService = require("./redis.service")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {

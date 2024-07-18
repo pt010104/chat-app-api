@@ -12,6 +12,7 @@ class RedisService {
             await initRedis(); 
             this.redisClient = getRedis();  
         } catch (error) {
+            console.error(error);
             throw new Error('RedisService failed to initialize.');
         }
     }
@@ -103,8 +104,8 @@ class RedisService {
     async getUnreadMessages(userId) {
         const client = await this.getClient();
         try {
-            const messages = await client.lrange(`unread:${user_id}`, 0, -1);
-            await client.delAsync(`unread:${user_id}`);
+            const messages = await client.lRange(`unread:${userId}`, 0, -1);
+            await client.del(`unread:${userId}`);
             return messages.map(msg => JSON.parse(msg));
         } catch (error) {
             console.error('Redis get unread messages error:', error);

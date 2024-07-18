@@ -11,6 +11,8 @@ class SocketServices {
         const user_id = socket.handshake.query.user_id;
         console.log(`User connected with id ${socket.id} and user_id ${user_id}`);
 
+        console.log(user_id);
+
         await RedisService.setUserStatus(user_id, 'online');
         console.log(`User status set to online for user_id ${user_id}`);
 
