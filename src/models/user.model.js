@@ -8,6 +8,10 @@ const user = new Schema({
     type: Types.ObjectId,
     auto: true
   },
+  _id: {
+    type: Types.ObjectId,
+    auto: true
+  },
   name: {
     type: String,
     trim: true,
@@ -48,6 +52,8 @@ const user = new Schema({
     type: [String],
     default: []
   },
+  avatar: String,
+  thumb_avatar: String
   avatar: String,
   thumb_avatar: String
 }, {
