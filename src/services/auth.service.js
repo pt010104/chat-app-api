@@ -8,16 +8,14 @@ const bcrypt = require("bcrypt");
 const crypto = require("node:crypto");
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
-const RedisService = require('./redis.service'); 
+const RedisService = require("./redis.service");
 class AuthService {
 
 
   static signUp = async (body) => {
-    const checkUser = await UserModel
-      .findOne({
-        email: body.email,
-      })
-      .lean();
+    const checkUser = await UserModel.findOne({
+      email: body.email,
+    }).lean();
 
     if (checkUser) {
       throw new ConflictRequestError("User already exists");
@@ -40,7 +38,7 @@ class AuthService {
     const keyStore = await KeyTokenService.createKeyToken(data);
 
     if (!keyStore) {
-      throw new BadRequestError ("Key store not created");
+      throw new BadRequestError("Key store not created");
     }
 
     const tokens = await createTokenPair(
@@ -59,7 +57,6 @@ class AuthService {
   };
 
   static signIn = async (body) => {
-
     //Check in redis first
     const redisKey = `user:${body.email}`;
 
@@ -73,20 +70,17 @@ class AuthService {
       }).lean();
       if (user) {
         await RedisService.set(redisKey, JSON.stringify(user), 300); // 5 min
-      }    
+      }
     }
 
     if (!user) {
       throw new AuthFailureError("Invalid email");
     }
 
-    const checkPassword = await bcrypt.compare(
-      body.password,
-      user.password
-    );
+    const checkPassword = await bcrypt.compare(body.password, user.password);
     if (!checkPassword) {
       throw new AuthFailureError("Invalid password");
-    } 
+    }
 
     const publicKey = crypto.randomBytes(64).toString("hex");
     const privateKey = crypto.randomBytes(64).toString("hex");
@@ -102,7 +96,7 @@ class AuthService {
     const keyStore = await KeyTokenService.createKeyToken(data);
 
     if (!keyStore) {
-      throw new BadRequestError ("Key store not created");
+      throw new BadRequestError("Key store not created");
     }
 
     const tokens = await createTokenPair(
@@ -115,10 +109,10 @@ class AuthService {
     );
 
     return {
-        user: user,
-        tokens,
+      user: user,
+      tokens,
     };
-  }
+  };
 
   static signOut = async (userId) => {
     // remove by userId
@@ -130,9 +124,46 @@ class AuthService {
     if (!keyStore) {
       throw new ForbiddenError("Key store not removed");
     }
-    
-    return 
+
+    return;
   };
+
+  static forgetPassword = async (email, newPassword) => {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await UserModel.findOneAndUpdate(
+      { email },
+      { password: hashedPassword },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!updatedUser) {
+      throw new NotFoundError("User with this email does not exist");
+    }
+
+    return;
+  };
+
+  static changePassword = async (userId, oldPassword, newPassword) => {
+    console.log(userId, oldPassword, newPassword)
+    const user = await UserModel.findOne({ _id: userId });
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    const checkPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!checkPassword) {
+      throw new AuthFailureError("Password does not match");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword; 
+    await user.save();
+
+    return;
+
+  }
 
 }
 
