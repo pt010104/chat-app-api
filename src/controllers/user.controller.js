@@ -58,6 +58,8 @@ class UserController {
         });
     }
 
+    const { otp, type } = req.body;
+
     let email;
 
     if (type == 'change-password') {
@@ -65,8 +67,6 @@ class UserController {
     } else {
         email = req.body.email;
     }
-
-    const { otp, type } = req.body;
 
     new SuccessResponse({
       message: "OTP verified successfully",

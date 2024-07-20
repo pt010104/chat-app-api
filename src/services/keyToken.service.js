@@ -28,6 +28,7 @@ class KeyTokenService {
       throw new Error(error);
     }
   };
+  
   static removeKeyToken = async (userId) => {
     try {
       const tokens = await keyToken.findOneAndDelete({

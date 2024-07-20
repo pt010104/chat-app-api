@@ -1,37 +1,34 @@
 'use strict';
 
 const OTP = require("../models/otp.model");
+const { findUserByEmail } = require("../models/repository/user.repository");
+const { createTokenPair } = require("../auth/authUtils");
+const KeyTokenService = require("./keyToken.service");
+const crypto = require("node:crypto");
 
 const generateOTPRandom = () => {
     return Math.floor(100000 + Math.random() * 900000);
 };
 
 const newOTP = async ({ email, type }) => {
-    const checkOTP = await OTP.findOne({
+    const otp = generateOTPRandom();
+    const newOTP = await OTP.findOneAndUpdate({
         email: email,
         type: type
-    });
-
-    if (checkOTP) {
-        await checkOTP.updateOne({
-            otp: generateOTPRandom(),
-            expire_at: new Date(Date.now() + 120000)
-        });
-        checkOTP.save();
-        return checkOTP;
-    }
-
-    const otp = generateOTPRandom();
-    const newOTP = await OTP.create({
-        otp: otp,
+    }, {
         email: email,
-        type: type,
-    });
+        otp: otp,
+        type: type
+    }, {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true
+    })
 
     return newOTP;
 };
 
-const checkOTP = async (email, otp, type) => {
+const verifyOTP = async (email, otp, type) => {
     const _otp = await OTP.findOne({
         email: email,
         otp: otp,
@@ -47,11 +44,41 @@ const checkOTP = async (email, otp, type) => {
         otp: otp,
         type: type
     })
+
+    if (type == "reset-password" || type == "change-password") {
+        const user = await findUserByEmail(email);
+        const publicKey = crypto.randomBytes(64).toString("hex");
+        const privateKey = crypto.randomBytes(64).toString("hex");
+        const refreshToken = crypto.randomBytes(64).toString("hex");
     
+        const data = {
+          _id: user._id,
+          publicKey,
+          privateKey,
+          refreshToken,
+        };
+    
+        const keyStore = await KeyTokenService.createKeyToken(data);
+    
+
+        const tokens = await createTokenPair({
+                email: email,
+                userId: user._id,
+            },
+            publicKey,
+            privateKey
+        );
+        
+        return {
+            otp: _otp,
+            tokens: tokens
+        };
+    }
+
     return _otp;
 };
 
 module.exports = {
     newOTP,
-    checkOTP
+    verifyOTP
 };

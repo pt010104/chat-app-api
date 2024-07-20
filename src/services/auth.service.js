@@ -9,9 +9,8 @@ const crypto = require("node:crypto");
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
 const RedisService = require("./redis.service");
+
 class AuthService {
-
-
   static signUp = async (body) => {
     const checkUser = await UserModel.findOne({
       email: body.email,
@@ -128,24 +127,23 @@ class AuthService {
     return;
   };
 
-  static forgetPassword = async (email, newPassword) => {
+  static forgetPassword = async (userId, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     const updatedUser = await UserModel.findOneAndUpdate(
-      { email },
+      { _id: userId },
       { password: hashedPassword },
       { new: true, runValidators: true }
     ).lean();
 
     if (!updatedUser) {
-      throw new NotFoundError("User with this email does not exist");
+      throw new NotFoundError("User does not exist");
     }
 
     return;
   };
 
   static changePassword = async (userId, oldPassword, newPassword) => {
-    console.log(userId, oldPassword, newPassword)
     const user = await UserModel.findOne({ _id: userId });
     if (!user) {
       throw new NotFoundError("User not found");

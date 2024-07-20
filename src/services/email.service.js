@@ -62,7 +62,6 @@ async function sendEmailOTP(to, type) {
                 raw: encodedMessage
             }
         });
-        console.log('Email sent:', result);
         return result;
     } catch (error) {
         console.error('Failed to send email:', error);

@@ -55,21 +55,23 @@ class AuthController {
   };
   
   forgetPassword = async (req, res, next) => {
-    const email = req.body.email;
-    const newPassword = req.body.newPassword;
-    const emailValidate = Joi.object({
-      email: Joi.string().email().required(),
-      newPassword: Joi.string().required().min(8).max(30),
+    const forgetPasswordValidate = Joi.object({
+      new_password: Joi.string().required().min(8).max(30),
     });
-    const { error } = emailValidate.validate(req.body);
+
+    const { error } = forgetPasswordValidate.validate(req.body);
     if (error) {
       return res.status(400).json({
         message: error.details[0].message,
       });
     }
+    
+    const newPassword = req.body.new_password;
+    const userId = req.user.userId;
+
     new SuccessResponse({
       message: "Password changed successfully",
-      metadata: await AuthService.forgetPassword(email, newPassword),
+      metadata: await AuthService.forgetPassword(userId, newPassword),
     }).send(res);
   };
 

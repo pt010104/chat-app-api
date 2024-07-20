@@ -111,14 +111,37 @@ authorization: Bearer &lt;token&gt;</code></pre>
             <pre><code>{
         "old_password": "string (required)"
         "new_password": "string (required) min 8 max 30"
-        }</code></pre>
+}</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
         {
-        "message": "User signed out successfully",
+        "message": "Change password successfully",
         "metadata": { ...signOutDetails }
         }</code></pre>
-        </div>
+      </div>
+
+      <h3>POST /v1/api/auth/forget-password</h3>
+      <div class="indent">
+          <p><strong>Description:</strong> Forget password</p>
+          <p><strong>URL:</strong> <code>/v1/api/auth/forget-password</code></p>
+          <p><strong>Method:</strong> POST</p>
+          <p><strong>Headers:</strong></p>
+          <pre><code>Content-Type: application/json
+      authorization: Bearer &lt;token&gt;
+      x-client-id: &lt;client-id&gt;
+    </code></pre>
+          <p><strong>Request Body:</strong></p>
+          <pre><code>{
+      "new_password": "string (required) min 8 max 30"
+}</code></pre>
+          <p><strong>Responses:</strong></p>
+          <pre><code>200 OK:
+{
+"message": "Change password successfully",
+"metadata": { ...signOutDetails }
+}</code></pre>
+      
+      </div>
 
         <h2>User Routes</h2>
 
@@ -174,7 +197,15 @@ authorization: Bearer &lt;token&gt;</code></pre>
             <pre><code>200 OK:
 {
   "message": "OTP verified successfully",
-  "metadata": { ...verificationDetails }
+  "metadata": { 
+    otp: {
+
+    }
+    tokens: { //If type is 'change-password' or 'reset-password'
+      accessToken: "string",
+      refreshToken: "string"
+    }
+  }
 }</code></pre>
         </div>
 

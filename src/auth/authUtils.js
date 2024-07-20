@@ -47,7 +47,7 @@ const authentication = asyncHandler(async (req, res, next) => {
 
   const keyStore = await findKeyByUserID(userId);
   if (!keyStore) {
-    throw new NotFoundError("Not found KeyStore");
+    throw new NotFoundError("Key Not Found");
   }
 
   //check if use refresh token
