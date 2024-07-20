@@ -71,6 +71,7 @@ const verifyOTP = async (email, otp, type) => {
         
         return {
             otp: _otp,
+            user_id: user._id,
             tokens: tokens
         };
     }
