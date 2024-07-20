@@ -42,13 +42,9 @@ class UserController {
 
   checkOTP = async (req, res, next) => {
     const otpCheckValidate = Joi.object({
-        email: Joi.string().email().when('type', {
-            is: Joi.valid('new-user', 'reset-password'),
-            then: Joi.required(),
-            otherwise: Joi.optional()
-        }),
+        email: Joi.string().email().required(),
         otp: Joi.string().required(),
-        type: Joi.string().valid("new-user", "reset-password", "change-password").required(),
+        type: Joi.string().valid("new-user", "reset-password", "change-password").required()
     });
 
     const { error } = otpCheckValidate.validate(req.body);
@@ -58,15 +54,7 @@ class UserController {
         });
     }
 
-    const { otp, type } = req.body;
-
-    let email;
-
-    if (type == 'change-password') {
-        email = req.user.email;
-    } else {
-        email = req.body.email;
-    }
+    const { otp, type, email } = req.body;
 
     new SuccessResponse({
       message: "OTP verified successfully",
