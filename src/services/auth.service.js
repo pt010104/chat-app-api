@@ -159,6 +159,8 @@ class AuthService {
     user.password = hashedPassword; 
     await user.save();
 
+    RedisService.delete(`user:${user.email}`);
+
     return;
 
   }
