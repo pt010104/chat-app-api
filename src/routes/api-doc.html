@@ -188,7 +188,7 @@ authorization: Bearer &lt;token&gt;</code></pre>
             <pre><code>Content-Type: application/json</code></pre>
             <p><strong>Request Body:</strong></p>
             <pre><code>{
-  "email": "string (required if type is 'new-user' or 'reset-password', valid email)",
+  "email": "string (required, valid email)",
   "otp": "string (required)",
   "type": "string (required, 'new-user' or 'reset-password' or 'change-password')"
 }</code></pre>
@@ -197,7 +197,8 @@ authorization: Bearer &lt;token&gt;</code></pre>
 {
   "message": "OTP verified successfully",
   "metadata": { 
-    otp: {}
+    otp: {},
+    user_id: "string",
     tokens: { // If type is 'change-password' or 'reset-password'
       accessToken: "string",
       refreshToken: "string"

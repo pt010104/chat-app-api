@@ -79,11 +79,11 @@ class AuthController {
     const newPassword = req.body.new_password;
     const oldPassword = req.body.old_password;
 
-    const emailValidate = Joi.object({
+    const changePasswordValidate = Joi.object({
       new_password: Joi.string().required().min(8).max(30),
       old_password: Joi.string().required(),
     });
-    const { error } = emailValidate.validate(req.body);
+    const { error } = changePasswordValidate.validate(req.body);
     if (error) {
       return res.status(400).json({
         message: error.details[0].message,
