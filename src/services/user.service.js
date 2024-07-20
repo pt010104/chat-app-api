@@ -6,7 +6,7 @@ const {
 } = require("../core/error.response");
 const User = require("../models/user.model");
 const { sendEmailOTP } = require("./email.service");
-const { checkOTP, newOTP } = require("./otp.service");
+const { verifyOTP } = require("./otp.service");
 
 const sendOTPService = async (email, type) => {
   // Check if email exists
@@ -28,8 +28,9 @@ const sendOTPService = async (email, type) => {
 };
 
 const checkOTPService = async (email, otp, type) => {
-  const isOTP = await checkOTP(email, otp, type);
-  return isOTP;
+  const result = await verifyOTP(email, otp, type);
+
+  return result;
 };
 
 module.exports = { sendOTPService, checkOTPService };
