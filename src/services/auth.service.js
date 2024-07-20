@@ -135,10 +135,11 @@ class AuthService {
       { password: hashedPassword },
       { new: true, runValidators: true }
     ).lean();
-
     if (!updatedUser) {
       throw new NotFoundError("User does not exist");
     }
+
+    RedisService.delete(`user:${updatedUser.email}`);
 
     return;
   };
