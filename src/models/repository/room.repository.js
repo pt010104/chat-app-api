@@ -27,6 +27,11 @@ class RoomRepository {
         
     }
 
+    getUserIDsByRoom = async (room_id) => {
+        const room = await RoomModel.findById(room_id).lean();
+        return room.user_ids;
+    }
+
     addUsersToRoom = async (room_id, usersID) => {
         return await RoomModel.findByIdAndUpdate(room_id, {
             $addToSet: {

@@ -18,7 +18,6 @@ class ChatService {
             user_id,
             message,
             room_id,
-            recipient_id: message.recipient_id
         }
 
         const queueName = String(room_id);

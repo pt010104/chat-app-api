@@ -81,10 +81,10 @@ class RedisService {
         }
     }
 
-    async getUserStatus(userId) {
+    async getUserStatus(userID) {
         const client = await this.getClient();
         try {
-            return await client.get(userId);
+            return await client.get(userID);
         } catch (error) {
             console.error('Redis get user status error:', error);
             throw error;
@@ -94,7 +94,7 @@ class RedisService {
     async storeUnreadMessage(userId, message) {
         const client = await this.getClient();
         try {
-            await client.rpush(`unread:${userId}`, JSON.stringify(message));
+            await client.rPush(`unread:${userId}`, JSON.stringify(message));
         } catch (error) {
             console.error('Redis store unread message error:', error);
             throw error;
