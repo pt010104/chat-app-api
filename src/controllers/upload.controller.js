@@ -25,7 +25,6 @@ class UploadController {
             message: "Upload file successfully",
             metadata: await UploadService.uploadImageFromBuffer({
                 buffer: file.buffer,
-                originalname: file.originalname,
                 user_id: req.user.userId,
                 type: "avatar",
             }),
