@@ -19,7 +19,7 @@ class RedisService {
 
     async getClient() {
         if (!this.redisClient) {
-            throw new Error('Redis client is not initialized.');
+            await this.initializeClient();
         }
         return this.redisClient;
     }

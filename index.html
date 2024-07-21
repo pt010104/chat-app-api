@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #messageLabel {
+            display: block;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: green;
+        }
+        #logArea {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            overflow-y: scroll;
+            padding: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <button id="sendMessageButton">Send Message</button>
+    <label id="messageLabel">No messages yet</label>
+    <div id="logArea"></div>
+    <script>
+        const socket = io('http://localhost:5050', {
+            query: {
+                user_id: '6697de6d3786fe3f2bc2c125'  
+            }
+        });
+
+        function log(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toISOString();
+            logArea.innerHTML += `[${timestamp}] ${message}<br>`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        // Add the catch-all listener
+        socket.onAny((eventName, ...args) => {
+            log(`Received event "${eventName}": ${JSON.stringify(args)}`);
+        });
+
+        socket.on('connect', () => {
+            log('Connected to server');
+            log('User ID connection: ' + socket.id);
+            // Join the room
+            socket.emit('join room', '66981da2388da84552594a90');
+        });
+
+        socket.on('joined room', (roomId) => {
+            log(`Joined room: ${roomId}`);
+        });
+
+        socket.on('chat message', (data) => {
+            log('Received chat message: ' + JSON.stringify(data));
+            if (data && data.message) {
+                document.getElementById('messageLabel').innerText = `Received message: ${data.message}`;
+            } else {
+                log('Error: Received invalid message format');
+            }
+        });
+
+        socket.on('disconnect', () => {
+            log('Disconnected from server');
+        });
+
+        socket.on('error', (error) => {
+            log('Connection error: ' + error);
+        });
+
+        function sendMessage(room_id, message) {
+            log('Sending message: ' + JSON.stringify({ room_id, message }));
+            socket.emit('chat message', { room_id, message });
+        }
+
+        document.getElementById('sendMessageButton').addEventListener('click', () => {
+            sendMessage('66981da2388da84552594a90', 'Message sent from button');
+        });
+    </script>
+</body>
+</html>
