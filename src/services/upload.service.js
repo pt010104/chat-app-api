@@ -68,13 +68,18 @@ class UploadService {
 
     uploadImageFromBuffer = async ({
         buffer,
-        originalname,
         user_id,
         type = "avatar",
     }) => {
         try {
             let folderName = type + "/" + user_id;
-
+    
+            // delete all images 
+            await cloudinary.api.delete_resources_by_prefix(folderName, {
+                invalidate: true,
+                resource_type: 'image'
+            });
+    
             const uploadImage = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
@@ -86,31 +91,31 @@ class UploadService {
                         else resolve(result);
                     }
                 );
-
+    
                 const readableStream = new Readable();
                 readableStream.push(buffer);
                 readableStream.push(null);
                 readableStream.pipe(uploadStream);
             });
-
+    
             let url = {};
-
+    
             if (type == "avatar") {
-                const avt_url = await cloudinary.url(uploadImage.public_id, {
+                const avt_url = cloudinary.url(uploadImage.public_id, {
                     width: CONSTANT.WIDTH_AVATAR,
                     height: CONSTANT.HEIGHT_AVATAR,
                     crop: "fill",
                     format: 'jpg'
-                })
-                const avt_thumb_url = await cloudinary.url(uploadImage.public_id, {
+                });
+                const avt_thumb_url = cloudinary.url(uploadImage.public_id, {
                     width: CONSTANT.WIDTH_THUMB_AVATAR,
                     height: CONSTANT.HEIGHT_THUMB_AVATAR,
                     crop: "fill",
                     format: 'jpg'
-                })
+                });
                 url['avt_url'] = avt_url;
                 url['avt_thumb_url'] = avt_thumb_url;
-
+    
                 const uploadAvt = await User.updateOne(
                     { _id: user_id }, 
                     {
