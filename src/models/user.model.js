@@ -3,7 +3,11 @@ const {model, Schema, Types} = require('mongoose')
 
 const DOCUMENT_NAME = 'User'
 
-const user = new Schema({
+const userModel = new Schema({
+  _id: {
+    type: Types.ObjectId,
+    auto: true
+  },
   name: {
     type: String,
     trim: true,
@@ -28,6 +32,7 @@ const user = new Schema({
   },
   gender:{
     type: String,
+    enum :['Female','Male','None'],
     trim: true
   },
   status: {
@@ -49,4 +54,4 @@ const user = new Schema({
   timestamps: true,
 })
 
-module.exports = model(DOCUMENT_NAME, user)
+module.exports = model(DOCUMENT_NAME, userModel)

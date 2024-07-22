@@ -4,29 +4,46 @@ const { getTemplate } = require('./template.service');
 const { NotFoundError } = require('../core/error.response');
 const { newOTP } = require('./otp.service');
 
-async function sendEmailOTP(to, subject) {
-    //Get Oauth client from credentials
+async function sendEmailOTP(to, type) {
     const oAuth2Client = getOAuth2Client();
     const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
-    //Get New OTP
-    const otp = await newOTP({ email: to });
+    const otp = await newOTP({email: to, type});
 
-    //get Email Template
-    const template = await getTemplate ({name: 'NEW_USER_OTP'});
+    let Subject, templateName;
+
+    switch (type) {
+        case 'new-user': {
+            Subject = 'Xác thực Email';
+            templateName = 'NEW_USER_OTP';
+            break;
+        }
+        case 'reset-password': {
+            Subject = 'Đặt lại mật khẩu';
+            templateName = 'RESET_PASSWORD_OTP';
+            break;
+        }
+        case 'change-password': {
+            Subject = 'Đổi mật khẩu';
+            templateName = 'CHANGE_PASSWORD_OTP';
+            break;
+        }
+        default:
+            throw new Error('Invalid type');
+    }  
+    const template = await getTemplate({ name: templateName });
 
     if (!template) {
         throw new NotFoundError('Template not found');
     }
 
-    //
     const htmlMessage = template.html.replace('{{otp}}', otp.otp);
 
     const emailParts = [
         `To: ${to}`,
         'Content-Type: text/html; charset=utf-8',
         'MIME-Version: 1.0',
-        `Subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
+        `Subject: =?utf-8?B?${Buffer.from(Subject).toString('base64')}?=`,
         '',
         htmlMessage
     ];
@@ -45,13 +62,11 @@ async function sendEmailOTP(to, subject) {
                 raw: encodedMessage
             }
         });
-        console.log('Email sent:', result);
         return result;
     } catch (error) {
         console.error('Failed to send email:', error);
         throw error;
     }
 }
-
 
 module.exports = { sendEmailOTP };

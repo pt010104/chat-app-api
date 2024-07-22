@@ -9,8 +9,11 @@ const { authentication } = require("../../auth/authUtils");
 //register
 router.post("/signup", asyncHandler(AuthController.signUp));
 router.post("/signin", asyncHandler(AuthController.signIn));
+
 router.use(authentication);
 
-//Logout and forgot password here
+router.post("/signout", asyncHandler(AuthController.signOut));
+router.post("/change-password", asyncHandler(AuthController.changePassword))
+router.post("/forget-password", asyncHandler(AuthController.forgetPassword));
 
 module.exports = router;

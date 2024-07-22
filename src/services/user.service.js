@@ -1,35 +1,36 @@
-'use strict'
-const { BadRequestError } = require('../core/error.response')
-const User = require('../models/user.model')
-const { sendEmailOTP } = require('./email.service')
-const { NotFoundError } = require('../core/error.response')
-const { checkOTP } = require('./otp.service')
+"use strict";
+const {
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+} = require("../core/error.response");
+const User = require("../models/user.model");
+const { sendEmailOTP } = require("./email.service");
+const { verifyOTP } = require("./otp.service");
 
-const newUser = async (
-    email = null, capcha = null
-) => {
+const sendOTPService = async (email, type) => {
+  // Check if email exists
+  const user = await User.findOne({ email }).lean();
 
-    // 1. Check email exists in dbs or not
-    const user = await User.findOne({
-        email: email
-    }).lean()
-
-    // 2. if exists
+  if (type === "new-user") {
     if (user) {
-        throw new BadRequestError("Email already exists")
+      throw new BadRequestError("Email already exists");
     }
+  } else if (type === "reset-password" || type === "change-password") {
+    if (!user) {
+      throw new NotFoundError("User with this email does not exist");
+    }
+  }
 
-    //3. Send email otp
-    //Send OTP
-    const result = await sendEmailOTP(email, 'Xác thực Email')
-    return result
-}
+  // Send OTP
+  const result = await sendEmailOTP(email, type);
+  return result;
+};
 
-const checkOTPService = async (
-    email = null, otp = null
-) => {
-    const isOTP = await checkOTP(email, otp)
-    return isOTP
-}
+const checkOTPService = async (email, otp, type) => {
+  const result = await verifyOTP(email, otp, type);
 
-module.exports = {newUser, checkOTPService}
+  return result;
+};
+
+module.exports = { sendOTPService, checkOTPService };
