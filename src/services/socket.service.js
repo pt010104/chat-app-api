@@ -21,7 +21,10 @@
 
             socket.on('chat message', (msg) => this.handleChatMessage(socket, user_id, msg));
             socket.on('disconnect', () => this.handleDisconnect(socket, user_id));
-            socket.on('join room', (room) => this.handleJoinRoom(socket, room));
+            socket.on('join room', (room) => {
+                console.log(`Received join room event for room ${room}`);
+                this.handleJoinRoom(socket, room);
+            });
             socket.on('error', (error) => this.handleError(socket, error));
         }
 
