@@ -81,19 +81,7 @@ class AuthService {
       throw new AuthFailureError("Invalid password");
     }
 
-    const publicKey = crypto.randomBytes(64).toString("hex");
-    const privateKey = crypto.randomBytes(64).toString("hex");
-    const refreshToken = crypto.randomBytes(64).toString("hex");
-
-    const data = {
-      _id: user._id,
-      publicKey,
-      privateKey,
-      refreshToken,
-    };
-
-    const keyStore = await KeyTokenService.createKeyToken(data);
-
+    const keyStore = await KeyTokenService.FindOrCreateKeyToken(user._id);
     if (!keyStore) {
       throw new BadRequestError("Key store not created");
     }
@@ -103,8 +91,8 @@ class AuthService {
         userId: user._id,
         email: user.email,
       },
-      publicKey,
-      privateKey
+      keyStore.public_key,
+      keyStore.private_key
     );
 
     return {
