@@ -141,6 +141,8 @@ class AuthService {
 
     RedisService.delete(`user:${updatedUser.email}`);
 
+    await KeyTokenService.removeKeyToken(userId);
+
     return;
   };
 
@@ -162,7 +164,32 @@ class AuthService {
 
     RedisService.delete(`user:${user.email}`);
 
-    return;
+    const publicKey = crypto.randomBytes(64).toString("hex");
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const refreshToken = crypto.randomBytes(64).toString("hex");
+
+    const data = {
+      _id: userId,
+      publicKey,
+      privateKey,
+      refreshToken,
+    };
+
+    const keyStore = await KeyTokenService.createKeyToken(data);
+    if (!keyStore) {
+      throw new BadRequestError("Key store not created");
+    }
+
+    const tokens = await createTokenPair(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      publicKey,
+      privateKey
+    );
+
+    return tokens;
 
   }
 
