@@ -10,7 +10,11 @@ router.get("/api-docs", (req, res) => {
 });
 
 router.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../index.html'));
+    res.sendFile(path.join(__dirname, '../public', 'index.html'));
+});
+
+router.get('/page2', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'index2.html'));
 });
 
 router.use("/v1/api/auth", require ("./auth"))
