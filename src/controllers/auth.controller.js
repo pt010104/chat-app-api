@@ -46,13 +46,6 @@ class AuthController {
       }).send(res);
     }
   };
-
-  signOut = async (req, res, next) => {
-    new OK({
-      message: "User signed out successfully",
-      metadata: await AuthService.signOut(req.user.userId),
-    }).send(res);
-  };
   
   forgetPassword = async (req, res, next) => {
     const forgetPasswordValidate = Joi.object({

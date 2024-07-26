@@ -52,7 +52,7 @@ class KeyTokenService {
       const refreshToken = crypto.randomBytes(32).toString("hex");
 
       return await this.createKeyToken({
-          user_id: userId,
+          _id: userId,
           publicKey,
           privateKey,
           refreshToken,
