@@ -101,19 +101,6 @@ class AuthService {
     };
   };
 
-  static signOut = async (userId) => {
-    // remove by userId
-    const checkUser = await UserModel.findOne({ _id: userId });
-    if (!checkUser) {
-      throw new BadRequestError("User not found");
-    }
-    const keyStore = await KeyTokenService.removeKeyToken(checkUser._id);
-    if (!keyStore) {
-      throw new ForbiddenError("Key store not removed");
-    }
-
-    return;
-  };
 
   static forgetPassword = async (userId, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
