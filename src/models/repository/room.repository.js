@@ -27,6 +27,12 @@ class RoomRepository {
         
     }
 
+    getRoomByUserID = async (user_id) => {
+        return await RoomModel.find({
+            user_ids: user_id
+        });
+    }
+
     getUserIDsByRoom = async (room_id) => {
         const room = await RoomModel.findById(room_id).lean();
         return room.user_ids;

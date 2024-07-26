@@ -2,6 +2,7 @@
 
 const { CREATED } = require("../core/success.response")
 const ChatService = require("../services/chat.service")
+const { OK } = require("../core/success.response")
 const Joi = require("joi");
 
 class ChatController {
@@ -23,6 +24,26 @@ class ChatController {
         new CREATED ({
             message: "Message sent successfully",
             metadata: await ChatService.createRoom(name, avt_url, user_ids)
+        }).send(res)
+    }
+
+    getMessagesInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const page = req.query.page;
+        const limit = req.query.limit;
+
+        new OK ({
+            message: "Messages retrieved successfully",
+            metadata: await ChatService.getMessagesInRoom(room_id, page, limit)
+        }).send(res)
+    }
+
+    getNewMessagesEachRoom = async (req, res, next) => {
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "New messages retrieved successfully",
+            metadata: await ChatService.getNewMessagesEachRoom(userId)
         }).send(res)
     }
 }

@@ -2,6 +2,7 @@ const RabbitMQService = require('../rabbitmq.service');
 const RoomRepository = require('../../models/repository/room.repository');
 const RedisService = require ('../redis.service')
 const ChatRepository = require('../../models/repository/chat.repository');
+const ChatService = require('../chat.service');
 
 class RabbitMQConsumer {
     static listenForMessages = async() => {
@@ -11,25 +12,29 @@ class RabbitMQConsumer {
         if (rooms) {
             rooms.forEach(room => {
                 const queueName = String(room._id);
-                console.log('Room id: ', room._id);
-                RabbitMQService.reciveMessage(queueName, async (message) => {
-                    await ChatRepository.saveMessage(message.user_id, room._id, message.message);
-                    const userIDsInRoom = await RoomRepository.getUserIDsByRoom(room._id); 
-                    //Check if user is online
+                RabbitMQService.receiveMessage(queueName, async (message) => {
+
+                    const saveMessage = await ChatRepository.saveMessage(message.user_id, room._id, message.message);
+                    await ChatService.updateNewMessagesInRoom(room._id, message.user_id, saveMessage);
+
+                    let userIDsInRoom = await RoomRepository.getUserIDsByRoom(room._id); 
+                    //Bỏ userId hiện tại
+                    userIDsInRoom = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+
                     userIDsInRoom.forEach(async (userID) => {
                         userID = userID.toString();
-                        console.log('User ID: ', userID)
+
+                        message = {
+                            ...message,
+                            id: saveMessage._id,
+                        }
+                        
                         const userStatus = await RedisService.getUserStatus(userID);
                         if (userStatus === 'online') {
-                            if (global._io) {
-                                console.log('global._io is defined, emitting message');
-                                global._io.to(room._id.toString()).emit("chat message", { message: message });
-                                console.log('Message emitted to room:', room._id.toString());
-                            } else {
-                                console.error('global._io is not defined');
-                            }
+                            global._io.to(room._id.toString()).emit("chat message", { message: message });
                         } else {
-                            await RedisService.storeUnreadMessage(userID, JSON.stringify(message));
+                            $type = 'unread';
+                            await RedisService.storeMessage(type, userID, JSON.stringify(message));
                         }
                     });
                 });
