@@ -1,6 +1,7 @@
 "use strict";
 
 const keyToken = require("../models/keytoken.model");
+const crypto = require("node:crypto");
 
 class KeyTokenService {
   static createKeyToken = async (data) => {
