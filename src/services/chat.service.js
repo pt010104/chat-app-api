@@ -5,6 +5,7 @@ const RoomRepository = require("../models/repository/room.repository")
 const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
+const chatRepository = require("../models/repository/chat.repository")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
@@ -46,7 +47,58 @@ class ChatService {
     }
 
     static async getUnreadMessages(user_id) {
-        return await RedisService.getUnreadMessages(user_id);
+        const type = 'unread';
+        const message = await RedisService.getAndClearMessages(type, user_id);
+        
+        return message
+    }
+
+    static async getNewMessagesEachRoom(userId) {
+        const rooms = await RoomRepository.getRoomByUserID(userId);
+        const type = 'newMessage';
+        const messages = [];
+        for (let i = 0; i < rooms.length; i++) {
+            const id = rooms[i]._id+':'+userId;
+            const message = await RedisService.getAndClearMessages(type, id);
+            if (message) {
+                messages.push(message);
+            }
+        }
+        
+        return messages;
+    }
+
+    static async updateNewMessagesInRoom(room_id, user_id, message) {
+        const type = 'newMessage'
+        const id = room_id+':'+user_id;
+        RedisService.storeMessage(type, id, message);
+
+        return;
+    }
+
+    static async getMessagesInRoom(room_id, page = 1, limit = 10) {
+        const room = await RoomRepository.getRoomByID(room_id);
+
+        if (!room) {
+            throw new NotFoundError("Room not found")
+        }
+
+        const skip = (page - 1) * limit;
+
+        const messages = await chatRepository.getMessagesByRoomId(room_id, skip, limit);
+
+        const totalMessages = await chatRepository.countMessagesByRoomId(room_id);
+
+        const totalPages = Math.ceil(totalMessages / limit)
+
+        return {
+            messages,
+            currentPage: page,
+            totalPages,
+            totalMessages,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+        }
     }
 }
 

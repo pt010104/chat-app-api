@@ -12,35 +12,23 @@ function log(message) {
     console.log(`[${timestamp}] ${message}`);
 }
 
-socket.onAny((eventName, ...args) => {
-    log(`Received event "${eventName}": ${JSON.stringify(args)}`);
+socket.on('connect', () => {
+    const userId = socket.io.opts.query.user_id;
+    log(`Connected to server with user ID: ${userId}`);
 });
 
-socket.on('connect', () => {
-    log('Connected to server');
-    log('User ID connection: ' + socket.id);
-
-    const roomId = '66981da2388da84552594a90'; 
+socket.on('ready', () => {
+    const roomId = '66981da2388da84552594a90';
     socket.emit('join room', roomId);
     log(`Emitted join room for room: ${roomId}`);
 });
 
 socket.on('joined room', (roomId) => {
-    log(`Joined room: ${roomId}`);
+    log(`Successfully joined room: ${roomId}`);
 });
 
 socket.on('chat message', (data) => {
     log('Received chat message: ' + JSON.stringify(data));
-    try {
-        const parsedData = JSON.parse(data); // Parse the JSON string
-        if (parsedData && parsedData.message) {
-            document.getElementById('messageLabel').innerText = `Received message: ${parsedData.message}`;
-        } else {
-            log('Error: Received invalid message format');
-        }
-    } catch (e) {
-        log('Error: Unable to parse message - ' + e.message);
-    }
 });
 
 socket.on('disconnect', () => {
@@ -57,6 +45,14 @@ function sendMessage(room_id, message) {
     socket.emit('chat message', messageData);
 }
 
+function connectRoom(roomId) {
+    socket.emit('join room', roomId);
+}
+
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     sendMessage('66981da2388da84552594a90', 'Message sent from button');
+});
+
+document.getElementById('connectRoomButton').addEventListener('click', () => {
+    connectRoom('66981da2388da84552594a90');
 });

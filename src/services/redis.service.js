@@ -4,118 +4,76 @@ const { initRedis, getRedis, closeRedis } = require('../dbs/init.redis');
 class RedisService {
     constructor() {
         this.redisClient = null;
-        this.initializeClient();  
+        this.initPromise = this.initializeClient();
     }
 
     async initializeClient() {
         try {
-            await initRedis(); 
-            this.redisClient = getRedis();  
+            await initRedis();
+            this.redisClient = getRedis();
         } catch (error) {
-            console.error(error);
-            throw new Error('RedisService failed to initialize.');
+            console.error('RedisService failed to initialize:', error);
+            throw error;
         }
     }
 
     async getClient() {
-        if (!this.redisClient) {
-            await this.initializeClient();
-        }
+        await this.initPromise;
         return this.redisClient;
     }
 
-    async set(key, value, expiration) {
+    async executeCommand(command, ...args) {
         const client = await this.getClient();
         try {
-            if (expiration) {
-                await client.set(key, value, { EX: expiration });
-            } else {
-                await client.set(key, value);
-            }
+            return await client[command](...args);
         } catch (error) {
-            console.error('Redis set error:', error);
+            console.error(`Redis ${command} error:`, error);
             throw error;
         }
     }
 
-    async get(key) {
-        const client = await this.getClient();
-        try {
-            return await client.get(key);
-        } catch (error) {
-            console.error('Redis get error:', error);
-            throw error;
-        }
+    set(key, value, expiration) {
+        const args = expiration ? [key, value, { EX: expiration }] : [key, value];
+        return this.executeCommand('set', ...args);
     }
 
-    async delete(key) {
-        const client = await this.getClient();
-        try {
-            await client.del(key);
-            console.log('Key deleted', key);
-        } catch (error) {
-            console.error('Redis delete error:', error);
-            throw error;
-        }
+    get(key) {
+        return this.executeCommand('get', key);
     }
 
-    async exists(key) {
-        const client = await this.getClient();
-        try {
-            const exists = await client.exists(key);
-            console.log('Key exists:', exists);
-            return exists;
-        } catch (error) {
-            console.error('Redis exists error:', error);
-            throw error;
-        }
+    delete(key) {
+        return this.executeCommand('del', key);
     }
 
-    async setUserStatus(userId, status) {
-        const client = await this.getClient();
-        try {
-            await client.set(userId, status);
-        } catch (error) {
-            console.error('Redis set user status error:', error);
-            throw error;
-        }
+    exists(key) {
+        return this.executeCommand('exists', key);
     }
 
-    async getUserStatus(userID) {
-        const client = await this.getClient();
-        try {
-            return await client.get(userID);
-        } catch (error) {
-            console.error('Redis get user status error:', error);
-            throw error;
-        }
+    setUserStatus(userId, status) {
+        return this.set(userId, status);
     }
 
-    async storeUnreadMessage(userId, message) {
-        const client = await this.getClient();
-        try {
-            await client.rPush(`unread:${userId}`, JSON.stringify(message));
-        } catch (error) {
-            console.error('Redis store unread message error:', error);
-            throw error;
-        }
+    getUserStatus(userId) {
+        return this.get(userId);
     }
-
-    async getUnreadMessages(userId) {
-        const client = await this.getClient();
-        try {
-            const messages = await client.lRange(`unread:${userId}`, 0, -1);
-            await client.del(`unread:${userId}`);
-            return messages.map(msg => JSON.parse(msg));
-        } catch (error) {
-            console.error('Redis get unread messages error:', error);
-            throw error;
-        }
+    async storeMessage(type, id, message) {
+        const key = `${type}:${id}`;
+        return this.executeCommand('rPush', key, JSON.stringify(message));
     }
+    
+    async getAndClearMessages(type, id) {
+        const key = `${type}:${id}`;
+        const messages = await this.executeCommand('lRange', key, 0, -1);
 
-    async close() {
-        await closeRedis();
+        if (type != 'newMessage') {
+            await this.delete(key);
+        }
+
+        return messages.map(msg => JSON.parse(msg));
+    }
+    close() {
+        return closeRedis();
     }
 }
 
-module.exports = new RedisService(); 
+module.exports = new RedisService();
