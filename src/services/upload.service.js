@@ -4,6 +4,7 @@ const cloudinary = require("../dbs/init.cloudinary");
 const CONSTANT = require('../helpers/constants');
 const User = require("../models/user.model");
 const { Readable } = require('stream'); 
+const RedisService = require("./redis.service");
 
 class UploadService {
     uploadImageFromLocal = async ({
@@ -116,7 +117,7 @@ class UploadService {
                 url['avt_url'] = avt_url;
                 url['avt_thumb_url'] = avt_thumb_url;
     
-                const uploadAvt = await User.updateOne(
+                const updateUser = await User.findOneAndUpdate(
                     { _id: user_id }, 
                     {
                         '$set': {
@@ -127,8 +128,11 @@ class UploadService {
                     {
                         upsert: true,
                         runValidators: true,
+                        new: true
                     }
-                );                
+                );
+                
+                await RedisService.set(`user:info:${user_id}`, JSON.stringify(updateUser))
             }
            
             return {
