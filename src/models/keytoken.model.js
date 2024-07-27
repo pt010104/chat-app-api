@@ -15,6 +15,11 @@ const keyToken = new Schema({
         required: true,
         trim: true
     },  
+    private_key: {
+        type: String,
+        required: true,
+        trim: true
+    },
     refresh_token: {
         type: Array,
         default: []

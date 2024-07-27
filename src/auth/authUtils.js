@@ -11,16 +11,27 @@ const HEADER = {
   REFRESHTOKEN: "refresh-token",
 };
 
-const createTokenPair = async (payLoad, publicKey, privateKey) => {
+const createTokenPair = async (payLoad, publicKey, privateKey, $type = '') => {
   try {
+    let accessToken, refreshToken;
     //access Token
-    const accessToken = JWT.sign(payLoad, publicKey, {
-      expiresIn: "10 days",
-    });
+    if ($type = 'reset-password') {
+      accessToken = JWT.sign(payLoad, publicKey, {
+        expiresIn: "1h",
+      });
 
-    const refreshToken = JWT.sign(payLoad, privateKey, {
-      expiresIn: "30 days",
-    });
+      refreshToken = JWT.sign(payLoad, privateKey, {
+        expiresIn: "2h",
+      });
+    } else {
+      accessToken = JWT.sign(payLoad, publicKey, {
+        expiresIn: "10 days",
+      });
+
+      refreshToken = JWT.sign(payLoad, privateKey, {
+        expiresIn: "30 days",
+      });
+    }
 
     JWT.verify(accessToken, publicKey, (err, decoded) => {
       if (err) {
@@ -47,7 +58,7 @@ const authentication = asyncHandler(async (req, res, next) => {
 
   const keyStore = await findKeyByUserID(userId);
   if (!keyStore) {
-    throw new NotFoundError("Not found KeyStore");
+    throw new NotFoundError("Key Not Found");
   }
 
   //check if use refresh token

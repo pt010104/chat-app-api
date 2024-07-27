@@ -16,21 +16,20 @@ class UploadController {
     }
 
     uploadFileAvatar = async (req, res, next) => {
-
-        const {file} = req;
+        const { file } = req;
         if (!file) {
             throw new NotFoundError("File not found");
         }
-
+    
         new SuccessResponse({
             message: "Upload file successfully",
-            metadata: await UploadService.uploadImageFromLocal({
-                path: file.path,
+            metadata: await UploadService.uploadImageFromBuffer({
+                buffer: file.buffer,
                 user_id: req.user.userId,
                 type: "avatar",
             }),
         }).send(res);
-
     }
+    
 }
 module.exports = new UploadController();
