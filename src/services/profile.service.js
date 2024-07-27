@@ -24,7 +24,6 @@ const RedisService = require("./redis.service");
         if(!userInfo) {
             throw new NotFoundError("User does not exist");
         }
-
         await RedisService.set(redisKey, JSON.stringify(userInfo), 600); // 10 minutes
 
       }

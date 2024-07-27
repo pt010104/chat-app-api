@@ -17,10 +17,14 @@ socket.on('connect', () => {
     log(`Connected to server with user ID: ${userId}`);
 });
 
+socket.on('connected', (userId) => {
+    log(`Successfully joined to channel user_${userId}`);
+
+})
+
 socket.on('ready', () => {
     const roomId = '66981da2388da84552594a90';
     socket.emit('join room', roomId);
-    log(`Emitted join room for room: ${roomId}`);
 });
 
 socket.on('joined room', (roomId) => {
@@ -29,6 +33,10 @@ socket.on('joined room', (roomId) => {
 
 socket.on('chat message', (data) => {
     log('Received chat message: ' + JSON.stringify(data));
+});
+
+socket.on('new message', (data) => {
+    log('Received new message: ' + JSON.stringify(data));
 });
 
 socket.on('disconnect', () => {

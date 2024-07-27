@@ -1,6 +1,7 @@
 'use strict';
 
 const RoomModel = require('../room.model');
+const RedisService = require('../../services/redis.service');
 
 class RoomRepository {
     // Get all rooms
@@ -28,9 +29,23 @@ class RoomRepository {
     }
 
     getRoomByUserID = async (user_id) => {
-        return await RoomModel.find({
+        const type = 'room';
+        let room = await RedisService.getMessages(type, user_id);
+
+        if (room.length > 0) {
+            return room;
+        }
+
+        room = await RoomModel.find({
             user_ids: user_id
+        }).lean();
+
+        room.map(async (room) => {
+            await RedisService.storeOrUpdateMessage(type, user_id, room);
         });
+
+    
+        return room;
     }
 
     getUserIDsByRoom = async (room_id) => {
@@ -46,7 +61,8 @@ class RoomRepository {
         }, { new: true });
     }
 
-    getRoomByID = async (room_id) => {
+    getRoomByID = async (room_id, user_id) => {
+        
         return await RoomModel.findById(room_id);
     }
 }
