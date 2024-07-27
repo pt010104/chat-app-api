@@ -8,8 +8,8 @@ const Joi = require("joi");
 class ChatController {
     createRoom = async (req, res, next) => {
         const roomValidate = Joi.object({
-            name: Joi.string().required(),
-            avt_url: Joi.string().required(),
+            name: Joi.string(),
+            avt_url: Joi.string(),
             user_ids: Joi.array().required()
         });
         const { error } = roomValidate.validate(req.body);
@@ -19,11 +19,12 @@ class ChatController {
             });
         }
 
-        const { name, avt_url, user_ids } = req.body;
+        let params = req.body;
+        params.userId = req.user.userId;
         
         new CREATED ({
             message: "Message sent successfully",
-            metadata: await ChatService.createRoom(name, avt_url, user_ids)
+            metadata: await ChatService.createRoom(params)
         }).send(res)
     }
 
