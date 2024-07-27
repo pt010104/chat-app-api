@@ -68,23 +68,23 @@ class ChatService {
             }
         }
 
-        const newRoom = await RoomRepository.createRoom(params.name, params.avt_url, params.user_ids);
+        const newRoom = await RoomRepository.createRoom(params.name, params.avt_url, params.user_ids, params.userId);
 
         return newRoom
     }
 
     static async getNewMessagesEachRoom(userId) {
-        let rooms = await RoomRepository.getRoomByUserID(userId);
+        let rooms = await RoomRepository.getRoomsByUserID(userId);
         const messages = [];
+        const roomsTransformed = await RoomRepository.transformForClient(rooms);
 
         for (let i = 0; i < rooms.length; i++) {
-            const key = 'newMessage:'+rooms[i].room_id
-            console.log('keyynee  ',key)
+            const key = 'newMessage:'+rooms[i]._id
             const message = await RedisService.get(key);
             if (message) {
                 messages.push(JSON.parse(message))
             } else {
-                messages.push(rooms[i])
+                messages.push(roomsTransformed[i])
             }
         }
         
