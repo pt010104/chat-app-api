@@ -31,13 +31,15 @@ class RoomRepository {
         return rooms;
     }
 
-    createRoom = async (name, avt_url, user_ids) => {
+    createRoom = async (name, avt_url, user_ids, user_id) => {
         const newRoom = await RoomModel.create({
             name: name,
             avt_url: avt_url,
             user_ids: user_ids,
             isGroup: user_ids.length > 2 ? true : false
         });
+
+        RedisService.storeOrUpdateMessage('room', user_id, JSON.stringify(newRoom));
         return newRoom;
     }
 
@@ -47,7 +49,7 @@ class RoomRepository {
         });
     }
 
-    getRoomByUserID = async (user_id) => {
+    getRoomsByUserID = async (user_id) => {
         const type = 'room';
         let rooms = await RedisService.getMessages(type, user_id);
 
@@ -58,8 +60,6 @@ class RoomRepository {
         rooms = await RoomModel.find({
             user_ids: user_id
         }).lean();
-
-        rooms = await this.transformForClient(rooms);
 
         rooms.map(async (room) => {
             await RedisService.storeOrUpdateMessage(type, user_id, room);
@@ -75,11 +75,13 @@ class RoomRepository {
     }
 
     addUsersToRoom = async (room_id, usersID) => {
-        return await RoomModel.findByIdAndUpdate(room_id, {
-            $addToSet: {
-                user_ids: { $each: usersID }
-            }
-        }, { new: true });
+        let room = RedisService.get(`room:${room_id}`)
+        if (!room) {
+            room = RoomModel.findById(room_id).lean()
+            room = transformForClient(room)[0]
+        }
+
+        room.user_ids.push(usersID)
     }
 
     getRoomByID = async (room_id, user_id) => {
