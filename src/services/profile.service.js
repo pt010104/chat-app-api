@@ -20,7 +20,7 @@ class ProfileService {
         _id: id
       }).lean().select("-password");
       if (userInfo) {
-        await RedisService.set(redisKey, JSON.stringify(userInfo), 300); // 5 min
+        await RedisService.set(redisKey, JSON.stringify(userInfo));
       }    
     }
 
@@ -32,7 +32,7 @@ class ProfileService {
     };
   }
 
-  static updateInfo = async (id,updateInfo) => {
+  static updateInfo = async (id, updateInfo) => {
     const userInfo = await user.findOne({
       _id: id
     }).lean().select("-password");
@@ -49,6 +49,8 @@ class ProfileService {
       runValidators: true,
       new: true
     })
+
+    await RedisService.set(`user:info:${id}`, JSON.stringify(newUserInfo));
 
     return {
         user: newUserInfo
