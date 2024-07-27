@@ -23,7 +23,7 @@ class FriendshipController {
     sendFriendRequest = async(req, res, next) =>  {
          
         const friendValidate = Joi.object({
-            user_id_recieve: Joi.string().required()
+            user_id_receive: Joi.string().required()
         });
 
         const { error } = friendValidate.validate(req.body);
