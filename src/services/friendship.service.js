@@ -1,5 +1,5 @@
 'use strict'
-const { BadRequestError, NotFoundError} = require('../core/error.response')
+const { BadRequestError, NotFoundError } = require('../core/error.response')
 const UserModel = require('../models/user.model')
 const FriendShipModel = require('../models/friendship.model')
 const UserProfile = require('./profile.service')
@@ -7,6 +7,32 @@ const UserProfile = require('./profile.service')
 class FriendShip {
 
     static listFriends = async (user_id) => {
+
+        const listFriends = await FriendShipModel.find({
+            $or: [
+                { user_id_send: user_id, status: "accepted" },
+                { user_id_receive: user_id, status: "accepted" }
+            ]
+        }).lean();
+        if (listFriends.length === 0) {
+            return;
+        }
+        const results = [];
+        for (let friend of listFriends) {
+            try {
+                let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
+                const user_info = await UserProfile.infoProfile(user_id_friend)
+                results.push({
+                    user_id: user_info.user._id,
+                    user_name: user_info.user.name,
+                    avatar: user_info.user.avatar,
+                    created_at: friend.createdAt
+                })
+            } catch (error) {
+                console.error(error)
+                continue;
+            }
+        }
     }
 
     static listRequestsFriends = async (user_id) => {
@@ -30,12 +56,12 @@ class FriendShip {
                     avatar: user_send_info.user.avatar,
                     created_at: request.createdAt
                 })
-            } catch(error) {
+            } catch (error) {
                 console.error(error)
                 continue;
-            }  
+            }
         }
-        
+
         return results
     }
 
@@ -102,6 +128,35 @@ class FriendShip {
 
         return {
             cancelRequest
+        }
+    }
+    static searchFriend = async (user_id, keyword) => {
+        const listFriends = await FriendShipModel.find({
+            $or: [
+                { user_id_send: user_id, status: "accepted" },
+                { user_id_receive: user_id, status: "accepted" }
+            ]
+        }).lean();
+        if (listFriends.length === 0) {
+            return;
+        }
+        const results = [];
+        for (let friend of listFriends) {
+            try {
+                let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
+                const user_info = await UserProfile.infoProfile(user_id_friend)
+                if (user_info.user.name.includes(keyword)) {
+                    results.push({
+                        user_id: user_info.user._id,
+                        user_name: user_info.user.name,
+                        avatar: user_info.user.avatar,
+                        created_at: friend.createdAt
+                    })
+                }
+            } catch (error) {
+                console.error(error)
+                continue;
+            }
         }
     }
 }
