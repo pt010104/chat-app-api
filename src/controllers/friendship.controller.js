@@ -8,6 +8,14 @@ class FriendshipController {
 
     // v1/api/friends/list/all
     listFriends = async(req, res, next) => {
+        //use redis for caching
+        
+
+        const user_id = req.user.userId
+        new SuccessResponse({
+            message: "List friends",
+            metadata: await FriendShip.listFriends(user_id)
+        }).send(res)
     }
 
     // v1/api/friends/list/requests
@@ -93,6 +101,7 @@ class FriendshipController {
     // v1/api/friends/remove
     async removeFriend(req, res) {
     }
+
 
 }
 
