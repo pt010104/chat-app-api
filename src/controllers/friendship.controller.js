@@ -101,8 +101,28 @@ class FriendshipController {
     // v1/api/friends/remove
     async removeFriend(req, res) {
     }
+    
+    // v1/api/friends/search-friends
+    async searchFriend(req, res) {
+        const friendValidate = Joi.object({
+            search: Joi.string().required()
+        });
 
+        const { error } = friendValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
 
+        const user_id = req.user.userId
+        const { search } = req.body
+        new SuccessResponse({
+            message: "Search friend",
+            metadata: await FriendShip.searchFriend(user_id, search)
+        }).send(res)
+        
+    }
 }
 
 module.exports = new FriendshipController()
