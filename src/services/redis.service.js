@@ -76,11 +76,18 @@ class RedisService {
 
     
     
-    async getMessages(type, id) {
+    async getMessages(type, id, index = '', value = '') {
         const key = `${type}:${id}`;
-        const messages = await this.executeCommand('lRange', key, 0, -1);
- 
-        return messages.map(msg => JSON.parse(msg));
+    
+        const existingMessages = await this.executeCommand('lRange', key, 0, -1);
+        
+        const parsedMessages = existingMessages.map(msg => JSON.parse(msg));
+    
+        if (value && index) {
+            return parsedMessages.filter(msg => msg[index] == value);
+        }
+    
+        return parsedMessages;
     }
     
     close() {

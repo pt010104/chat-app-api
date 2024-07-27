@@ -23,8 +23,10 @@ class ChatRepository {
         const user_avatar = user.avatar;
         const user_avatar_thumb = user.thumb_avatar;
 
-        const room = await RoomRepository.getRoomByID(chatData.room_id);
+        const room = await RoomRepository.getRoomByID(chatData.room_id, chatData.user_id);
         const room_avatar = room.avt_url;
+        const room_name = room.name;
+        const room_user_ids = room.user_ids
         
         const transformedData = {
             user_id: chatData.user_id.toString(),
@@ -47,6 +49,12 @@ class ChatRepository {
         }
         if (room_avatar) {
             transformedData.room_avatar = room_avatar;
+        }
+        if (room_name) {
+            transformedData.room_name = room_name;
+        }
+        if (room_user_ids) {
+            transformedData.room_user_ids = room_user_ids
         }
         
         return transformedData

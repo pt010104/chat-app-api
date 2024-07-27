@@ -6,6 +6,7 @@ const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
 const ChatRepository = require("../models/repository/chat.repository")
+const { findUserById } = require("../models/repository/user.repository")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
@@ -28,33 +29,62 @@ class ChatService {
         return chatMessage 
     }
 
-    static createRoom = async (name, avt_url, user_ids) => {
-        if (user_ids.length < 2) {
+    static createRoom = async (params) => {
+        if (params.user_ids.length < 2) {
             throw new BadRequestError("Invalid Request")
         }
 
         //Chỉ có trường hợp one-to-one chat mới check exist room
-        if(user_ids.length == 2) {
-            const checkExistRoom = await RoomRepository.getRoomByUserIDs(user_ids)
+        if(params.user_ids.length == 2) {
+            const checkExistRoom = await RoomRepository.getRoomByUserIDs(params.user_ids)
             if(checkExistRoom) {
                 throw new BadRequestError("Room already exist")
             }
         }
 
-        const newRoom = await RoomRepository.createRoom(name, avt_url, user_ids);
+        //Tên group:
+        //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, avt group là avt của user còn lại
+        if (params.user_ids.length == 2) {
+            const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
+
+            const user = await findUserById(friend_user_id);
+            params.name = user.name;
+            params.avt_url = user.avatar;
+        }
+
+        //Trường hợp user_ids.length > 2 thì tên group là param name hoặc tên của tất cả user
+        if (params.user_ids.length > 2) {
+            if (!params.name) {
+                params.name = '';
+                for (let i = 0; i < params.user_ids.length; i++) {
+                    const user = await findUserById(params.user_ids[i]);
+                    params.name += user.name + ', ';
+                }
+            } 
+            //Nếu không set avt thì avt nhóm mặc định là avt người tạo nhóm
+            if (!params.avt_url) {
+                const user = await findUserById(params.userId);
+                params.avt_url = user.avatar;
+            }
+        }
+
+        const newRoom = await RoomRepository.createRoom(params.name, params.avt_url, params.user_ids);
 
         return newRoom
     }
 
     static async getNewMessagesEachRoom(userId) {
-        const rooms = await RoomRepository.getRoomByUserID(userId);
+        let rooms = await RoomRepository.getRoomByUserID(userId);
         const messages = [];
 
         for (let i = 0; i < rooms.length; i++) {
-            const key = 'newMessage:'+rooms[i]._id
+            const key = 'newMessage:'+rooms[i].room_id
+            console.log('keyynee  ',key)
             const message = await RedisService.get(key);
             if (message) {
                 messages.push(JSON.parse(message))
+            } else {
+                messages.push(rooms[i])
             }
         }
         
