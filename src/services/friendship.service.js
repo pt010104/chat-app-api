@@ -131,34 +131,36 @@ class FriendShip {
         }
     }
     static searchFriend = async (user_id, keyword) => {
-        const listFriends = await FriendShipModel.find({
+        //i want it search by name || email || phone. Create index for name and use regex. Dont show block user
+        const ListUser = await UserModel.find({
             $or: [
-                { user_id_send: user_id, status: "accepted" },
-                { user_id_receive: user_id, status: "accepted" }
-            ]
-        }).lean();
-        if (listFriends.length === 0) {
+                { name: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } },
+                { phone: { $regex: keyword, $options: 'i' } }
+            ],
+            _id: { $ne: user_id }
+        }).lean()
+        if (ListUser.length === 0) {
             return;
         }
         const results = [];
-        for (let friend of listFriends) {
+        for (let user of ListUser) {
             try {
-                let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
-                const user_info = await UserProfile.infoProfile(user_id_friend)
-                if (user_info.user.name.includes(keyword)) {
-                    results.push({
-                        user_id: user_info.user._id,
-                        user_name: user_info.user.name,
-                        avatar: user_info.user.avatar,
-                        created_at: friend.createdAt
-                    })
-                }
+                const user_info = await UserProfile.infoProfile(user._id)
+                results.push({
+                    user_id: user_info.user._id,
+                    user_name: user_info.user.name,
+                    avatar: user_info.user.avatar,
+                    email: user_info.user.email,
+                    phone: user_info.user.phone
+                })
             } catch (error) {
                 console.error(error)
                 continue;
             }
         }
-    }
+        return results
+   }
 }
 
 module.exports = FriendShip
