@@ -83,28 +83,66 @@
 }</code></pre>
         </div>
 
-        <h3>POST /v1/api/auth/signout</h3>
+        <h3>POST /v1/api/auth/change-password</h3>
         <div class="indent">
-            <p><strong>Description:</strong> Sign out the currently authenticated user.</p>
-            <p><strong>URL:</strong> <code>/v1/api/auth/signout</code></p>
+            <p><strong>Description:</strong> Change user's password</p>
+            <p><strong>URL:</strong> <code>/v1/api/auth/change-password</code></p>
             <p><strong>Method:</strong> POST</p>
             <p><strong>Headers:</strong></p>
             <pre><code>Content-Type: application/json
-Authorization: Bearer &lt;token&gt;</code></pre>
+authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>Request Body:</strong></p>
             <pre><code>{
-  "userId": "string (required)"
+  "old_password": "string (required)",
+  "new_password": "string (required, min 8, max 30)"
 }</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
 {
-  "message": "User signed out successfully",
+  "message": "Change password successfully",
+  "metadata": { ...changePasswordDetails }
+}</code></pre>
+        </div>
+
+        <h3>POST /v1/api/auth/forget-password</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Forget password</p>
+            <p><strong>URL:</strong> <code>/v1/api/auth/forget-password</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json
+authorization: Bearer &lt;token&gt;
+x-client-id: &lt;client-id&gt;</code></pre>
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+  "new_password": "string (required, min 8, max 30)"
+}</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Change password successfully",
   "metadata": { ...signOutDetails }
 }</code></pre>
         </div>
 
         <h2>User Routes</h2>
-        
+
+        <h3>POST /v1/api/user/send-otp-change-password</h3>
+        <div class="indent">
+            <p><strong>Description:</strong> Send OTP to user's email for change password. User must login and use accessToken to use that api.</p>
+            <p><strong>URL:</strong> <code>/v1/api/user/send-otp-change-password</code></p>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>Headers:</strong></p>
+            <pre><code>Content-Type: application/json
+authorization: Bearer &lt;token&gt;</code></pre>
+            <p><strong>Responses:</strong></p>
+            <pre><code>200 OK:
+{
+  "message": "Email sent successfully for change password",
+  "metadata": { ...otpDetails }
+}</code></pre>
+        </div>
+
         <h3>POST /v1/api/user/send-otp</h3>
         <div class="indent">
             <p><strong>Description:</strong> Send OTP to user's email for either new user registration or password reset.</p>
@@ -136,13 +174,20 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <pre><code>{
   "email": "string (required, valid email)",
   "otp": "string (required)",
-  "type": "string (required, 'new-user' or 'reset-password')"
+  "type": "string (required, 'new-user' or 'reset-password' or 'change-password')"
 }</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
 {
   "message": "OTP verified successfully",
-  "metadata": { ...verificationDetails }
+  "metadata": { 
+    otp: {},
+    user_id: "string",
+    tokens: { // If type is 'change-password' or 'reset-password'
+      accessToken: "string",
+      refreshToken: "string"
+    }
+  }
 }</code></pre>
         </div>
 
@@ -154,7 +199,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/upload/image/avatar</code></p>
             <p><strong>Method:</strong> POST</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>Request:</strong></p>
             <pre><code>Form Data:
   - file: Image file (required)
@@ -179,7 +224,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/profile/info</code></p>
             <p><strong>Method:</strong> GET</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
 {
@@ -196,7 +241,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/friends/list/all</code></p>
             <p><strong>Method:</strong> GET</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
 {
@@ -211,7 +256,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/friends/list/requests</code></p>
             <p><strong>Method:</strong> GET</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
+            <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>Responses:</strong></p>
             <pre><code>200 OK:
 {
@@ -226,7 +271,7 @@ Authorization: Bearer &lt;token&gt;</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/friends/send-request</code></p>
             <p><strong>Method:</strong> POST</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;
+            <pre><code>authorization: Bearer &lt;token&gt;
 Content-Type: application/json</code></pre>
             <p><strong>Request Body:</strong></p>
             <pre><code>{
@@ -246,7 +291,7 @@ Content-Type: application/json</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/friends/accept-request</code></p>
             <p><strong>Method:</strong> POST</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;
+            <pre><code>authorization: Bearer &lt;token&gt;
 Content-Type: application/json</code></pre>
             <p><strong>Request Body:</strong></p>
             <pre><code>{
@@ -266,7 +311,7 @@ Content-Type: application/json</code></pre>
             <p><strong>URL:</strong> <code>/v1/api/friends/cancel-request</code></p>
             <p><strong>Method:</strong> POST</p>
             <p><strong>Headers:</strong></p>
-            <pre><code>Authorization: Bearer &lt;token&gt;
+            <pre><code>authorization: Bearer &lt;token&gt;
 Content-Type: application/json</code></pre>
             <p><strong>Request Body:</strong></p>
             <pre><code>{

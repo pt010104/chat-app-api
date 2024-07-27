@@ -11,7 +11,8 @@ router.post("/signup", asyncHandler(AuthController.signUp));
 router.post("/signin", asyncHandler(AuthController.signIn));
 
 router.use(authentication);
-router.post("/signout", asyncHandler(AuthController.signOut));
-//Logout and forgot password here
+
+router.post("/change-password", asyncHandler(AuthController.changePassword))
+router.post("/forget-password", asyncHandler(AuthController.forgetPassword));
 
 module.exports = router;
