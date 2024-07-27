@@ -17,7 +17,7 @@ const roomSchema = new Schema({
         type: [Types.ObjectId],
         required: true,
     },
-    isGroup: {
+    is_group: {
         type: Boolean,
         default: false
     }

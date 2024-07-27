@@ -9,14 +9,13 @@ class SocketServices {
 
     async connection(socket) {
         const user_id = socket.handshake.query.user_id;
-        this.log(`User connected with id ${socket.id} and user_id ${user_id}`);
     
         try {
             await RedisService.setUserStatus(user_id, 'online');
-            this.log(`User status set to online for user_id ${user_id}`);
     
-            const unreadMessages = await ChatService.getUnreadMessages(user_id);
-            unreadMessages.forEach(message => socket.emit('chat message', message));
+            //Join vào user_id channel để nhận message từ home
+            socket.join(`user_${user_id}`);
+            socket.emit('connected', user_id);
     
             this.registerEventHandlers(socket, user_id);
     
@@ -27,10 +26,11 @@ class SocketServices {
     }
 
     registerEventHandlers(socket, user_id) {
-        socket.on('chat message', msg => this.handleChatMessage(socket, user_id, msg));
-        socket.on('disconnect', () => this.handleDisconnect(socket, user_id));
-        socket.on('join room', roomId => this.handleJoinRoom(socket, roomId));
-        socket.on('error', error => this.handleError(socket, error));
+        socket.on('chat message', msg => this.handleChatMessage(socket, user_id, msg))
+        socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
+        socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
+        socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
+        socket.on('error', error => this.handleError(socket, error))
     }
 
     async handleChatMessage(socket, user_id, msg) {
@@ -39,6 +39,14 @@ class SocketServices {
             const savedMessage = await ChatService.sendMessage(user_id, room_id, message);
         } catch (error) {
             this.log(`Error handling message for ${user_id}: ${error}`, true);
+        }
+    }
+
+    async handleNewMessage(socket, user_id, msg) {
+        try {
+            console.log('nghe ne')
+        } catch (error) {
+            this.log(`Error handling new message for ${user_id}: ${error}`, true);
         }
     }
 
@@ -54,7 +62,6 @@ class SocketServices {
     handleJoinRoom(socket, roomId) {
         socket.join(roomId);
         socket.emit('joined room', roomId);
-        this.log(`User ${socket.id} joined room ${roomId}`);
     }
 
     handleError(socket, error) {

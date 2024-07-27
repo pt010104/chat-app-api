@@ -5,7 +5,7 @@ const RoomRepository = require("../models/repository/room.repository")
 const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
-const chatRepository = require("../models/repository/chat.repository")
+const ChatRepository = require("../models/repository/chat.repository")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
@@ -46,32 +46,26 @@ class ChatService {
         return newRoom
     }
 
-    static async getUnreadMessages(user_id) {
-        const type = 'unread';
-        const message = await RedisService.getAndClearMessages(type, user_id);
-        
-        return message
-    }
-
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomRepository.getRoomByUserID(userId);
-        const type = 'newMessage';
         const messages = [];
+
         for (let i = 0; i < rooms.length; i++) {
-            const id = rooms[i]._id+':'+userId;
-            const message = await RedisService.getAndClearMessages(type, id);
+            const key = 'newMessage:'+rooms[i]._id
+            const message = await RedisService.get(key);
             if (message) {
-                messages.push(message);
+                messages.push(JSON.parse(message))
             }
         }
         
-        return messages;
+        return {
+            messages
+        };
     }
 
-    static async updateNewMessagesInRoom(room_id, user_id, message) {
-        const type = 'newMessage'
-        const id = room_id+':'+user_id;
-        RedisService.storeMessage(type, id, message);
+    static async updateNewMessagesInRoom(roomId, message) {
+        const key = 'newMessage:'+roomId;
+        await RedisService.set(key, JSON.stringify(message));
 
         return;
     }
@@ -85,16 +79,22 @@ class ChatService {
 
         const skip = (page - 1) * limit;
 
-        const messages = await chatRepository.getMessagesByRoomId(room_id, skip, limit);
+        const messages = await ChatRepository.getMessagesByRoomId(room_id, skip, limit);
+        for (let i = 0; i < messages.length; i++) {
+            messages[i] = await ChatRepository.transformForClient(messages[i]);
+        }
 
-        const totalMessages = await chatRepository.countMessagesByRoomId(room_id);
+        const totalMessages = await ChatRepository.countMessagesByRoomId(room_id);
 
         const totalPages = Math.ceil(totalMessages / limit)
 
+        const amount = messages.length;
+
         return {
-            messages,
-            currentPage: page,
+            "messages": messages,
+            currentPage: parseInt(page),    
             totalPages,
+            amount,
             totalMessages,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1

@@ -67,7 +67,6 @@ class RabbitMQService {
             await channel.assertQueue(queue, { durable: true });
             channel.consume(queue, (message) => {
                 if (message) {
-                    console.log(`Message received from ${queue}: `, message.content.toString());
                     try {
                         const parsedMessage = JSON.parse(message.content.toString());
                         callback(parsedMessage);

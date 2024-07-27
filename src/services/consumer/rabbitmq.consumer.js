@@ -15,7 +15,6 @@ class RabbitMQConsumer {
                 RabbitMQService.receiveMessage(queueName, async (message) => {
 
                     const saveMessage = await ChatRepository.saveMessage(message.user_id, room._id, message.message);
-                    await ChatService.updateNewMessagesInRoom(room._id, message.user_id, saveMessage);
 
                     let userIDsInRoom = await RoomRepository.getUserIDsByRoom(room._id); 
                     //Bỏ userId hiện tại
@@ -23,19 +22,14 @@ class RabbitMQConsumer {
 
                     userIDsInRoom.forEach(async (userID) => {
                         userID = userID.toString();
-
-                        message = {
-                            ...message,
-                            id: saveMessage._id,
-                        }
+                        const transformedMessage = await ChatRepository.transformForClient(saveMessage);
                         
                         const userStatus = await RedisService.getUserStatus(userID);
                         if (userStatus === 'online') {
-                            global._io.to(room._id.toString()).emit("chat message", { message: message });
-                        } else {
-                            $type = 'unread';
-                            await RedisService.storeMessage(type, userID, JSON.stringify(message));
+                            global._io.to(`user_${userID}`).emit("new message", { "data": transformedMessage });
+                            global._io.to(room._id.toString()).emit("chat message", {"data": transformedMessage });
                         }
+                        await ChatService.updateNewMessagesInRoom(room._id, transformedMessage); 
                     });
                 });
             })
