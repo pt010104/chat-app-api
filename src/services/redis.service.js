@@ -57,23 +57,27 @@ class RedisService {
         return this.get(userId);
     }
 
-    async storeOrUpdateMessage(type, id, message) {
+    async storeOrUpdateMessage(type, id, message, field = '') {
         const key = `${type}:${id}`;
         
         const existingMessages = await this.executeCommand('lRange', key, 0, -1);
         
-        const messageIndex = existingMessages.findIndex(msg => {
-            const parsedMsg = JSON.parse(msg);
-            return parsedMsg.room_id === message.room_id;
-        });
+        if (field) {
+            const messageIndex = existingMessages.findIndex(msg => {
+                const parsedMsg = JSON.parse(msg);
+                return parsedMsg[field] == message[field];
+            });
     
-        if (messageIndex !== -1) {
-            await this.executeCommand('lSet', key, messageIndex, JSON.stringify(message));
+            if (messageIndex !== -1) {
+                await this.executeCommand('lSet', key, messageIndex, JSON.stringify(message));
+            } else {
+                await this.executeCommand('rPush', key, JSON.stringify(message));
+            }
         } else {
             await this.executeCommand('rPush', key, JSON.stringify(message));
         }
     }
-
+    
     
     
     async getMessages(type, id, limit = 0, skip = 0) {

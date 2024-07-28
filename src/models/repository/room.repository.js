@@ -51,7 +51,7 @@ class RoomRepository {
     }
 
     invalidateRoomsCache = async () => {
-        await RedisService.del('all_rooms');
+        await RedisService.delete('all_rooms');
     }
 
     createRoom = async (name, avt_url, user_ids, user_id) => {
@@ -105,45 +105,55 @@ class RoomRepository {
         return room.user_ids;
     }
 
+    updateRedisCacheForRoom = async (room) => {
+        
+        const redisOperations = [];
+      
+        redisOperations.push(RedisService.delete(`room:${room._id}`));
+        redisOperations.push(RedisService.delete(`all_rooms`));
+        redisOperations.push(RedisService.set(`room:${room._id}`, JSON.stringify(room), 3600));
+      
+        room.user_ids.forEach(id => {
+          redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
+        });
+      
+        await Promise.all(redisOperations);
+      };
+      
+
     addUsersToRoom = async (room_id, newUserIds, userId) => {
         const [updatedRoom, userRooms] = await Promise.all([
-            RoomModel.findByIdAndUpdate(
-                room_id,
-                { $addToSet: { user_ids: { $each: newUserIds } } },
-                { new: true, runValidators: true } 
-            ),
-            RoomModel.find({ user_ids: userId }, null, { lean: true })
+          RoomModel.findByIdAndUpdate(
+            room_id,
+            { $addToSet: { user_ids: { $each: newUserIds } } },
+            { new: true, runValidators: true }
+          ),
+          RoomModel.find({ user_ids: userId }, null, { lean: true })
         ]);
-    
+      
         if (!updatedRoom) {
-            throw new Error('Room not found');
+          throw new Error('Room not found');
         }
-    
+      
         if (updatedRoom.user_ids.length > 2) {
-            updatedRoom.is_group = true;
+          updatedRoom.is_group = true;
         }
-    
-        const userDetailsPromises = updatedRoom.user_ids.map(id => findUserById(id));
+      
+        const userDetailsPromises = updatedRoom.user_ids.map(findUserById);
         const userDetails = await Promise.all(userDetailsPromises);
-    
-        const usersName = userDetails.map(user => user.name);
-    
-        updatedRoom.name = usersName.join(', ');
-    
-        await updatedRoom.save(); 
-    
-        const type = 'room';
-        const redisOperations = [
-            RedisService.set(`room:${room_id}`, JSON.stringify(updatedRoom)),
-            ...userRooms.map(room => 
-                RedisService.storeOrUpdateMessage(type, userId, room)
-            )
-        ];
-    
-        await Promise.all(redisOperations);
-    
+      
+        if (updatedRoom.is_group) {
+            const usersName = userDetails.map(user => user.name);
+            updatedRoom.name = usersName.join(', ');
+        }
+      
+        await updatedRoom.save();
+      
+        await this.updateRedisCacheForRoom(updatedRoom);
+      
         return updatedRoom;
-    }
+    };
+      
 
     getRoomByID = async (room_id) => {
         const key = `room:${room_id}`
