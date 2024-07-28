@@ -53,12 +53,9 @@ class UploadService {
             }
            
             return {
-                code: 200,
-                metadata: {
-                    url,
-                    user_id: user_id,
-                    type: type,
-                }
+                url,
+                user_id: user_id,
+                type: type,
             }
         }
         catch (error) {

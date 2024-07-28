@@ -4,75 +4,98 @@ const { initRedis, getRedis, closeRedis } = require('../dbs/init.redis');
 class RedisService {
     constructor() {
         this.redisClient = null;
-        this.initializeClient();  
+        this.initPromise = this.initializeClient();
     }
 
     async initializeClient() {
         try {
-            await initRedis(); 
-            this.redisClient = getRedis();  
+            await initRedis();
+            this.redisClient = getRedis();
         } catch (error) {
-            throw new Error('RedisService failed to initialize.');
+            console.error('RedisService failed to initialize:', error);
+            throw error;
         }
     }
 
     async getClient() {
-        if (!this.redisClient) {
-            throw new Error('Redis client is not initialized.');
-        }
+        await this.initPromise;
         return this.redisClient;
     }
 
-    async set(key, value, expiration) {
+    async executeCommand(command, ...args) {
         const client = await this.getClient();
         try {
-            if (expiration) {
-                await client.set(key, value, { EX: expiration });
+            return await client[command](...args);
+        } catch (error) {
+            console.error(`Redis ${command} error:`, error);
+            throw error;
+        }
+    }
+
+    set(key, value, expiration) {   
+        const args = expiration ? [key, value, { EX: expiration }] : [key, value];
+        return this.executeCommand('set', ...args);
+    }
+
+    get(key) {
+        return this.executeCommand('get', key);
+    }
+
+    delete(key) {
+        return this.executeCommand('del', key);
+    }
+
+    exists(key) {
+        return this.executeCommand('exists', key);
+    }
+
+    setUserStatus(userId, status) {
+        return this.set(userId, status);
+    }
+
+    getUserStatus(userId) {
+        return this.get(userId);
+    }
+
+    async storeOrUpdateMessage(type, id, message, field = '') {
+        const key = `${type}:${id}`;
+        
+        const existingMessages = await this.executeCommand('lRange', key, 0, -1);
+        
+        if (field) {
+            const messageIndex = existingMessages.findIndex(msg => {
+                const parsedMsg = JSON.parse(msg);
+                return parsedMsg[field] == message[field];
+            });
+    
+            if (messageIndex !== -1) {
+                await this.executeCommand('lSet', key, messageIndex, JSON.stringify(message));
             } else {
-                await client.set(key, value);
+                await this.executeCommand('rPush', key, JSON.stringify(message));
             }
-        } catch (error) {
-            console.error('Redis set error:', error);
-            throw error;
+        } else {
+            await this.executeCommand('rPush', key, JSON.stringify(message));
         }
     }
-
-    async get(key) {
-        const client = await this.getClient();
-        try {
-            return await client.get(key);
-        } catch (error) {
-            console.error('Redis get error:', error);
-            throw error;
+    
+    
+    
+    async getMessages(type, id, limit = 0, skip = 0) {
+        const key = `${type}:${id}`;
+    
+        let existingMessages;
+    
+        if (skip > 0 || limit > 0) {
+            const end = limit > 0 ? skip + limit - 1 : -1;
+            existingMessages = await this.executeCommand('lRange', key, skip, end);
+        } else {
+            existingMessages = await this.executeCommand('lRange', key, 0, -1);
         }
-    }
-
-    async delete(key) {
-        const client = await this.getClient();
-        try {
-            await client.del(key);
-            console.log('Key deleted', key);
-        } catch (error) {
-            console.error('Redis delete error:', error);
-            throw error;
-        }
-    }
-
-    async exists(key) {
-        const client = await this.getClient();
-        try {
-            const exists = await client.exists(key);
-            console.log('Key exists:', exists);
-            return exists;
-        } catch (error) {
-            console.error('Redis exists error:', error);
-            throw error;
-        }
-    }
-
-    async close() {
-        await closeRedis();
+        
+        const parsedMessages = existingMessages.map(msg => JSON.parse(msg));
+    
+        return parsedMessages;
     }
 }
 
-module.exports = new RedisService(); 
+module.exports = new RedisService();    
