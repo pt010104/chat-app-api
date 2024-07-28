@@ -42,10 +42,10 @@ class FriendshipController {
         }
 
         const user_id = req.user.userId
-        const { user_id_recieve } = req.body
+        const { user_id_receive } = req.body
         new SuccessResponse({
             message: "Friend request sent",
-            metadata: await FriendShip.sendFriendRequest(user_id, user_id_recieve)
+            metadata: await FriendShip.sendFriendRequest(user_id, user_id_receive)
         }).send(res)
     }
 

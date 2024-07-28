@@ -65,25 +65,25 @@ class FriendShip {
         return results
     }
 
-    static sendFriendRequest = async (user_id, user_id_recieve) => {
+    static sendFriendRequest = async (user_id, user_id_receive) => {
 
-        const check_user_recieve = await UserModel.findOne({
-            _id: user_id_recieve
+        const check_user_receive = await UserModel.findOne({
+            _id: user_id_receive
         }).lean()
-        if (!check_user_recieve) {
-            throw new NotFoundError("User recieve does not exist")
+        if (!check_user_receive) {
+            throw new NotFoundError("User receive does not exist")
         }
 
         const check_request = await FriendShipModel.findOne({
             user_id_send: user_id,
-            user_id_receive: user_id_recieve
+            user_id_receive: user_id_receive
         }).lean()
         if (check_request) {
             throw new BadRequestError("Friend request already exists")
         }
         const sendRequest = await FriendShipModel.create({
             user_id_send: user_id,
-            user_id_receive: user_id_recieve,
+            user_id_receive: user_id_receive,
             status: "pending",
             action_user_id: user_id
         })
