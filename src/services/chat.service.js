@@ -47,11 +47,12 @@ class ChatService {
         //Trường hợp user_ids.length > 2 thì tên group là param name hoặc tên của tất cả user
         if (params.user_ids.length > 2) {
             if (!params.name) {
-                params.name = '';
+                const userNames = [];
                 for (let i = 0; i < params.user_ids.length; i++) {
                     const user = await findUserById(params.user_ids[i]);
-                    params.name += user.name + ', ';
+                    userNames.push(user.name);
                 }
+                params.name = userNames.join(', ');
             } 
             //Nếu không set avt thì avt nhóm mặc định là avt người tạo nhóm
             if (!params.avt_url) {
@@ -127,7 +128,9 @@ class ChatService {
     }
 
     static async addUsersToRoom(room_id, newUserIds, userId) {
-        const room = await RoomRepository.addUsersToRoom(room_id, newUserIds, userId);
+        let room = await RoomRepository.addUsersToRoom(room_id, newUserIds, userId);
+        room = await RoomRepository.transformForClient(room);
+
         return room;
     }
 }

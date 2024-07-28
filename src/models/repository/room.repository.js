@@ -7,21 +7,29 @@ const { findUserById } = require('./user.repository');
 
 class RoomRepository {
     transformForClient = async (rooms) => {
-        let data = [];
-        for (let i = 0; i < rooms.length; i++) {
-            const room = rooms[i];
-            let dataTransformed = {
-                room_id: room._id,
-                room_name: room.name,
-                room_avatar: room.avt_url,
-                is_group: room.is_group,
-                room_user_ids: room.user_ids
-            
+        if (Array.isArray(rooms)) {
+            let data = [];
+            for (let i = 0; i < rooms.length; i++) {
+                const room = rooms[i];
+                let dataTransformed = {
+                    room_id: room._id,
+                    room_name: room.name,
+                    room_avatar: room.avt_url,
+                    is_group: room.is_group,
+                    room_user_ids: room.user_ids
+                }
+                data.push(dataTransformed);
             }
-            data.push(dataTransformed);
+            return data;
+        } else {
+            return {
+                room_id: rooms._id,
+                room_name: rooms.name,
+                room_avatar: rooms.avt_url,
+                is_group: rooms.is_group,
+                room_user_ids: rooms.user_ids
+            };
         }
-
-        return data;
     }
 
     // Get all rooms
@@ -98,35 +106,31 @@ class RoomRepository {
     }
 
     addUsersToRoom = async (room_id, newUserIds, userId) => {
-        const userDetailsPromises = newUserIds.map(id => findUserById(id));
-        
-        const [updatedRoom, userRooms, userDetails] = await Promise.all([
+        const [updatedRoom, userRooms] = await Promise.all([
             RoomModel.findByIdAndUpdate(
                 room_id,
                 { $addToSet: { user_ids: { $each: newUserIds } } },
-                { new: true, lean: true }
+                { new: true, runValidators: true } 
             ),
-            RoomModel.find({ user_ids: userId }, null, { lean: true }),
-            Promise.all(userDetailsPromises)
+            RoomModel.find({ user_ids: userId }, null, { lean: true })
         ]);
     
         if (!updatedRoom) {
             throw new Error('Room not found');
         }
     
-        const userNameMap = userDetails.reduce((map, user) => {
-            map[user._id] = user.name; 
-            return map;
-        }, {});
-    
-        const newUserNames = newUserIds.map(id => userNameMap[id]).filter(Boolean);
-        if (newUserNames.length > 0) {
-            if (updatedRoom.is_group) {
-                updatedRoom.name += `, ${newUserNames.join(', ')}`;
-            } else {
-                updatedRoom.name = newUserNames[0];
-            }
+        if (updatedRoom.user_ids.length > 2) {
+            updatedRoom.is_group = true;
         }
+    
+        const userDetailsPromises = updatedRoom.user_ids.map(id => findUserById(id));
+        const userDetails = await Promise.all(userDetailsPromises);
+    
+        const usersName = userDetails.map(user => user.name);
+    
+        updatedRoom.name = usersName.join(', ');
+    
+        await updatedRoom.save(); 
     
         const type = 'room';
         const redisOperations = [
