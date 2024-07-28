@@ -1,40 +1,73 @@
 const RabbitMQService = require('../rabbitmq.service');
 const RoomRepository = require('../../models/repository/room.repository');
-const RedisService = require ('../redis.service')
+const RedisService = require('../redis.service');
 const ChatRepository = require('../../models/repository/chat.repository');
 const ChatService = require('../chat.service');
 
 class RabbitMQConsumer {
-    static listenForMessages = async() => {
+    static async listenForMessages() {
         await RabbitMQService.connect();
-        const rooms = await RoomRepository.getAllRooms(); 
-        
-        if (rooms) {
-            rooms.forEach(room => {
-                const queueName = String(room._id);
-                RabbitMQService.receiveMessage(queueName, async (message) => {
+        const rooms = await RoomRepository.getAllRooms();
 
-                    const saveMessage = await ChatRepository.saveMessage(message.user_id, room._id, message.message);
+        if (rooms && rooms.length > 0) {
+            await Promise.all(rooms.map(room => this.processQueue(room._id.toString())));
+        }
+    }
 
-                    let userIDsInRoom = await RoomRepository.getUserIDsByRoom(room._id); 
-                    //Bỏ userId hiện tại
-                    userIDsInRoom = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+    static async processQueue(roomId) {
+        try {
+            await RabbitMQService.channel.assertQueue(roomId, { durable: true });
+            RabbitMQService.channel.consume(roomId, async (msg) => {
+                if (msg !== null) {
+                    try {
+                        const message = JSON.parse(msg.content.toString());
+                        await this.processMessage(message, roomId);
+                        RabbitMQService.channel.ack(msg);
+                    } catch (error) {
+                        console.error(`Error processing message in room ${roomId}:`, error);
+                        RabbitMQService.channel.nack(msg);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error(`Error setting up queue for room ${roomId}:`, error);
+        }
+    }
 
-                    userIDsInRoom.forEach(async (userID) => {
-                        userID = userID.toString();
-                        const transformedMessage = await ChatRepository.transformForClient(saveMessage);
-                        
-                        const userStatus = await RedisService.getUserStatus(userID);
-                        if (userStatus === 'online') {
-                            global._io.to(`user_${userID}`).emit("new message", { "data": transformedMessage });
-                            global._io.to(room._id.toString()).emit("chat message", {"data": transformedMessage });
-                        }
-                        await ChatService.updateNewMessagesInRoom(room._id, transformedMessage); 
-                    });
-                });
-            })
+    static async processMessage(message, roomId) {
+        const [checkRoom, saveMessage, userIDsInRoom] = await Promise.all([
+            RoomRepository.getRoomByID(roomId),
+            ChatRepository.saveMessage(message.user_id, roomId, message.message),
+            RoomRepository.getUserIDsByRoom(roomId)
+        ]);
+
+        if (!checkRoom) {
+            throw new Error(`Room not found: ${roomId}`);
         }
 
+        const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+        const transformedMessage = await ChatRepository.transformForClient(saveMessage);
+
+        await Promise.all([
+            this.notifyOnlineUsers(filteredUserIDs, transformedMessage),
+            this.broadcastToRoom(roomId, transformedMessage),
+            ChatService.updateNewMessagesInRoom(roomId, transformedMessage)
+        ]);
+    }
+
+    static async notifyOnlineUsers(userIDs, message) {
+        const notificationPromises = userIDs.map(async (userId) => {
+            const userStatus = await RedisService.getUserStatus(userId);
+            if (userStatus === 'online') {
+                global._io.to(`user_${userId}`).emit("new message", { "data": message });
+            }
+        });
+
+        await Promise.all(notificationPromises);
+    }
+
+    static async broadcastToRoom(roomId, message) {
+        global._io.to(roomId).emit("chat message", { "data": message });
     }
 }
 

@@ -4,6 +4,7 @@ const ChatModel = require('../chat.model');
 const RoomRepository = require('./room.repository');
 const { BadRequestError } = require('../../core/error.response');
 const { findUserById } = require('./user.repository');
+const RedisService = require('../../services/redis.service');
 
 class ChatRepository {
     transform(chatData) {
@@ -23,11 +24,11 @@ class ChatRepository {
         const user_avatar = user.avatar;
         const user_avatar_thumb = user.thumb_avatar;
 
-        const room = await RoomRepository.getRoomByID(chatData.room_id, chatData.user_id);
+        const room = await RoomRepository.getRoomByID(chatData.room_id);
         const room_avatar = room.avt_url;
         const room_name = room.name;
         const room_user_ids = room.user_ids
-        
+
         const transformedData = {
             user_id: chatData.user_id.toString(),
             message: chatData.message,
@@ -79,24 +80,44 @@ class ChatRepository {
     }
 
     saveMessage = async (user_id, room_id, message) => {
+        const key = `room:message`;
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
                 message
             });
-            return await newMessage.save();
+    
+            const [, savedMessage] = await Promise.all([
+                RedisService.storeOrUpdateMessage(key, room_id, newMessage),
+                newMessage.save()
+            ]);
+    
+            return savedMessage;
         } catch (error) {
             throw new BadRequestError(error);
         }
     }
 
-    getMessagesByRoomId = async (room_id, skip, limit) => {
-        return ChatModel.find({ room_id })
+    getMessagesByRoomId = async (room_id, skip = 0, limit = 10) => {
+        const key = `room:message`
+        let messages = await RedisService.getMessages(key, room_id, limit, skip);
+    
+        if (messages.length > 0) {
+            return messages;
+        }
+    
+        messages = await ChatModel.find({ room_id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
+    
+        messages.forEach(async (message) => {
+            await RedisService.storeOrUpdateMessage(key, room_id, message);
+        });
+    
+        return messages;
     }
 
     countMessagesByRoomId = async (room_id) => {

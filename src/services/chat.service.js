@@ -10,21 +10,13 @@ const { findUserById } = require("../models/repository/user.repository")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
-        
-        const checkRoom = await RoomRepository.getRoomByID(room_id)
-        if (!checkRoom) {
-            throw new NotFoundError("Room not found")
-        }
-
         const chatMessage = {
             user_id,
             message,
             room_id,
         }
 
-        const queueName = String(room_id);
-
-        await RabbitMQService.sendMessage(queueName, chatMessage);
+        await RabbitMQService.sendMessage(room_id, chatMessage);
 
         return chatMessage 
     }
@@ -74,61 +66,69 @@ class ChatService {
     }
 
     static async getNewMessagesEachRoom(userId) {
-        let rooms = await RoomRepository.getRoomsByUserID(userId);
-        const messages = [];
-        const roomsTransformed = await RoomRepository.transformForClient(rooms);
-
-        for (let i = 0; i < rooms.length; i++) {
-            const key = 'newMessage:'+rooms[i]._id
-            const message = await RedisService.get(key);
+        const rooms = await RoomRepository.getRoomsByUserID(userId);
+    
+        const roomsTransformedPromise = RoomRepository.transformForClient(rooms);
+    
+        const messagePromises = rooms.map(room => {
+            const key = 'newMessage:' + room._id;
+            return RedisService.get(key);
+        });
+    
+        const [roomsTransformed, ...messageResults] = await Promise.all([
+            roomsTransformedPromise,
+            ...messagePromises
+        ]);
+    
+        const messages = messageResults.map((message, index) => {
             if (message) {
-                messages.push(JSON.parse(message))
+                return JSON.parse(message);
             } else {
-                messages.push(roomsTransformed[i])
+                return roomsTransformed[index];
             }
-        }
-        
-        return {
-            messages
-        };
+        });
+    
+        return { messages };
     }
 
     static async updateNewMessagesInRoom(roomId, message) {
-        const key = 'newMessage:'+roomId;
+        const key = 'newMessage:' + roomId;
         await RedisService.set(key, JSON.stringify(message));
-
-        return;
     }
 
     static async getMessagesInRoom(room_id, page = 1, limit = 10) {
-        const room = await RoomRepository.getRoomByID(room_id);
-
-        if (!room) {
-            throw new NotFoundError("Room not found")
-        }
-
         const skip = (page - 1) * limit;
-
-        const messages = await ChatRepository.getMessagesByRoomId(room_id, skip, limit);
-        for (let i = 0; i < messages.length; i++) {
-            messages[i] = await ChatRepository.transformForClient(messages[i]);
+    
+        const [room, messages, totalMessages] = await Promise.all([
+            RoomRepository.getRoomByID(room_id),
+            ChatRepository.getMessagesByRoomId(room_id, skip, limit),
+            ChatRepository.countMessagesByRoomId(room_id)
+        ]);
+    
+        if (!room) {
+            throw new NotFoundError("Room not found");
         }
-
-        const totalMessages = await ChatRepository.countMessagesByRoomId(room_id);
-
-        const totalPages = Math.ceil(totalMessages / limit)
-
-        const amount = messages.length;
-
+    
+        const transformedMessages = await Promise.all(
+            messages.map(message => ChatRepository.transformForClient(message))
+        );
+    
+        const totalPages = Math.ceil(totalMessages / limit);
+    
         return {
-            "messages": messages,
+            messages: transformedMessages,
             currentPage: parseInt(page),    
             totalPages,
-            amount,
+            amount: transformedMessages.length,
             totalMessages,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1
-        }
+        };
+    }
+
+    static async addUsersToRoom(room_id, newUserIds, userId) {
+        const room = await RoomRepository.addUsersToRoom(room_id, newUserIds, userId);
+        return room;
     }
 }
 

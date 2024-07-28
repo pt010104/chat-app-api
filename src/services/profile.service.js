@@ -9,7 +9,7 @@ const RedisService = require('./redis.service');
 class ProfileService {
   static infoProfile = async (id) => {
 
-    const redisKey = `user:info:${id}`;
+    const redisKey = `user:${id}`;
 
     let userInfo;
     const cacheduserInfo = await RedisService.get(redisKey);
@@ -33,12 +33,17 @@ class ProfileService {
   }
 
   static updateInfo = async (id, updateInfo) => {
-    const userInfo = await user.findOne({
-      _id: id
-    }).lean().select("-password");
-    if(!userInfo){
-      throw new NotFoundError("User does not exist");
+    let userInfo = await RedisService.get(`user:${id}`);
+    userInfo = userInfo ? JSON.parse(userInfo) : null;
+    if (!userInfo) {
+      const userInfo = await user.findOne({
+        _id: id
+      }).lean().select("-password");
+      if(!userInfo){
+        throw new NotFoundError("User does not exist");
+      }
     }
+
     const newUserInfo = await user.findOneAndUpdate(
     {
       _id: id
@@ -50,7 +55,7 @@ class ProfileService {
       new: true
     })
 
-    await RedisService.set(`user:info:${id}`, JSON.stringify(newUserInfo));
+    await RedisService.set(`user:${id}`, JSON.stringify(newUserInfo));
 
     return {
         user: newUserInfo
