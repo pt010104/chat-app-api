@@ -11,27 +11,16 @@ const HEADER = {
   REFRESHTOKEN: "refresh-token",
 };
 
-const createTokenPair = async (payLoad, publicKey, privateKey, $type = '') => {
+const createTokenPair = async (payLoad, publicKey, privateKey) => {
   try {
-    let accessToken, refreshToken;
     //access Token
-    if ($type = 'reset-password') {
-      accessToken = JWT.sign(payLoad, publicKey, {
-        expiresIn: "1h",
-      });
+    const accessToken = JWT.sign(payLoad, publicKey, {
+      expiresIn: "10 days",
+    });
 
-      refreshToken = JWT.sign(payLoad, privateKey, {
-        expiresIn: "2h",
-      });
-    } else {
-      accessToken = JWT.sign(payLoad, publicKey, {
-        expiresIn: "10 days",
-      });
-
-      refreshToken = JWT.sign(payLoad, privateKey, {
-        expiresIn: "30 days",
-      });
-    }
+    const refreshToken = JWT.sign(payLoad, privateKey, {
+      expiresIn: "30 days",
+    });
 
     JWT.verify(accessToken, publicKey, (err, decoded) => {
       if (err) {
@@ -51,6 +40,9 @@ const createTokenPair = async (payLoad, publicKey, privateKey, $type = '') => {
 const authentication = asyncHandler(async (req, res, next) => {
   const userId = req.headers[HEADER.CLIENT_ID];
   const accessToken = req.headers[HEADER.AUTHORIZATION];
+
+  //jwt
+  //publicKey
 
   if (!userId) {
     throw new AuthFailureError("Authentication Failed");

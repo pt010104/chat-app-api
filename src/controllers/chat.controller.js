@@ -47,6 +47,29 @@ class ChatController {
             metadata: await ChatService.getNewMessagesEachRoom(userId)
         }).send(res)
     }
+
+    addUsersToRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const user_ids = req.body.user_ids;
+
+        const addUsersToRoomValidate = Joi.object({
+            user_ids: Joi.array().required(),
+        });
+
+        const { error } = addUsersToRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "Users added to room successfully",
+            metadata: await ChatService.addUsersToRoom(room_id, user_ids, userId)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

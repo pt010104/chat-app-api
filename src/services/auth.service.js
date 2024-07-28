@@ -68,7 +68,7 @@ class AuthService {
         email: body.email,
       }).lean();
       if (user) {
-        await RedisService.set(redisKey, JSON.stringify(user), 300); // 5 min
+        await RedisService.set(redisKey, JSON.stringify(user), 3600); 
       }
     }
 

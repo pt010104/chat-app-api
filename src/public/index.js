@@ -54,5 +54,5 @@ function sendMessage(room_id, message) {
 }
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
-    sendMessage('66981da2388da84552594a90', 'Message sent from button');
+    sendMessage('66981da2388da84552594a90', 'Message sent from buttonkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
 });
