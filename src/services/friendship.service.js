@@ -3,17 +3,26 @@ const { BadRequestError, NotFoundError } = require('../core/error.response')
 const UserModel = require('../models/user.model')
 const FriendShipModel = require('../models/friendship.model')
 const UserProfile = require('./profile.service')
+const RedisService = require("./redis.service")
 
 class FriendShip {
 
-    static listFriends = async (user_id) => {
+    static listFriends = async (user_id, limit, offset) => {
 
+        const key = `listFriends:${user_id}`
+        const cache = await RedisService.get(key)
+        if (cache) {
+            return cache
+        }
         const listFriends = await FriendShipModel.find({
             $or: [
                 { user_id_send: user_id, status: "accepted" },
                 { user_id_receive: user_id, status: "accepted" }
             ]
-        }).lean();
+        })
+            .skip(offset)
+            .limit(limit)
+            .lean();
         if (listFriends.length === 0) {
             return;
         }
@@ -22,17 +31,17 @@ class FriendShip {
             try {
                 let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
                 const user_info = await UserProfile.infoProfile(user_id_friend)
+
                 results.push({
-                    user_id: user_info.user._id,
                     user_name: user_info.user.name,
                     avatar: user_info.user.avatar,
-                    created_at: friend.createdAt
                 })
             } catch (error) {
-                console.error(error)
-                continue;
+                throw new NotFoundError("User does not exist")
             }
         }
+        await RedisService.set(key, results);
+        return results;
     }
 
     static listRequestsFriends = async (user_id) => {
@@ -57,8 +66,7 @@ class FriendShip {
                     created_at: request.createdAt
                 })
             } catch (error) {
-                console.error(error)
-                continue;
+               throw new NotFoundError("User send does not exist")
             }
         }
 
@@ -132,6 +140,12 @@ class FriendShip {
     }
     static searchFriend = async (user_id, keyword) => {
         //i want it search by name || email || phone. Create index for name and use regex. Dont show block user
+        const key = `searchFriend:${user_id}`
+        const cache = await RedisService.get(key)
+        if (cache) {
+            return cache
+        }
+
         const ListUser = await UserModel.find({
             $or: [
                 { name: { $regex: keyword, $options: 'i' } },
@@ -141,26 +155,22 @@ class FriendShip {
             _id: { $ne: user_id }
         }).lean()
         if (ListUser.length === 0) {
-            return;
+            throw new NotFoundError("User does not exist")
         }
         const results = [];
         for (let user of ListUser) {
             try {
                 const user_info = await UserProfile.infoProfile(user._id)
                 results.push({
-                    user_id: user_info.user._id,
                     user_name: user_info.user.name,
                     avatar: user_info.user.avatar,
-                    email: user_info.user.email,
-                    phone: user_info.user.phone
                 })
             } catch (error) {
-                console.error(error)
-                continue;
+                throw new NotFoundError("User does not exist")
             }
         }
         return results
-   }
+    }
 }
 
 module.exports = FriendShip
