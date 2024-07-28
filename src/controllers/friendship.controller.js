@@ -2,19 +2,20 @@
 const { BadRequestError } = require('../core/error.response')
 const { SuccessResponse } = require('../core/success.response')
 const FriendShip = require('../services/friendship.service')
+
 const Joi = require("joi");
 
 class FriendshipController {
 
     // v1/api/friends/list/all
-    listFriends = async(req, res, next) => {
-        //use redis for caching
-        
-
+    listFriends = async(req, res, next) => {        
+       //pagination
+       const limit = parseInt(req.query.limit, 10) || 10; // Default limit to 10
+        const offset = parseInt(req.query.offset, 10) || 0;
         const user_id = req.user.userId
         new SuccessResponse({
             message: "List friends",
-            metadata: await FriendShip.listFriends(user_id)
+            metadata: await FriendShip.listFriends(user_id,limit,offset)
         }).send(res)
     }
 
