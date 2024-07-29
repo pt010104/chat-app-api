@@ -10,13 +10,20 @@ class FriendshipController {
     // v1/api/friends/list/all
     listFriends = async(req, res, next) => {        
        //pagination
-       const limit = parseInt(req.query.limit, 10) || 10; // Default limit to 10
+       try {
+        const user_id = req.user.userId;
+        const limit = parseInt(req.query.limit, 10) || 10;
         const offset = parseInt(req.query.offset, 10) || 0;
-        const user_id = req.user.userId
+
+        const friendsList = await FriendShip.listFriends(user_id, limit, offset);
+
         new SuccessResponse({
             message: "List friends",
-            metadata: await FriendShip.listFriends(user_id,limit,offset)
-        }).send(res)
+            metadata: friendsList
+        }).send(res);
+    } catch (error) {
+        next(error);  // Passes the error to the next middleware
+    }
     }
 
     // v1/api/friends/list/requests
@@ -105,6 +112,10 @@ class FriendshipController {
     
     // v1/api/friends/search-friends
     async searchFriend(req, res) {
+
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const offset = parseInt(req.query.offset, 10) || 0;
+
         const friendValidate = Joi.object({
             search: Joi.string().required()
         });
@@ -120,7 +131,7 @@ class FriendshipController {
         const { search } = req.body
         new SuccessResponse({
             message: "Search friend",
-            metadata: await FriendShip.searchFriend(user_id, search)
+            metadata: await FriendShip.searchFriend(user_id, search, limit, offset)
         }).send(res)
         
     }

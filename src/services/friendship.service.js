@@ -4,16 +4,19 @@ const UserModel = require('../models/user.model')
 const FriendShipModel = require('../models/friendship.model')
 const UserProfile = require('./profile.service')
 const RedisService = require("./redis.service")
-
+const UserRepo = require('../models/repository/user.repository')
+const { crossOriginResourcePolicy } = require('helmet')
 class FriendShip {
 
-    static listFriends = async (user_id, limit, offset) => {
-
-        const key = `listFriends:${user_id}`
-        const cache = await RedisService.get(key)
+    static async listFriends(user_id, limit, offset) {
+        console.log(`Listing friends for user ID: ${user_id}`);
+        const key = `listFriends:${user_id}:${limit}:${offset}`;
+        const cache = await RedisService.get(key);
         if (cache) {
-            return cache
+            console.log(`Cache hit for key: ${key}`);
+            return cache;
         }
+
         const listFriends = await FriendShipModel.find({
             $or: [
                 { user_id_send: user_id, status: "accepted" },
@@ -23,23 +26,27 @@ class FriendShip {
             .skip(offset)
             .limit(limit)
             .lean();
+
+        console.log(`Friends found: ${listFriends.length}`);
         if (listFriends.length === 0) {
-            return;
+            throw new NotFoundError("User does not exist");
         }
+
         const results = [];
         for (let friend of listFriends) {
+            let user_id_friend;
             try {
                 let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
-                const user_info = await UserProfile.infoProfile(user_id_friend)
+                const user_info = await UserRepo.transformData.transformUser(user_id_friend)
 
                 results.push({
-                    user_name: user_info.user.name,
-                    avatar: user_info.user.avatar,
+                    user_info,
                 })
             } catch (error) {
                 throw new NotFoundError("User does not exist")
             }
         }
+
         await RedisService.set(key, results);
         return results;
     }
@@ -66,7 +73,7 @@ class FriendShip {
                     created_at: request.createdAt
                 })
             } catch (error) {
-               throw new NotFoundError("User send does not exist")
+                throw new NotFoundError("User send does not exist")
             }
         }
 
@@ -138,26 +145,23 @@ class FriendShip {
             cancelRequest
         }
     }
-    static searchFriend = async (user_id, keyword) => {
-        //i want it search by name || email || phone. Create index for name and use regex. Dont show block user
-        const key = `searchFriend:${user_id}`
-        const cache = await RedisService.get(key)
+    static async searchFriend(user_id, keyword, limit, offset) {
+        console.log(`Searching friends for user ID: ${user_id} with keyword: ${keyword}`);
+        const key = `searchFriend:${user_id}:${keyword}:${limit}:${offset}`;
+        console.log(`Key: ${key}`); 
+        const cache = await RedisService.get(key);
         if (cache) {
-            return cache
+            console.log(`Cache hit for key: ${key}`);
+            return cache;
         }
-
-        const ListUser = await UserModel.find({
-            $or: [
-                { name: { $regex: keyword, $options: 'i' } },
-                { email: { $regex: keyword, $options: 'i' } },
-                { phone: { $regex: keyword, $options: 'i' } }
-            ],
-            _id: { $ne: user_id }
-        }).lean()
+        console.log(`Cache miss for key: ${key}`);
+        
+        const ListUser = await UserRepo.transformData.findFriend(user_id,keyword);
         if (ListUser.length === 0) {
             throw new NotFoundError("User does not exist")
         }
         const results = [];
+        console.log(`Users found: ${ListUser.length}`);
         for (let user of ListUser) {
             try {
                 const user_info = await UserProfile.infoProfile(user._id)
@@ -169,6 +173,8 @@ class FriendShip {
                 throw new NotFoundError("User does not exist")
             }
         }
+
+        await RedisService.set(key, JSON.stringify(results));
         return results
     }
 }
