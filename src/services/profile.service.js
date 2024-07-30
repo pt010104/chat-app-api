@@ -1,3 +1,4 @@
+const { filter } = require("compression");
 const {
     BadRequestError,
     ForbiddenError,
@@ -53,7 +54,7 @@ class ProfileService {
       upsert: true,
       runValidators: true,
       new: true
-    })
+    }).lean().select("-password");
 
     await RedisService.set(`user:${id}`, JSON.stringify(newUserInfo));
 
