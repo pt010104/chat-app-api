@@ -54,7 +54,9 @@ class FriendShip {
         }
 
         await RedisService.set(key, JSON.stringify(results));
-        return results;
+
+        const paginatedResults = results.slice(offset, offset + limit);
+        return paginatedResults;
     }
 
     static listRequestsFriends = async (user_id) => {
@@ -83,7 +85,8 @@ class FriendShip {
             }
         }
 
-        return results
+        const paginatedResults = results.slice(offset, offset + limit);
+        return paginatedResults;
     }
 
     static sendFriendRequest = async (user_id, user_id_receive) => {
