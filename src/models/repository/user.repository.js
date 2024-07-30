@@ -26,10 +26,12 @@ class transformData {
         if (!user) {
             throw new NotFoundError("User does not exist");
         }
+        console.log(JSON.stringify(user));
         const user_info = {
-            user_name: user.name.toString(),
-            avatar:user.avatar.toString()
+            user_name: user.name,
+            avatar:user.avatar
         }
+        console.log(JSON.stringify(user_info.user_name));
         return user_info;
     }
 

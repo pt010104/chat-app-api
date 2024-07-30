@@ -66,7 +66,7 @@ class RedisService {
             const parsedMsg = JSON.parse(msg);
             return parsedMsg.room_id === message.room_id;
         });
-    
+        
         if (messageIndex !== -1) {
             await this.executeCommand('lSet', key, messageIndex, JSON.stringify(message));
         } else {
