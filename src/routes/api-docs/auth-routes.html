@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Routes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="quick-menu">
+            <h2>Quick Menu</h2>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="auth-routes.html">Auth Routes</a></li>
+                <li><a href="user-routes.html">User Routes</a></li>
+                <li><a href="upload-routes.html">Upload Routes</a></li>
+                <li><a href="profile-routes.html">Profile Routes</a></li>
+                <li><a href="friendship-routes.html">Friendship Routes</a></li>
+                <li><a href="chat-room-routes.html">Chat Room Routes</a></li>
+            </ul>
+        </div>
+        <div class="content">
+            <h1>Auth Routes</h1>
+
+            <h3>POST /v1/api/auth/signup</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Register a new user.</p>
+                <p><strong>URL:</strong> <code>/v1/api/auth/signup</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "name": "string (required)",
+    "password": "string (required, min: 8, max: 30)",
+    "email": "string (required, valid email)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>201 CREATED:
+{
+    "message": "User created successfully",
+    "metadata": { ...userDetails }
+}</code></pre>
+            </div>
+
+            <h3>POST /v1/api/auth/signin</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Sign in an existing user.</p>
+                <p><strong>URL:</strong> <code>/v1/api/auth/signin</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
+                <pre><code>x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "password": "string (required, min: 8, max: 30)",
+    "email": "string (required, valid email)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "User signed in successfully",
+    "metadata": { ...userDetails }
+}</code></pre>
+            </div>
+
+            <h3>POST /v1/api/auth/change-password</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Change user's password</p>
+                <p><strong>URL:</strong> <code>/v1/api/auth/change-password</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
+                <pre><code>x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "old_password": "string (required)",
+    "new_password": "string (required, min 8, max 30)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Change password successfully",
+    "metadata": { ...changePasswordDetails }
+}</code></pre>
+            </div>
+
+            <h3>POST /v1/api/auth/forget-password</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Forget password</p>
+                <p><strong>URL:</strong> <code>/v1/api/auth/forget-password</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: Bearer &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "new_password": "string (required, min 8, max 30)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Change password successfully",
+    "metadata": { ...signOutDetails }
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
