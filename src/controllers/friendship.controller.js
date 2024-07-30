@@ -113,8 +113,7 @@ class FriendshipController {
     // v1/api/friends/search-friends
     async searchFriend(req, res) {
 
-        const limit = parseInt(req.query.limit, 10) || 10;
-        const offset = parseInt(req.query.offset, 10) || 0;
+        
 
         const friendValidate = Joi.object({
             search: Joi.string().required()
@@ -131,7 +130,7 @@ class FriendshipController {
         const { search } = req.body
         new SuccessResponse({
             message: "Search friend",
-            metadata: await FriendShip.searchFriend(user_id, search, limit, offset)
+            metadata: await FriendShip.searchFriend(user_id, search)
         }).send(res)
         
     }
