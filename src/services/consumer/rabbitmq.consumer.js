@@ -6,12 +6,17 @@ const ChatService = require('../chat.service');
 
 class RabbitMQConsumer {
     static async listenForMessages() {
-        console.log('Connecting to RabbitMQ...');
         await RabbitMQService.connect();
         const rooms = await RoomRepository.getAllRooms();
-
+    
         if (rooms && rooms.length > 0) {
-            await Promise.all(rooms.map(room => this.processQueue(room._id.toString())));
+            const concurrencyLimit = 5; 
+            for (let i = 0; i < rooms.length; i += concurrencyLimit) {
+                const batch = rooms.slice(i, i + concurrencyLimit);
+                await Promise.all(batch.map(room => this.processQueue(room._id.toString()).catch(error => {
+                    console.error(`Error in consumer for room ${room._id}:`, error);
+                })));
+            }
         }
     }
 
@@ -19,12 +24,13 @@ class RabbitMQConsumer {
         try {
             await RabbitMQService.receiveMessage(roomId, async (message, channel, msg) => {
                 try {
-                    console.log(`Received message for room ${roomId}: ${JSON.stringify(message)}`);
                     await this.processMessage(message, roomId);
                 } catch (error) {
                     console.error(`Error processing message in room ${roomId}:`, error);
                 }
             });
+            
+            await new Promise(() => {});
         } catch (error) {
             console.error(`Error setting up queue for room ${roomId}:`, error);
         }
@@ -45,38 +51,25 @@ class RabbitMQConsumer {
             const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
             const transformedMessage = await ChatRepository.transformForClient(saveMessage);
 
-            console.log(filteredUserIDs, transformedMessage);
-            await Promise.all([
-                this.notifyOnlineUsers(filteredUserIDs, transformedMessage),
-                this.broadcastToRoom(roomId, transformedMessage),
-                ChatService.updateNewMessagesInRoom(roomId, transformedMessage)
-            ]);
+            this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
+            ChatService.updateNewMessagesInRoom(roomId, transformedMessage);
 
-            console.log(`Processed and broadcast message for room ${roomId}`);
         } catch (error) {
             console.error(`Error processing message for room ${roomId}:`, error);
             throw error;
         }
     }
 
-    static async notifyOnlineUsers(userIDs, message) {
-        const notificationPromises = userIDs.map(async (userId) => {
-            const userStatus = await RedisService.getUserStatus(userId);
-            console.log(`User ${userId} status: ${userStatus}`);
+    static async notifyAndBroadcast(roomId, userIDs, message) {
+        const io = global._io;
+        io.to(roomId).emit("chat message", { "data": message });
+        
+        userIDs.forEach((userId) => {
+            const userStatus = RedisService.getUserStatus(userId)
             if (userStatus === 'online') {
-                console.log(`Emitting message to user ${userId}`);
-                global._io.to(`user_${userId}`).emit("new message", { "data": message });
-            } else {
-                console.log(`User ${userId} is offline`);
+                io.to(`user_${userId}`).emit("new message", { "data": message });
             }
         });
-
-        await Promise.all(notificationPromises);
-    }
-
-    static async broadcastToRoom(roomId, message) {
-        console.log(`Broadcasting message to room ${roomId}`);
-        global._io.to(roomId).emit("chat message", { "data": message });
     }
 }
 
