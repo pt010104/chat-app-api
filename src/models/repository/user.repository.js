@@ -28,10 +28,10 @@ class transformData {
         }
         console.log(JSON.stringify(user));
         const user_info = {
-            user_name: user.name,
-            avatar:user.avatar
+            user_name: user.user.name,
+            avatar:user.user.avatar
         }
-        console.log(JSON.stringify(user_info.user_name));
+        console.log("meo"+ JSON.stringify(user_info.user_name));
         return user_info;
     }
 

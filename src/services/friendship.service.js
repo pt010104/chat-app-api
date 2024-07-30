@@ -37,11 +37,16 @@ class FriendShip {
         for (let friend of listFriends) {
             let user_id_friend;
             try {
-                user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
+                user_id_friend = user_id === friend.user_id_send ?  friend.user_id_send :friend.user_id_receive 
+                console.log(`FFFUser ID: ${user_id_friend}`);
                 const user_info = await UserRepo.transformData.transformUser(user_id_friend);
-                console.log(`User : ${user_info}`);
+                console.log(`User11 : ` + user_info.user_name);
                 results.push({
-                    user_info,
+                    avatar: user_info.avatar,
+                    user_name: user_info.user_name,
+                    
+                    
+
                 })
             } catch (error) {
                 console.error(`Error fetching user with ID ${user_id_friend}:`, error);
