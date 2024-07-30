@@ -8,10 +8,11 @@ const UserRepo = require('../models/repository/user.repository')
 const { crossOriginResourcePolicy } = require('helmet')
 class FriendShip {
 
-    static async listFriends(user_id, limit, offset) {
+    static async listFriends(user_id, limit, page) {
+        const offset = (page - 1) * limit;
         console.log(`Listing friends for user ID: ${user_id}`);
         const key = `listFriends:${user_id}:${limit}:${offset}`;
-        const cache = await RedisService.get(key);
+        const cache = await RedisService.storeOrUpdateMessage('get', key,'null');
         if (cache) {
             console.log(`Cache hit for key: ${key}`);
             return cache;
@@ -36,18 +37,19 @@ class FriendShip {
         for (let friend of listFriends) {
             let user_id_friend;
             try {
-                let user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
-                const user_info = await UserRepo.transformData.transformUser(user_id_friend)
-
+                user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
+                const user_info = await UserRepo.transformData.transformUser(user_id_friend);
+                console.log(`User : ${user_info}`);
                 results.push({
                     user_info,
                 })
             } catch (error) {
-                throw new NotFoundError("User does not exist")
+                console.error(`Error fetching user with ID ${user_id_friend}:`, error);
+                throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
             }
         }
 
-        await RedisService.set(key, results);
+        await RedisService.set(key, JSON.stringify(results));
         return results;
     }
 

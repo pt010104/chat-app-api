@@ -13,9 +13,9 @@ class FriendshipController {
        try {
         const user_id = req.user.userId;
         const limit = parseInt(req.query.limit, 10) || 10;
-        const offset = parseInt(req.query.offset, 10) || 0;
+        const page = parseInt(req.query.page, 10) || 1;
 
-        const friendsList = await FriendShip.listFriends(user_id, limit, offset);
+        const friendsList = await FriendShip.listFriends(user_id, limit, page);
 
         new SuccessResponse({
             message: "List friends",
