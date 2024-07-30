@@ -23,6 +23,7 @@ class ProfileController {
             phone: Joi.string().min(10).max(20).optional(),
             gender: Joi.string().optional(),
             roles: Joi.array().items(Joi.string()),
+            address: Joi.string().optional(),
         });
       
         const { error } = infoValidate.validate(updateInfo);
