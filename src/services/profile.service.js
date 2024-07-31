@@ -33,6 +33,20 @@ class ProfileService {
     };
   }
 
+  static updateUserCache = async (newUserInfo) => {
+    if (newUserInfo) {
+      const redisOperations = [];
+      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo)))
+      redisOperations.push(RedisService.delete(`user:${newUserInfo.email}`))
+
+      await Promise.all(redisOperations);
+    } else {
+      throw new BadRequestError("User does not exist");
+    }
+
+    return;
+  }
+
   static updateInfo = async (id, updateInfo) => {
     let userInfo = await RedisService.get(`user:${id}`);
     userInfo = userInfo ? JSON.parse(userInfo) : null;
@@ -56,7 +70,7 @@ class ProfileService {
       new: true
     }).lean().select("-password");
 
-    await RedisService.set(`user:${id}`, JSON.stringify(newUserInfo));
+    await this.updateUserCache(newUserInfo);
 
     return {
         user: newUserInfo
