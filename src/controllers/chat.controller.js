@@ -70,6 +70,30 @@ class ChatController {
             metadata: await ChatService.addUsersToRoom(room_id, user_ids, userId)
         }).send(res)
     }
+    
+    removeUserFromRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const user_id = req.params.user_id;
+
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "User removed from room successfully",
+            metadata: await ChatService.removeUsersFromRoom(room_id, user_id, userId)
+        }).send(res)
+    }   
+
+    leaveRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "User left room successfully",
+            metadata: await ChatService.leaveRoom(room_id, userId)
+        }).send(res)
+    }
+
 }
 
 module.exports = new ChatController()

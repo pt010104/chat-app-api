@@ -169,6 +169,17 @@ class RoomRepository {
 
         return roomFromDB;
     }
+    
+    removeUsersFromRoom = async (room_id, userIds) => {
+        const updatedRoom = await RoomModel.findByIdAndUpdate
+        (
+            room_id,
+            { $pull: { user_ids: { $in: userIds } } },
+            { new: true }
+        );
+    }
+
+    
 }
 
 module.exports = new RoomRepository();

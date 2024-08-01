@@ -126,9 +126,22 @@ class ChatService {
             hasPrevPage: page > 1
         };
     }
-
+      
     static async addUsersToRoom(room_id, newUserIds, userId) {
         let room = await RoomRepository.addUsersToRoom(room_id, newUserIds, userId);
+        room = await RoomRepository.transformForClient(room);
+
+        return room;
+    }
+       
+    static async removeUsersFromRoom(room_id, userIds, userId) {
+        let room = await RoomRepository.removeUsersFromRoom(room_id, userIds, userId);
+        room = await RoomRepository.transformForClient(room);
+        return room;
+    }
+
+    static async leaveRoom(room_id, userId) {
+        let room = await RoomRepository.removeUsersFromRoom(room_id, [userId], userId);
         room = await RoomRepository.transformForClient(room);
 
         return room;
