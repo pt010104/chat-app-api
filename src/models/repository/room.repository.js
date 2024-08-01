@@ -177,8 +177,17 @@ class RoomRepository {
             { $pull: { user_ids: { $in: userIds } } },
             { new: true }
         );
-    }
 
+        if (!updatedRoom) {
+            throw new Error('Room not found');
+        }
+
+        await updatedRoom.save();
+        await this.updateRedisCacheForRoom(updatedRoom);
+        return updatedRoom;
+    }
+    
+    
     
 }
 

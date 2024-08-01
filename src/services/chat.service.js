@@ -21,6 +21,14 @@ class ChatService {
         return chatMessage 
     }
 
+    static deleteMessage = async (message_id) => {  
+        const message = await ChatRepository.deleteMessage(message_id);
+        //update Redis
+        const key = 'newMessage:' + message.room_id;
+        await RedisService.delete(key);
+        
+    }
+
     static createRoom = async (params) => {
         if (params.user_ids.length < 2) {
             throw new BadRequestError("Invalid Request")

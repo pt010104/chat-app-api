@@ -93,7 +93,7 @@ class ChatController {
             metadata: await ChatService.leaveRoom(room_id, userId)
         }).send(res)
     }
-
+    
 }
 
 module.exports = new ChatController()
