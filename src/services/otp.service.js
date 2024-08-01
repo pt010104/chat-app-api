@@ -4,6 +4,7 @@ const OTP = require("../models/otp.model");
 const { findUserByEmail } = require("../models/repository/user.repository");
 const { createTokenPair } = require("../auth/authUtils");
 const KeyTokenService = require("./keyToken.service");
+const KeyRepository = require("../models/repository/key.repository");
 const crypto = require("node:crypto");
 
 const generateOTPRandom = () => {
@@ -45,30 +46,18 @@ const verifyOTP = async (email, otp, type) => {
         type: type
     })
 
-    if (type == "reset-password" || type == "change-password") {
+    if (type == "reset-password") {
         const user = await findUserByEmail(email);
-        const publicKey = crypto.randomBytes(64).toString("hex");
-        const privateKey = crypto.randomBytes(64).toString("hex");
-        const refreshToken = crypto.randomBytes(64).toString("hex");
-    
-        const data = {
-          _id: user._id,
-          publicKey,
-          privateKey,
-          refreshToken,
-        };
-    
-        const keyStore = await KeyTokenService.createKeyToken(data);
-    
+        const keyStore = await KeyTokenService.FindOrCreateKeyToken(user._id);
 
+        console.log("KeyStore: ", keyStore);
         const tokens = await createTokenPair({
-                email: email,
-                userId: user._id,
-            },
-            publicKey,
-            privateKey
-        );
-        
+            email: email,
+            userId: user._id,
+        },
+        keyStore.public_key,
+        keyStore.private_key
+    );        
         return {
             otp: _otp,
             user_id: user._id,

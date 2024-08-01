@@ -35,6 +35,10 @@ const userModel = new Schema({
     enum :['Female','Male','None'],
     trim: true
   },
+  address: {
+    type: String,
+    trim: true
+  },
   status: {
     type: String,
     enum: ['active', 'inactive', 'deleted'],
