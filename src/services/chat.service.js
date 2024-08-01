@@ -26,7 +26,7 @@ class ChatService {
         //update Redis
         const key = 'newMessage:' + message.room_id;
         await RedisService.delete(key);
-        
+        return message;
     }
 
     static createRoom = async (params) => {
