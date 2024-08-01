@@ -69,7 +69,7 @@ class AuthService {
         email: body.email,
       }).lean();
       if (user) {
-        await RedisService.set(redisKey, JSON.stringify(user), 300); // 5 min
+        await RedisService.set(redisKey, JSON.stringify(user), 3600); 
       }
     }
 
@@ -82,19 +82,7 @@ class AuthService {
       throw new AuthFailureError("Invalid password");
     }
 
-    const publicKey = crypto.randomBytes(64).toString("hex");
-    const privateKey = crypto.randomBytes(64).toString("hex");
-    const refreshToken = crypto.randomBytes(64).toString("hex");
-
-    const data = {
-      _id: user._id,
-      publicKey,
-      privateKey,
-      refreshToken,
-    };
-
-    const keyStore = await KeyTokenService.createKeyToken(data);
-
+    const keyStore = await KeyTokenService.FindOrCreateKeyToken(user._id);
     if (!keyStore) {
       throw new BadRequestError("Key store not created");
     }
@@ -104,8 +92,8 @@ class AuthService {
         userId: user._id,
         email: user.email,
       },
-      publicKey,
-      privateKey
+      keyStore.public_key,
+      keyStore.private_key
     );
 
     return {
@@ -114,19 +102,6 @@ class AuthService {
     };
   };
 
-  static signOut = async (userId) => {
-    // remove by userId
-    const checkUser = await UserModel.findOne({ _id: userId });
-    if (!checkUser) {
-      throw new BadRequestError("User not found");
-    }
-    const keyStore = await KeyTokenService.removeKeyToken(checkUser._id);
-    if (!keyStore) {
-      throw new ForbiddenError("Key store not removed");
-    }
-
-    return;
-  };
 
   static forgetPassword = async (userId, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -141,6 +116,8 @@ class AuthService {
     }
 
     RedisService.delete(`user:${updatedUser.email}`);
+
+    await KeyTokenService.removeKeyToken(userId);
 
     return;
   };
@@ -163,7 +140,32 @@ class AuthService {
 
     RedisService.delete(`user:${user.email}`);
 
-    return;
+    const publicKey = crypto.randomBytes(64).toString("hex");
+    const privateKey = crypto.randomBytes(64).toString("hex");
+    const refreshToken = crypto.randomBytes(64).toString("hex");
+
+    const data = {
+      _id: userId,
+      publicKey,
+      privateKey,
+      refreshToken,
+    };
+
+    const keyStore = await KeyTokenService.createKeyToken(data);
+    if (!keyStore) {
+      throw new BadRequestError("Key store not created");
+    }
+
+    const tokens = await createTokenPair(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      publicKey,
+      privateKey
+    );
+
+    return tokens;
 
   }
 
