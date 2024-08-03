@@ -31,8 +31,8 @@ const SocketServices = require('./services/socket.service');
 new SocketServices(io);
 
 // RabbitMQ consumer
-const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
-RabbitMQConsumer.listenForMessages();
+// const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
+// RabbitMQConsumer.listenForMessages();
 
 // Init routes
 app.use(router);

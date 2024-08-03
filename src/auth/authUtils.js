@@ -15,7 +15,7 @@ const createTokenPair = async (payLoad, publicKey, privateKey, $type = '') => {
   try {
     let accessToken, refreshToken;
     //access Token
-    if ($type = 'reset-password') {
+    if ($type == 'reset-password') {
       accessToken = JWT.sign(payLoad, publicKey, {
         expiresIn: "1h",
       });
