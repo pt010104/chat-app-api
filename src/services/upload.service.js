@@ -69,12 +69,6 @@ class UploadService {
         try {
             const folderName = `${type}/${user_id}`;
     
-            // Delete all images
-            await cloudinary.api.delete_resources_by_prefix(folderName, {
-                invalidate: true,
-                resource_type: 'image'
-            });
-    
             const uploadImagePromise = new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
