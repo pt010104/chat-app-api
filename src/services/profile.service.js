@@ -1,3 +1,4 @@
+const { filter } = require("compression");
 const {
     BadRequestError,
     ForbiddenError,
@@ -5,7 +6,8 @@ const {
   } = require("../core/error.response");
 const user = require("../models/user.model");
 const RedisService = require('./redis.service');
-  
+const RoomRepository = require("../models/repository/room.repository");
+
 class ProfileService {
   static infoProfile = async (id) => {
 
@@ -32,6 +34,20 @@ class ProfileService {
     };
   }
 
+  static updateUserCache = async (newUserInfo) => { 
+    if (newUserInfo) {
+      const redisOperations = [];
+      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo)))
+      redisOperations.push(RedisService.delete(`user:${newUserInfo.email}`))
+
+      await Promise.all(redisOperations);
+    } else {
+      throw new BadRequestError("User does not exist");
+    }
+
+    return;
+  }
+
   static updateInfo = async (id, updateInfo) => {
     let userInfo = await RedisService.get(`user:${id}`);
     userInfo = userInfo ? JSON.parse(userInfo) : null;
@@ -53,9 +69,9 @@ class ProfileService {
       upsert: true,
       runValidators: true,
       new: true
-    })
+    }).lean().select("-password");
 
-    await RedisService.set(`user:${id}`, JSON.stringify(newUserInfo));
+    await this.updateUserCache(newUserInfo);
 
     return {
         user: newUserInfo

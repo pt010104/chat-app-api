@@ -5,9 +5,8 @@ const path = require("path"); // Import the path module
 const router = express.Router();
 
 // API document nha
-router.get("/api-docs", (req, res) => {
-    res.sendFile(path.join(__dirname, '/api-doc.html'));
-});
+router.use("/api-docs", express.static(path.join(__dirname, 'api-docs')));
+
 
 router.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'index.html'));
