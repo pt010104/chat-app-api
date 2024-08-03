@@ -6,7 +6,8 @@ const {
   } = require("../core/error.response");
 const user = require("../models/user.model");
 const RedisService = require('./redis.service');
-  
+const RoomRepository = require("../models/repository/room.repository");
+
 class ProfileService {
   static infoProfile = async (id) => {
 
@@ -33,7 +34,7 @@ class ProfileService {
     };
   }
 
-  static updateUserCache = async (newUserInfo) => {
+  static updateUserCache = async (newUserInfo) => { 
     if (newUserInfo) {
       const redisOperations = [];
       redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo)))
