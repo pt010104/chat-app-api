@@ -18,9 +18,16 @@ class RoomRepository {
                     room_user_ids: room.user_ids
                 }
                 if (!room.is_group || room.avt_url == "") {
-                    const user = await findUserById(room.created_by);
-                    if (user && user.avatar) {
-                        dataTransformed.room_avatar = user.avatar; 
+                    if (room.is_group) {
+                        const user = await findUserById(room.created_by);
+                        if (user && user.avatar) {
+                            dataTransformed.room_avatar = user.avatar; 
+                        }
+                    } else {
+                        const user = await findUserById(room.user_ids.filter(id => id != room.created_by)[0]);
+                        if (user && user.avatar) {
+                            dataTransformed.room_avatar = user.avatar; 
+                        }
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
