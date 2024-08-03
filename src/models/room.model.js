@@ -9,6 +9,10 @@ const roomSchema = new Schema({
         type: String,
         required: true
     },
+    auto_name: {
+        type: Boolean,
+        default: false
+    },
     avt_url: {
         type: String,
         default: ''
@@ -16,6 +20,10 @@ const roomSchema = new Schema({
     user_ids: {
         type: [Types.ObjectId],
         required: true,
+    },
+    created_by: {
+        type: Types.ObjectId,
+        required: true
     },
     is_group: {
         type: Boolean,
