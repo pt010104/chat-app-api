@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Routes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="quick-menu">
+            <h2>Quick Menu</h2>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="auth-routes.html">Auth Routes</a></li>
+                <li><a href="user-routes.html">User Routes</a></li>
+                <li><a href="upload-routes.html">Upload Routes</a></li>
+                <li><a href="profile-routes.html">Profile Routes</a></li>
+                <li><a href="friendship-routes.html">Friendship Routes</a></li>
+                <li><a href="chat-room-routes.html">Chat Room Routes</a></li>
+            </ul>
+        </div>
+        <div class="content">
+            <h1>Profile Routes</h1>
+
+            <h3>GET /v1/api/profile/info/:user_id</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Get user profile information.</p>
+                <p><strong>URL:</strong> <code>/v1/api/profile/info</code></p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: Bearer &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Get user profile successfully",
+    "metadata": { ...profileDetails }
+}</code></pre>
+            </div>
+
+            <h3>PATCH /v1/api/profile/updateInfo</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Update user profile information.</p>
+                <p><strong>URL:</strong> <code>/v1/api/profile/updateInfo</code></p>
+                <p><strong>Method:</strong> PUT</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: Bearer &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "name": "string (optional, min: 3, max: 30)",
+    "phone": "string (optional, min: 10, max: 20)",
+    "gender": "string (optional)",
+    "roles": ["string"]
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Update information successfully",
+    "metadata": { ...updatedDetails }
+}
+
+400 Bad Request:
+{
+    "message": "Validation error message"
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
