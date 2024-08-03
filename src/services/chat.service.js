@@ -83,9 +83,14 @@ class ChatService {
     
         const messages = messageResults.map((message, index) => {
             if (message) {
-                return JSON.parse(message);
+                return {
+                    room: roomsTransformed[index],
+                    newMessage: JSON.parse(message)
+                };
             } else {
-                return roomsTransformed[index];
+                return {
+                    room: roomsTransformed[index],
+                }
             }
         });
     
