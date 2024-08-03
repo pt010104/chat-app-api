@@ -12,8 +12,8 @@ class ChatRepository {
         return {
             user_id: chatData.user_id.toString(), 
             message: chatData.message,
-            updated_at: this.formatDate(chatData.updatedAt),
-            created_at: this.formatDate(chatData.createdAt),
+            updated_at: chatData.updatedAt,
+            created_at: chatData.createdAt,
             status: chatData.status,
             room_id: chatData.room_id.toString()
         };
@@ -30,8 +30,8 @@ class ChatRepository {
         const transformedData = {
             user_id: chatData.user_id.toString(),
             message: chatData.message,
-            updated_at: this.formatDate(chatData.updatedAt),
-            created_at: this.formatDate(chatData.createdAt),
+            updated_at: chatData.updatedAt,
+            created_at: chatData.createdAt,
             status: chatData.status,
         };
 
@@ -46,19 +46,6 @@ class ChatRepository {
         }
         
         return transformedData
-    }
-
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
     }
 
     getMessageById = async (id) => {
