@@ -74,10 +74,8 @@ class ChatService {
     }
 
     static async getNewMessagesEachRoom(userId) {
-        const [rooms, roomsTransformed] = await Promise.all([
-            RoomRepository.getRoomsByUserID(userId),
-            RoomRepository.getRoomsByUserID(userId).then(RoomRepository.transformForClient)
-        ]);
+        const rooms = await RoomRepository.getRoomsByUserID(userId);
+        const roomsTransformed = await RoomRepository.transformForClient(rooms);
     
         const messagePromises = rooms.map(room => 
             RedisService.get('newMessage:' + room._id).then(async message => {
