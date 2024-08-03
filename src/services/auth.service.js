@@ -21,6 +21,10 @@ class AuthService {
     }
 
     body.password = await bcrypt.hash(body.password, 10);
+
+    // Set default avt cho user
+    const defaultAvt = "https://i.pinimg.com/474x/8a/eb/67/8aeb672598aaabad530c6f401fc2cf35.jpg";
+    body.avatar = defaultAvt;
     let newUser = await UserModel.create(body);
 
     const publicKey = crypto.randomBytes(64).toString("hex");
