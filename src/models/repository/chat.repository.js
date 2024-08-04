@@ -99,6 +99,12 @@ class ChatRepository {
     countMessagesByRoomId = async (room_id) => {
         return ChatModel.countDocuments({ room_id });
     }
+
+    deleteMessage = async (message_id) => {
+        await RedisService.delete(`room:message:${message_id}`);
+        return ChatModel.findByIdAndDelete(message_id);
+    }
+
 }
 
 module.exports = new ChatRepository();

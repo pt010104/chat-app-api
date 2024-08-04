@@ -179,6 +179,34 @@ class RoomRepository {
 
         return roomFromDB;
     }
+ 
+    removeUsersFromRoom = async (room_id, user_ids) => {
+        const updatedRoom = await RoomModel.findByIdAndUpdate(
+            room_id,
+            { $pull: { user_ids: { $in: user_ids } } },
+            { new: true, runValidators: true }
+        );
+    
+        if (!updatedRoom) {
+            throw new Error('Room not found');
+        }
+    
+        return updatedRoom;
+    };
+
+    leaveRoom = async (room_id, userId) => {
+        const room = await this.getRoomByID(room_id);
+    
+        if (!room) {
+            throw new Error('Room not found');
+        }
+    
+        if (room.user_ids.length === 1) {
+            await this.deleteRoom(room_id);
+        }
+    
+        return await this.removeUsersFromRoom(room_id, [userId]);
+    }
 }
 
 module.exports = new RoomRepository();

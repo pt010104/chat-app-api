@@ -95,6 +95,20 @@ class ChatService {
         }));
     }
 
+    static async deleteMessage(message_id, userId) {
+        const message = await ChatRepository.getMessageByID(message_id);
+    
+        if (!message) {
+            throw new NotFoundError("Message not found");
+        }
+    
+        if (message.user_id.toString() !== userId.toString()) {
+            throw new BadRequestError("You are not allowed to delete this message");
+        }
+    
+        await ChatRepository.deleteMessage(message_id);
+    }
+    
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;
         await RedisService.set(key, JSON.stringify(message));
@@ -152,6 +166,51 @@ class ChatService {
         updatedRoom = await RoomRepository.transformForClient(updatedRoom);
     
         return updatedRoom;
+    }
+
+    static async removeUsersFromRoom(room_id, user_ids, userId) {
+        let updatedRoom = await RoomRepository.removeUsersFromRoom(room_id, user_ids);
+    
+        if (updatedRoom.user_ids.length > 2) {
+            updatedRoom.is_group = true;
+        }
+    
+        const userDetailsPromises = updatedRoom.user_ids.map(findUserById);
+        const userDetails = await Promise.all(userDetailsPromises);
+    
+        if (updatedRoom.is_group && updatedRoom.auto_name) {
+            const usersName = userDetails.map(user => user.name);
+            updatedRoom.name = usersName.join(', ');
+        }
+    
+        updatedRoom = await RoomRepository.updateRoom(updatedRoom);
+    
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+    
+        updatedRoom = await RoomRepository.transformForClient(updatedRoom);
+    
+        return updatedRoom;
+    }
+
+    static async leaveRoom(room_id, userId) {
+        const room = await RoomRepository.getRoomByID(room_id);
+    
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+    
+        if (room.user_ids.length === 1) {
+            await RoomRepository.deleteRoom(room_id);
+            return;
+        }
+    
+        await RoomRepository.removeUsersFromRoom(room_id, [userId]);
+    }
+
+    listRooms = async (userId) => {
+        const rooms = await RoomRepository.getRoomsByUserID(userId);
+        const roomsTransformed = await RoomRepository.transformForClient(rooms);  
+        return roomsTransformed;
     }
 }
 

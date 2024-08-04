@@ -47,7 +47,16 @@ class ChatController {
             metadata: await ChatService.getNewMessagesEachRoom(userId)
         }).send(res)
     }
+    
+    deleteMessage = async (req, res, next) => {
+        const message_id = req.params.message_id;
+        const userId = req.user.userId;
 
+        new OK ({
+            message: "Message deleted successfully",
+            metadata: await ChatService.deleteMessage(message_id, userId)
+        }).send(res)
+    }
     addUsersToRoom = async (req, res, next) => {
         const room_id = req.params.room_id;
         const user_ids = req.body.user_ids;
@@ -68,6 +77,48 @@ class ChatController {
         new OK ({
             message: "Users added to room successfully",
             metadata: await ChatService.addUsersToRoom(room_id, user_ids, userId)
+        }).send(res)
+    }
+
+    removeUsersFromRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const user_ids = req.body.user_ids;
+
+        const removeUsersFromRoomValidate = Joi.object({
+            user_ids: Joi.array().required(),
+        });
+
+        const { error } = removeUsersFromRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "Users removed from room successfully",
+            metadata: await ChatService.removeUsersFromRoom(room_id, user_ids, userId)
+        }).send(res)
+    }
+
+    leaveRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "User left room successfully",
+            metadata: await ChatService.leaveRoom(room_id, userId)
+        }).send(res)
+    }
+
+    listRooms = async (req, res, next) => {
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "Rooms retrieved successfully",
+            metadata: await ChatService.listRooms(userId)
         }).send(res)
     }
 }
