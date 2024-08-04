@@ -64,8 +64,6 @@ class ChatService {
 
         params.created_by = params.userId
 
-        console.log(params)
-
         let newRoom = await RoomRepository.createRoom(params);
 
         newRoom = await RoomRepository.transformForClient(newRoom);
