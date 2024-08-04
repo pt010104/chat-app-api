@@ -20,13 +20,11 @@ class ChatRepository {
     }
 
     transformForClient = async(chatData) => {
-        console.log(chatData)
         const user = await findUserById(chatData.user_id);
         const user_name = user.name;
         const user_avatar = user.avatar;
         const user_avatar_thumb = user.thumb_avatar;
 
-        console.log(chatData)
         const transformedData = {
             user_id: chatData.user_id.toString(),
             message: chatData.message,
