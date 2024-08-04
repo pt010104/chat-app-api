@@ -45,7 +45,6 @@ class SocketServices {
 
     async handleNewMessage(socket, user_id, msg) {
         try {
-            console.log('nghe ne')
         } catch (error) {
             this.log(`Error handling new message for ${user_id}: ${error}`, true);
         }
