@@ -96,7 +96,7 @@ class ChatService {
     }
 
     static async deleteMessage(message_id, userId) {
-        const message = await ChatRepository.getMessageByID(message_id);
+        const message = await ChatRepository.getMessageById(message_id);
     
         if (!message) {
             throw new NotFoundError("Message not found");
@@ -205,11 +205,12 @@ class ChatService {
         }
     
         await RoomRepository.removeUsersFromRoom(room_id, [userId]);
+        return;
     }
 
-    listRooms = async (userId) => {
+    static async listRooms(userId) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
-        const roomsTransformed = await RoomRepository.transformForClient(rooms);  
+        const roomsTransformed = await RoomRepository.transformForClient(rooms);
         return roomsTransformed;
     }
 }
