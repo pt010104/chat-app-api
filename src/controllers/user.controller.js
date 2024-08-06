@@ -1,5 +1,5 @@
 const { SuccessResponse } = require("../core/success.response");
-const { sendOTPService, checkOTPService } = require("../services/user.service");
+const UserService = require("../services/user.service");
 const Joi = require("joi");
 
 class UserController {
@@ -28,7 +28,7 @@ class UserController {
     }
     new SuccessResponse({
       message,
-      metadata: await sendOTPService(email, type),
+      metadata: await UserService.sendOTP(email, type),
     }).send(res);
   };
 
@@ -36,7 +36,7 @@ class UserController {
     const emailUser = req.user.email;
     new SuccessResponse({
       message: "Email sent successfully for password change",
-      metadata: await sendOTPService(emailUser, 'change-password'),
+      metadata: await UserService.sendOTP(emailUser, 'change-password'),
     }).send(res);
   };
 
@@ -58,7 +58,27 @@ class UserController {
 
     new SuccessResponse({
       message: "OTP verified successfully",
-      metadata: await checkOTPService(email, otp, type),
+      metadata: await UserService.checkOTP(email, otp, type),
+    }).send(res);
+  };
+
+  searchForUser = async (req, res, next) => {
+    const searchValidate = Joi.object({
+      filter: Joi.string().required(),
+    });
+
+    const { error } = searchValidate.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        message: error.details[0].message,
+      });
+    }
+
+    const { filter } = req.query;
+
+    new SuccessResponse({
+      message: "Search for user successful",
+      metadata: await UserService.SearchForUser(filter),
     }).send(res);
   };
 }
