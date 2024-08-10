@@ -111,10 +111,7 @@ class FriendshipController {
     }
     
     // v1/api/friends/search-friends
-    async searchFriend(req, res) {
-
-        
-
+    async searchFriend(req, res) {     
         const friendValidate = Joi.object({
             search: Joi.string().required()
         });
