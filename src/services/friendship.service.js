@@ -6,23 +6,24 @@ const UserProfile = require('./profile.service')
 const RedisService = require("./redis.service")
 const UserRepo = require('../models/repository/user.repository')
 const { crossOriginResourcePolicy } = require('helmet')
+const { transform } = require('../models/repository/chat.repository')
 class FriendShip {
 
     static async listFriends(user_id, limit, page) {
         const offset = (page - 1) * limit;
         const key = `listFriends:${user_id}`;
-        const cache = await RedisService.getMessages(key);
+        const cache = await RedisService.get(key);
 
-        if (cache && cache !== 'null' && cache.length > 0) {
+        if (cache && cache !== 'null' ) {
             console.log(`Cache hit for key: ${key}`);
-            //const cachedFriends = JSON.parse(cache); 
+            const cachedFriends = JSON.parse(cache); 
             console.log('cache'+JSON.stringify(cache));     
-            const paginatedFriends = cache.slice(offset, offset + limit); 
+            const paginatedFriends = cachedFriends.slice(offset, offset + limit); 
             const results = [];
             for (let friend of paginatedFriends) {
                 let user_id_friend;
                 try {
-                    user_id_friend = user_id === friend.user_id_send ? friend.user_id_send : friend.user_id_receive;
+                    user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
                     console.log('friend'+user_id_friend);
                     const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                     results.push({
@@ -43,16 +44,23 @@ class FriendShip {
         })
             .skip(offset)
             .limit(limit)
-            .lean();
-
-        await RedisService.set(key, JSON.stringify(listFriends));
-        
+            .lean(); 
+        await RedisService.set(key, JSON.stringify(listFriends), 3600);               
         const results = [];
-        for (let friend of listFriends) {
+        const transformedFriends = JSON.parse(JSON.stringify(listFriends));
+        for (let friend of transformedFriends) {
             let user_id_friend;
             try {
-                user_id_friend = user_id === friend.user_id_send ? friend.user_id_send : friend.user_id_receive
-                console.log('friend'+user_id_friend);
+                if(user_id === friend.user_id_send.toString()){
+                    user_id_friend = friend.user_id_receive;
+                    console.log('friend rece '+ friend.user_id_receive);
+
+                }
+                else if(user_id === friend.user_id_receive.toString()){
+                    user_id_friend = friend.user_id_send;
+                    console.log('friend send '+ friend.user_id_send);
+                }
+                console.log('friend'+ user_id_friend);
                 const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                 results.push({
                     user_info
@@ -61,6 +69,7 @@ class FriendShip {
                 throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
             }
         }     
+        
         return results;
     }
 
@@ -162,14 +171,28 @@ class FriendShip {
 
     static async searchFriend(user_id, query) {
         const key = `listFriends:${user_id}`;
-        const cache = await RedisService.getMessages(key);
+        const cache = await RedisService.get(key);
         
-        if (cache && cache !== 'null'&& cache.length > 0) {
+        if (cache && cache !== 'null') {
             console.log(`Cache hit for key: ${key}`);
-            //const cachedFriends = JSON.parse(cache);
-            console.log('cache'+JSON.stringify(cache));
+            const cachedFriends = JSON.parse(cache);
+            const results = [];
+            for (let friend of cachedFriends) {
+                let user_id_friend;
+                try {
+                    user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+                    console.log('friend'+user_id_friend);
+                    const user_info = await UserRepo.transformData.transformUser(user_id_friend);
+                    results.push({
+                        user_info
+                    })
+                } catch (error) {
+                    throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
+                }
+            }           
+
             const regex = new RegExp(query, 'i'); // case-insensitive regex for search
-            const filteredFriends = cache.filter(friend =>
+            const filteredFriends = results.filter(friend =>
             regex.test(friend.user_info.user_name) ||
             regex.test(friend.user_info.email) ||
             regex.test(friend.user_info.phone)
@@ -187,12 +210,13 @@ class FriendShip {
                 { user_id_receive: user_id, status: "accepted" }
             ]
         }).lean();
-
+        await RedisService.set(key, JSON.stringify(listFriends), 3600);
         const results = [];
-        for (let friend of listFriends) {
+        const transformedFriends = JSON.parse(JSON.stringify(listFriends));
+        for (let friend of transformedFriends) {
             let user_id_friend;
             try {
-                user_id_friend = user_id === friend.user_id_send ? friend.user_id_send : friend.user_id_receive
+                user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
                 const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                 results.push({
                     user_info
