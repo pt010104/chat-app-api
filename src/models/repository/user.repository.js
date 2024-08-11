@@ -42,7 +42,6 @@ class transformData {
         if (!user) {
             throw new NotFoundError("User does not exist");
         }
-        console.log(JSON.stringify(user));
         const user_info = {
             user_name: user.user.name,
             avatar:    user.user.avatar,
