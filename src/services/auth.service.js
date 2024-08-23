@@ -11,6 +11,7 @@ const { createTokenPair } = require("../auth/authUtils");
 const RedisService = require("./redis.service");
 
 class AuthService {
+
   static signUp = async (body) => {
     const checkUser = await UserModel.findOne({
       email: body.email,

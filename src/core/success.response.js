@@ -3,9 +3,9 @@
 const {StatusCodes,ReasonPhrases} = require ("../utils/httpStatusCode.js")
 
 class SuccessResponse{
-    constructor({message, statucsCode = StatusCodes.OK, reasonPhrases = ReasonPhrases.OK, metadata={} }){
+    constructor({message, statusCode = StatusCodes.OK, reasonPhrases = ReasonPhrases.OK, metadata={} }){
         this.message = message || reasonPhrases
-        this.status = statucsCode
+        this.status = statusCode
         this.metadata = metadata
     }
 
