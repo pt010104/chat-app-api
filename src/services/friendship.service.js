@@ -4,74 +4,46 @@ const UserModel = require('../models/user.model')
 const FriendShipModel = require('../models/friendship.model')
 const UserProfile = require('./profile.service')
 const RedisService = require("./redis.service")
-const UserRepo = require('../models/repository/user.repository')
-const { crossOriginResourcePolicy } = require('helmet')
-const { transform } = require('../models/repository/chat.repository')
+const FriendRepo = require('../models/repository/friend.repository')
+const { findUserById } = require('../models/repository/user.repository')
+
 class FriendShip {
+    static async findFriends(user_id) {
+        const key = `listFriends:${user_id}`;
+        let friends = await RedisService.get(key);
+
+        if (!friends) {
+            friends = await FriendRepo.listFriends(user_id);
+            await RedisService.set(key, JSON.stringify(friends), 3600);
+        } else {
+            friends = JSON.parse(friends);
+        }
+
+        return friends;
+    }
 
     static async listFriends(user_id, limit, page) {
         const offset = (page - 1) * limit;
-        const key = `listFriends:${user_id}`;
-        const cache = await RedisService.get(key);
+        const friends = await this.findFriends(user_id);
 
-        if (cache && cache !== 'null') {
-            const cachedFriends = JSON.parse(cache);
-            const paginatedFriends = cachedFriends.slice(offset, offset + limit);
-            const results = [];
-            for (let friend of paginatedFriends) {
-                let user_id_friend;
-                try {
-                    user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
-                    const user_info = await UserRepo.transformData.transformUser(user_id_friend);
-                    results.push({
-                        user_info
-                    })
-                } catch (error) {
-                    throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
-                }
-            }
-            return results;
-        }
-
-        const listFriends = await FriendShipModel.find({
-            $or: [
-                { user_id_send: user_id, status: "accepted" },
-                { user_id_receive: user_id, status: "accepted" }
-            ]
-        })
-            .skip(offset)
-            .limit(limit)
-            .lean();
-        await RedisService.set(key, JSON.stringify(listFriends), 3600);
-        const results = [];
-        const transformedFriends = JSON.parse(JSON.stringify(listFriends));
-        for (let friend of transformedFriends) {
-            let user_id_friend;
-            try {
-                if (user_id === friend.user_id_send.toString()) {
-                    user_id_friend = friend.user_id_receive;
-                    console.log('friend rece ' + friend.user_id_receive);
-
-                }
-                else if (user_id === friend.user_id_receive.toString()) {
-                    user_id_friend = friend.user_id_send;
-                    console.log('friend send ' + friend.user_id_send);
-                }
-                console.log('friend' + user_id_friend);
-                const user_info = await UserRepo.transformData.transformUser(user_id_friend);
-                results.push({
-                    user_info
-                })
-            } catch (error) {
-                throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
-            }
-        }     
+        const paginatedFriends = friends.slice(offset, offset + limit);
         
-        return results;
+        const friendPromises = paginatedFriends.map(async (friend) => {
+            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            try {
+                const friend_info = await findUserById(friend_id);
+                return FriendRepo.transformFriend(friend_info);
+            } catch (error) {
+                console.error(`Error processing friend ${friend_id}:`, error);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(friendPromises);
+        return results.filter(Boolean);
     }
 
     static listRequestsFriends = async (user_id) => {
-
         const listRequests = await FriendShipModel.find({
             user_id_receive: user_id,
             status: "pending"
@@ -92,7 +64,7 @@ class FriendShip {
                     created_at: request.createdAt
                 })
             } catch (error) {
-                throw new NotFoundError("User send does not exist")
+                console.log(error);
             }
         }
 
@@ -167,73 +139,30 @@ class FriendShip {
     }
 
     static async searchFriend(user_id, query) {
-        const key = `listFriends:${user_id}`;
-        const cache = await RedisService.get(key);
-
-        if (cache && cache !== 'null') {
-            console.log(`Cache hit for key: ${key}`);
-            const cachedFriends = JSON.parse(cache);
-            const results = [];
-            for (let friend of cachedFriends) {
-                let user_id_friend;
-                try {
-                    user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
-                    
-                    const user_info = await UserRepo.transformData.transformUser(user_id_friend);
-                    results.push({
-                        user_info
-                    })
-                } catch (error) {
-                    throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
-                }
-            }
-
-            const regex = new RegExp(query, 'i'); // case-insensitive regex for search
-            const filteredFriends = results.filter(friend =>
-                regex.test(friend.user_info.user_name) ||
-                regex.test(friend.user_info.email) ||
-                regex.test(friend.user_info.phone)
-            );
-
-            if (filteredFriends.length === 0) {
-                throw new NotFoundError("No friends found matching the search criteria redis");
-            }
-            return filteredFriends;
-        }
-
-        const listFriends = await FriendShipModel.find({
-            $or: [
-                { user_id_send: user_id, status: "accepted" },
-                { user_id_receive: user_id, status: "accepted" }
-            ]
-        }).lean();
-        await RedisService.set(key, JSON.stringify(listFriends), 3600);
-        const results = [];
-        const transformedFriends = JSON.parse(JSON.stringify(listFriends));
-        for (let friend of transformedFriends) {
-            let user_id_friend;
+        let friends = await this.findFriends(user_id);
+    
+        const regex = new RegExp(query, 'i');
+        const transformPromises = friends.map(async (friend) => {
+            friend.user_id_send = friend.user_id_send.toString();
+            friend.user_id_receive = friend.user_id_receive.toString();
+            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
-                user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send
-                const user_info = await UserRepo.transformData.transformUser(user_id_friend);
-                results.push({
-                    user_info
-                })
+                const friend_info = await findUserById(friend_id)
+                const transformed_friend = await FriendRepo.transformFriend(friend_info);
+                return transformed_friend;
             } catch (error) {
-                throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
+                console.error(`Error transforming friend ${friend_id}:`, error);
+                return null;
             }
-        }
-        const regex = new RegExp(query, 'i'); // case-insensitive regex for search
-        const filteredFriends = results.filter(friend =>
-            regex.test(friend.user_info.user_name) ||
-            regex.test(friend.user_info.email) ||
-            regex.test(friend.user_info.phone)
-        );
-        if (filteredFriends.length === 0) {
-            throw new NotFoundError("No friends found matching the search criteria");
-        }
+        });
 
-        return filteredFriends;
+        const transformedFriends = (await Promise.all(transformPromises)).filter(Boolean);
+    
+        return transformedFriends.filter(friend => 
+            regex.test(friend.user_name) ||
+            friend.user_email === query ||
+            friend.user_phone === query
+        );
     }
 }
-
 module.exports = FriendShip
