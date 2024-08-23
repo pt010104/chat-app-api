@@ -71,6 +71,15 @@ class ChatService {
         return newRoom
     }
 
+    static async detailRoom(room_id) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found")
+        }
+
+        return RoomRepository.transformForClient(room)
+    }
+
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
         const roomsTransformed = await RoomRepository.transformForClient(rooms);
@@ -150,6 +159,25 @@ class ChatService {
         updatedRoom = await RoomRepository.transformForClient(updatedRoom);
     
         return updatedRoom;
+    }
+
+    static async updateRoom(params) {
+        const room = await RoomRepository.getRoomByID(params.room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        if (params.name) {
+            room.name = params.name;
+            room.auto_name = false;
+        }
+
+        if (params.avt_url) {
+            room.avt_url = params.avt_url;
+        }
+
+        const updatedRoom = await RoomRepository.updateRoom(room);
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
     }
 }
 
