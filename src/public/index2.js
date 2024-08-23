@@ -54,5 +54,9 @@ function sendMessage(room_id, message) {
 }
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
-    sendMessage('66981da2388da84552594a90', 'Message sent from buttonkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
+    const now = new Date();
+    const formattedTime = `${now.getDate()}-${now.getMonth() + 1} ${now.getHours()}:${now.getMinutes()}`;
+    const userId = socket.io.opts.query.user_id;
+    const message = `${userId}: sent at ${formattedTime}`;
+    sendMessage('66981da2388da84552594a90', message);
 });
