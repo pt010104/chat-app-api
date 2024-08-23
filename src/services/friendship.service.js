@@ -15,16 +15,13 @@ class FriendShip {
         const cache = await RedisService.get(key);
 
         if (cache && cache !== 'null') {
-            console.log(`Cache hit for key: ${key}`);
             const cachedFriends = JSON.parse(cache);
-            console.log('cache' + JSON.stringify(cache));
             const paginatedFriends = cachedFriends.slice(offset, offset + limit);
             const results = [];
             for (let friend of paginatedFriends) {
                 let user_id_friend;
                 try {
                     user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
-                    console.log('friend' + user_id_friend);
                     const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                     results.push({
                         user_info
