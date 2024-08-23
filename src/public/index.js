@@ -1,4 +1,4 @@
-const socket = io('http://localhost:5050', {
+const socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
     query: {
         user_id: '6697de6d3786fe3f2bc2c125'
     }
