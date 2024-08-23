@@ -30,6 +30,7 @@ class SocketServices {
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
+        socket.on('read message', (roomId, status) => this.MarkMessage(socket, roomId, status))
         socket.on('error', error => this.handleError(socket, error))
     }
 
@@ -44,7 +45,6 @@ class SocketServices {
 
     async handleNewMessage(socket, user_id, msg) {
         try {
-            console.log('nghe ne')
         } catch (error) {
             this.log(`Error handling new message for ${user_id}: ${error}`, true);
         }

@@ -11,5 +11,6 @@ router.post("/check-otp", asyncHandler(UserController.checkOTP));
 
 router.use(authentication);
 router.post("/send-otp-change-password", asyncHandler(UserController.sendOTPChangePassword));
+router.post("/search", asyncHandler(UserController.searchForUser));
 
 module.exports = router;

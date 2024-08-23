@@ -19,7 +19,7 @@ class ProfileController {
         const updateInfo = req.body;
 
         const infoValidate = Joi.object({
-            name: Joi.string().alphanum().min(3).max(30).optional(),
+            name: Joi.string().min(3).max(30).optional(),
             phone: Joi.string().min(10).max(20).optional(),
             gender: Joi.string().optional(),
             roles: Joi.array().items(Joi.string()),

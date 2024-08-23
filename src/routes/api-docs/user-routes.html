@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Routes</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <div class="quick-menu">
@@ -23,13 +25,34 @@
         <div class="content">
             <h1>User Routes</h1>
 
+            <h3>POST /v1/api/user/search</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Search for users based on a filter.</p>
+                <p><strong>URL:</strong> <code>/v1/api/user/search</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Query Parameters:</strong></p>
+                <pre><code>{
+    "filter": "string (required)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Search for user successful",
+    "metadata": [ ...userDetails ]
+}</code></pre>
+            </div>
+
             <h3>POST /v1/api/user/send-otp-change-password</h3>
             <div class="indent">
                 <p><strong>Description:</strong> Send OTP to user's email for change password. User must login and use accessToken to use that api.</p>
                 <p><strong>URL:</strong> <code>/v1/api/user/send-otp-change-password</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;</code></pre>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
 {
@@ -44,7 +67,8 @@
                 <p><strong>URL:</strong> <code>/v1/api/user/send-otp</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>x-client-id: &lt;client_id&gt;</code></pre>
+                <pre><code>x-client-id: &lt;client_id&gt;
+authorization: &lt;token&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
     "email": "string (required, valid email)",
@@ -64,7 +88,8 @@
                 <p><strong>URL:</strong> <code>/v1/api/user/check-otp</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>x-client-id: &lt;client_id&gt;</code></pre>
+                <pre><code>x-client-id: &lt;client_id&gt;
+authorization: &lt;token&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
     "email": "string (required, valid email)",
@@ -75,7 +100,7 @@
                 <pre><code>200 OK:
 {
     "message": "OTP verified successfully",
-    "metadata": { 
+    "metadata": {
         otp: {},
         user_id: "string",
         tokens: { // If type is 'change-password' or 'reset-password'
@@ -88,4 +113,5 @@
         </div>
     </div>
 </body>
+
 </html>

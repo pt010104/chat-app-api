@@ -5,14 +5,15 @@ const RoomRepository = require('./room.repository');
 const { BadRequestError } = require('../../core/error.response');
 const { findUserById } = require('./user.repository');
 const RedisService = require('../../services/redis.service');
+const { chat } = require('googleapis/build/src/apis/chat');
 
 class ChatRepository {
     transform(chatData) {
         return {
             user_id: chatData.user_id.toString(), 
             message: chatData.message,
-            updated_at: this.formatDate(chatData.updatedAt),
-            created_at: this.formatDate(chatData.createdAt),
+            updated_at: chatData.updatedAt,
+            created_at: chatData.createdAt,
             status: chatData.status,
             room_id: chatData.room_id.toString()
         };
@@ -24,19 +25,12 @@ class ChatRepository {
         const user_avatar = user.avatar;
         const user_avatar_thumb = user.thumb_avatar;
 
-        const room = await RoomRepository.getRoomByID(chatData.room_id);
-        const room_avatar = room.avt_url;
-        const room_name = room.name;
-        const room_user_ids = room.user_ids
-
         const transformedData = {
             user_id: chatData.user_id.toString(),
             message: chatData.message,
-            updated_at: this.formatDate(chatData.updatedAt),
-            created_at: this.formatDate(chatData.createdAt),
+            updated_at: chatData.updatedAt,
+            created_at: chatData.createdAt,
             status: chatData.status,
-            room_id: chatData.room_id.toString(),
-            is_group: room.is_group
         };
 
         if (user_name) {
@@ -48,30 +42,8 @@ class ChatRepository {
         if (user_avatar_thumb) {
             transformedData.user_avatar_thumb = user_avatar_thumb;
         }
-        if (room_avatar) {
-            transformedData.room_avatar = room_avatar;
-        }
-        if (room_name) {
-            transformedData.room_name = room_name;
-        }
-        if (room_user_ids) {
-            transformedData.room_user_ids = room_user_ids
-        }
         
         return transformedData
-    }
-
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
     }
 
     getMessageById = async (id) => {
@@ -79,13 +51,15 @@ class ChatRepository {
         return message;
     }
 
-    saveMessage = async (user_id, room_id, message) => {
+    saveMessage = async (user_id, room_id, message, created_at, updated_at) => {
         const key = `room:message`;
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
-                message
+                message,
+                createdAt: created_at,
+                updatedAt: updated_at
             });
     
             const [, savedMessage] = await Promise.all([

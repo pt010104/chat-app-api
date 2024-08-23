@@ -22,26 +22,31 @@ class ChatService {
     }
 
     static createRoom = async (params) => {
-        if (params.user_ids.length < 2) {
+        if (params.user_ids.length < 1) {
             throw new BadRequestError("Invalid Request")
+        }
+
+        // Nếu user_ids không chứa id của user hiện tại thì thêm vào 
+        if (!params.user_ids.includes(params.userId)) {
+            params.user_ids.push(params.userId);
         }
 
         //Chỉ có trường hợp one-to-one chat mới check exist room
         if(params.user_ids.length == 2) {
             const checkExistRoom = await RoomRepository.getRoomByUserIDs(params.user_ids)
             if(checkExistRoom) {
-                throw new BadRequestError("Room already exist")
+                return RoomRepository.transformForClient(checkExistRoom)
             }
         }
 
         //Tên group:
-        //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, avt group là avt của user còn lại
+        //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
         if (params.user_ids.length == 2) {
             const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
 
             const user = await findUserById(friend_user_id);
-            params.name = user.name;
-            params.avt_url = user.avatar;
+            params.name = user.name
+            params.auto_name = true
         }
 
         //Trường hợp user_ids.length > 2 thì tên group là param name hoặc tên của tất cả user
@@ -53,43 +58,48 @@ class ChatService {
                     userNames.push(user.name);
                 }
                 params.name = userNames.join(', ');
-            } 
-            //Nếu không set avt thì avt nhóm mặc định là avt người tạo nhóm
-            if (!params.avt_url) {
-                const user = await findUserById(params.userId);
-                params.avt_url = user.avatar;
+                params.auto_name = true;
             }
         }
 
-        const newRoom = await RoomRepository.createRoom(params.name, params.avt_url, params.user_ids, params.userId);
+        params.created_by = params.userId
+
+        let newRoom = await RoomRepository.createRoom(params);
+
+        newRoom = await RoomRepository.transformForClient(newRoom);
 
         return newRoom
     }
 
+    static async detailRoom(room_id) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found")
+        }
+
+        return RoomRepository.transformForClient(room)
+    }
+
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
+        const roomsTransformed = await RoomRepository.transformForClient(rooms);
     
-        const roomsTransformedPromise = RoomRepository.transformForClient(rooms);
+        const messagePromises = rooms.map(room => 
+            RedisService.get('newMessage:' + room._id).then(async message => {
+                if (message) {
+                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
+                    return { message: transformedData };
+                }
+                return null;
+            })
+        );
     
-        const messagePromises = rooms.map(room => {
-            const key = 'newMessage:' + room._id;
-            return RedisService.get(key);
-        });
+        const messageResults = await Promise.all(messagePromises);
     
-        const [roomsTransformed, ...messageResults] = await Promise.all([
-            roomsTransformedPromise,
-            ...messagePromises
-        ]);
-    
-        const messages = messageResults.map((message, index) => {
-            if (message) {
-                return JSON.parse(message);
-            } else {
-                return roomsTransformed[index];
-            }
-        });
-    
-        return { messages };
+        return roomsTransformed.map((room, index) => ({
+            room,
+            newMessage: messageResults[index]?.message
+        }));
     }
 
     static async updateNewMessagesInRoom(roomId, message) {
@@ -127,11 +137,47 @@ class ChatService {
         };
     }
 
-    static async addUsersToRoom(room_id, newUserIds, userId) {
-        let room = await RoomRepository.addUsersToRoom(room_id, newUserIds, userId);
-        room = await RoomRepository.transformForClient(room);
+    static async addUsersToRoom(room_id, newUserIds, userId) {    
+        let updatedRoom = await RoomRepository.addUsersToRoom(room_id, newUserIds);
+    
+        if (updatedRoom.user_ids.length > 2) {
+            updatedRoom.is_group = true;
+        }
+    
+        const userDetailsPromises = updatedRoom.user_ids.map(findUserById);
+        const userDetails = await Promise.all(userDetailsPromises);
+    
+        if (updatedRoom.is_group && updatedRoom.auto_name) {
+            const usersName = userDetails.map(user => user.name);
+            updatedRoom.name = usersName.join(', ');
+        }
+    
+        updatedRoom = await RoomRepository.updateRoom(updatedRoom);
+    
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+    
+        updatedRoom = await RoomRepository.transformForClient(updatedRoom);
+    
+        return updatedRoom;
+    }
 
-        return room;
+    static async updateRoom(params) {
+        const room = await RoomRepository.getRoomByID(params.room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        if (params.name) {
+            room.name = params.name;
+            room.auto_name = false;
+        }
+
+        if (params.avt_url) {
+            room.avt_url = params.avt_url;
+        }
+
+        const updatedRoom = await RoomRepository.updateRoom(room);
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
     }
 }
 

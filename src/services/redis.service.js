@@ -49,6 +49,10 @@ class RedisService {
         return this.executeCommand('exists', key);
     }
 
+    keys(pattern) {
+        return this.executeCommand('keys', pattern);
+    }
+
     setUserStatus(userId, status) {
         return this.set(userId, status);
     }

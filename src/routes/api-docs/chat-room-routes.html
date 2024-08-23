@@ -29,7 +29,7 @@
                 <p><strong>URL:</strong> <code>/v1/api/room/create</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
@@ -60,7 +60,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/new-messages</code></p>
                 <p><strong>Method:</strong> GET</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
@@ -69,19 +69,31 @@ x-client-id: &lt;client_id&gt;</code></pre>
     "metadata": {
         "messages": [
             {
-                "user_id": "string",
-                "message": "string",
-                "updated_at": "string",
-                "created_at": "string",
-                "status": "string",
-                "room_id": "string",
-                "is_group": boolean,
-                "user_name": "string",
-                "user_avatar": "string",
-                "user_avatar_thumb": "string",
-                "room_avatar": "string",
-                "room_name": "string",
-                "room_user_ids": ["string"]
+                "room": {
+                    "room_id": "string",
+                    "room_name": "string",
+                    "room_avatar": "string",
+                    "is_group": boolean,
+                    "room_user_ids": ["string"]
+                },
+                "newMessage": {
+                    "user_id": "string",
+                    "message": "string",
+                    "updated_at": "string",
+                    "created_at": "string",
+                    "user_name": "string",
+                    "user_avatar": "string",
+                    "user_avatar_thumb": "string"
+                }
+            },
+            {
+                "room": {
+                    "room_id": "string",
+                    "room_name": "string",
+                    "room_avatar": "string",
+                    "is_group": boolean,
+                    "room_user_ids": ["string"]
+                }
             }
         ]
     }
@@ -94,7 +106,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/messages/:room_id</code></p>
                 <p><strong>Method:</strong> GET</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Query Parameters:</strong></p>
                 <pre><code>page: integer
@@ -137,7 +149,7 @@ limit: integer</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/add-users/:room_id</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{

@@ -5,6 +5,7 @@ const CONSTANT = require('../helpers/constants');
 const User = require("../models/user.model");
 const { Readable } = require('stream'); 
 const RedisService = require("./redis.service");
+const ProfileService = require("./profile.service");
 
 class UploadService {
     uploadImageFromLocal = async ({
@@ -64,21 +65,11 @@ class UploadService {
        
     }
 
-    uploadImageFromBuffer = async ({
-        buffer,
-        user_id,
-        type = "avatar",
-    }) => {
+    uploadImageFromBuffer = async ({ buffer, user_id, type = "avatar" }) => {
         try {
-            let folderName = type + "/" + user_id;
+            const folderName = `${type}/${user_id}`;
     
-            // delete all images 
-            await cloudinary.api.delete_resources_by_prefix(folderName, {
-                invalidate: true,
-                resource_type: 'image'
-            });
-    
-            const uploadImage = await new Promise((resolve, reject) => {
+            const uploadImagePromise = new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         public_id: `${user_id}_${Date.now()}`,
@@ -96,52 +87,43 @@ class UploadService {
                 readableStream.pipe(uploadStream);
             });
     
-            let url = {};
+            const uploadImage = await uploadImagePromise;
     
-            if (type == "avatar") {
-                const avt_url = cloudinary.url(uploadImage.public_id, {
-                    width: CONSTANT.WIDTH_AVATAR,
-                    height: CONSTANT.HEIGHT_AVATAR,
-                    crop: "fill",
-                    format: 'jpg'
-                });
-                const avt_thumb_url = cloudinary.url(uploadImage.public_id, {
-                    width: CONSTANT.WIDTH_THUMB_AVATAR,
-                    height: CONSTANT.HEIGHT_THUMB_AVATAR,
-                    crop: "fill",
-                    format: 'jpg'
-                });
-                url['avt_url'] = avt_url;
-                url['avt_thumb_url'] = avt_thumb_url;
+            if (type === "avatar") {
+                const generateUrls = () => {
+                    const avt_url = cloudinary.url(uploadImage.public_id, {
+                        width: CONSTANT.WIDTH_AVATAR,
+                        height: CONSTANT.HEIGHT_AVATAR,
+                        crop: "fill",
+                        format: 'jpg'
+                    });
+                    const avt_thumb_url = cloudinary.url(uploadImage.public_id, {
+                        width: CONSTANT.WIDTH_THUMB_AVATAR,
+                        height: CONSTANT.HEIGHT_THUMB_AVATAR,
+                        crop: "fill",
+                        format: 'jpg'
+                    });
+                    return { avt_url, avt_thumb_url };
+                };
     
-                const updateUser = await User.findOneAndUpdate(
-                    { _id: user_id }, 
-                    {
-                        '$set': {
-                            avatar: avt_url,
-                            thumb_avatar: avt_thumb_url
-                        }
-                    }, 
-                    {
-                        upsert: true,
-                        runValidators: true,
-                        new: true
-                    }
-                );
-                
-                await RedisService.set(`user:info:${user_id}`, JSON.stringify(updateUser))
+                const { avt_url, avt_thumb_url } = generateUrls();
+    
+                await Promise.all([
+                    ProfileService.updateInfo(user_id, {
+                        avatar: avt_url,
+                        thumb_avatar: avt_thumb_url
+                    })
+                ]);
+    
+                return { avt_url, avt_thumb_url };
             }
-           
-            return {
-                url,
-                user_id: user_id,
-                type: type,
-            }
+    
+            return { url: uploadImage.url };
+        } catch (error) {
+            console.error(error);
+            throw error;
         }
-        catch (error) {
-            throw new Error(error)
-        }
-    }
+    };
 }
 
 module.exports = new UploadService();

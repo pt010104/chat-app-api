@@ -50,7 +50,6 @@ const verifyOTP = async (email, otp, type) => {
         const user = await findUserByEmail(email);
         const keyStore = await KeyTokenService.FindOrCreateKeyToken(user._id);
 
-        console.log("KeyStore: ", keyStore);
         const tokens = await createTokenPair({
             email: email,
             userId: user._id,
