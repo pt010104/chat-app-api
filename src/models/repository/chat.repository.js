@@ -52,7 +52,7 @@ class ChatRepository {
     }
 
     saveMessage = async (user_id, room_id, message, created_at, updated_at) => {
-        const key = `room:message`;
+        const key = `room:messages`;
         try {
             const newMessage = new ChatModel({
                 user_id,
