@@ -10,7 +10,7 @@ class RabbitMQConsumer {
         const rooms = await RoomRepository.getAllRooms();
     
         if (rooms && rooms.length > 0) {
-            const concurrencyLimit = 5; 
+            const concurrencyLimit = 1; 
             for (let i = 0; i < rooms.length; i += concurrencyLimit) {
                 const batch = rooms.slice(i, i + concurrencyLimit);
                 await Promise.all(batch.map(room => this.processQueue(room._id.toString()).catch(error => {
