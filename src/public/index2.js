@@ -53,14 +53,6 @@ function sendMessage(room_id, message) {
     socket.emit('chat message', messageData);
 }
 
-function connectRoom(roomId) {
-    socket.emit('join room', roomId);
-}
-
 document.getElementById('sendMessageButton').addEventListener('click', () => {
-    sendMessage('66981da2388da84552594a90', 'Message sent from button');
-});
-
-document.getElementById('connectRoomButton').addEventListener('click', () => {
-    connectRoom('66981da2388da84552594a90');
+    sendMessage('66981da2388da84552594a90', 'Message sent from buttonkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk');
 });
