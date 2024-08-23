@@ -74,29 +74,29 @@ class ChatRepository {
     }
 
     getMessagesByRoomId = async (room_id, skip = 0, limit = 10) => {
-        const key = `room:message`
-        let messages = await RedisService.getMessages(key, room_id, limit, skip);
+        const key = `room:messages`; 
+        let messages = await RedisService.getMessages(key, room_id);
     
         if (messages.length > 0) {
-            return messages;
+            messages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); 
+            const paginatedMessages = messages.slice(skip, skip + limit);
+            return paginatedMessages;
         }
     
-        messages = await ChatModel.find({ room_id })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean();
+        messages = await ChatModel.find({ room_id }).sort({ createdAt: -1 }).lean();
     
-        messages.forEach(async (message) => {
-            await RedisService.storeOrUpdateMessage(key, room_id, message);
-        });
+        await Promise.all(messages.map(message =>
+            RedisService.storeOrUpdateMessage(key, room_id, message)
+        ));
     
-        return messages;
+        const paginatedMessages = messages.slice(skip, skip + limit);
+        return paginatedMessages;
     }
-
+    
     countMessagesByRoomId = async (room_id) => {
         return ChatModel.countDocuments({ room_id });
     }
+    
 }
 
 module.exports = new ChatRepository();
