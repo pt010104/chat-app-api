@@ -14,17 +14,17 @@ class FriendShip {
         const key = `listFriends:${user_id}`;
         const cache = await RedisService.get(key);
 
-        if (cache && cache !== 'null' ) {
+        if (cache && cache !== 'null') {
             console.log(`Cache hit for key: ${key}`);
-            const cachedFriends = JSON.parse(cache); 
-            console.log('cache'+JSON.stringify(cache));     
-            const paginatedFriends = cachedFriends.slice(offset, offset + limit); 
+            const cachedFriends = JSON.parse(cache);
+            console.log('cache' + JSON.stringify(cache));
+            const paginatedFriends = cachedFriends.slice(offset, offset + limit);
             const results = [];
             for (let friend of paginatedFriends) {
                 let user_id_friend;
                 try {
                     user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
-                    console.log('friend'+user_id_friend);
+                    console.log('friend' + user_id_friend);
                     const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                     results.push({
                         user_info
@@ -32,7 +32,7 @@ class FriendShip {
                 } catch (error) {
                     throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
                 }
-            }           
+            }
             return results;
         }
 
@@ -44,23 +44,23 @@ class FriendShip {
         })
             .skip(offset)
             .limit(limit)
-            .lean(); 
-        await RedisService.set(key, JSON.stringify(listFriends), 3600);               
+            .lean();
+        await RedisService.set(key, JSON.stringify(listFriends), 3600);
         const results = [];
         const transformedFriends = JSON.parse(JSON.stringify(listFriends));
         for (let friend of transformedFriends) {
             let user_id_friend;
             try {
-                if(user_id === friend.user_id_send.toString()){
+                if (user_id === friend.user_id_send.toString()) {
                     user_id_friend = friend.user_id_receive;
-                    console.log('friend rece '+ friend.user_id_receive);
+                    console.log('friend rece ' + friend.user_id_receive);
 
                 }
-                else if(user_id === friend.user_id_receive.toString()){
+                else if (user_id === friend.user_id_receive.toString()) {
                     user_id_friend = friend.user_id_send;
-                    console.log('friend send '+ friend.user_id_send);
+                    console.log('friend send ' + friend.user_id_send);
                 }
-                console.log('friend'+ user_id_friend);
+                console.log('friend' + user_id_friend);
                 const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                 results.push({
                     user_info
@@ -172,7 +172,7 @@ class FriendShip {
     static async searchFriend(user_id, query) {
         const key = `listFriends:${user_id}`;
         const cache = await RedisService.get(key);
-        
+
         if (cache && cache !== 'null') {
             console.log(`Cache hit for key: ${key}`);
             const cachedFriends = JSON.parse(cache);
@@ -181,7 +181,7 @@ class FriendShip {
                 let user_id_friend;
                 try {
                     user_id_friend = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
-                    console.log('friend'+user_id_friend);
+                    
                     const user_info = await UserRepo.transformData.transformUser(user_id_friend);
                     results.push({
                         user_info
@@ -189,19 +189,19 @@ class FriendShip {
                 } catch (error) {
                     throw new NotFoundError(`User with ID ${user_id_friend} does not exist`);
                 }
-            }           
+            }
 
             const regex = new RegExp(query, 'i'); // case-insensitive regex for search
             const filteredFriends = results.filter(friend =>
-            regex.test(friend.user_info.user_name) ||
-            regex.test(friend.user_info.email) ||
-            regex.test(friend.user_info.phone)
-        );
+                regex.test(friend.user_info.user_name) ||
+                regex.test(friend.user_info.email) ||
+                regex.test(friend.user_info.phone)
+            );
 
-        if (filteredFriends.length === 0) {
-            throw new NotFoundError("No friends found matching the search criteria redis");
-        }
-        return filteredFriends;
+            if (filteredFriends.length === 0) {
+                throw new NotFoundError("No friends found matching the search criteria redis");
+            }
+            return filteredFriends;
         }
 
         const listFriends = await FriendShipModel.find({
@@ -235,7 +235,7 @@ class FriendShip {
             throw new NotFoundError("No friends found matching the search criteria");
         }
 
-        return filteredFriends;       
+        return filteredFriends;
     }
 }
 
