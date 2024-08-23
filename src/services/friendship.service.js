@@ -138,10 +138,10 @@ class FriendShip {
         }
     }
 
-    static async searchFriend(user_id, query) {
+    static async searchFriend(user_id, filter) {
         let friends = await this.findFriends(user_id);
     
-        const regex = new RegExp(query, 'i');
+        const regex = new RegExp(filter, 'i');
         const transformPromises = friends.map(async (friend) => {
             friend.user_id_send = friend.user_id_send.toString();
             friend.user_id_receive = friend.user_id_receive.toString();
@@ -160,8 +160,8 @@ class FriendShip {
     
         return transformedFriends.filter(friend => 
             regex.test(friend.user_name) ||
-            friend.user_email === query ||
-            friend.user_phone === query
+            friend.user_email === filter ||
+            friend.user_phone === filter
         );
     }
 }
