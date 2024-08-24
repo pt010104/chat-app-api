@@ -30,14 +30,10 @@ document.getElementById('connectButton').addEventListener('click', () => {
             log(`Successfully joined room: ${roomId}`);
         });
 
-socket.on('new message', (data) => {
-    const { message, ...otherData } = data;
-    log(`Received new message: ${message}`);
-});
-
-
         socket.on('new message', (data) => {
-            log('Received new message: ' + JSON.stringify(data));
+            data = JSON.parse(data);
+            const { message, ...otherData } = data;
+            log(`Received new message: ${message}`);
         });
 
         socket.on('disconnect', () => {
