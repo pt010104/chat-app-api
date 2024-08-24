@@ -27,8 +27,8 @@ app.use(compression());
 require("./dbs/init.mongodb");
 
 // Socket.io service
-const SocketServices = require('./services/socket.service');
-new SocketServices(io);
+// const SocketServices = require('./services/socket.service');
+// new SocketServices(io);
 
 // RabbitMQ consumer
 const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
