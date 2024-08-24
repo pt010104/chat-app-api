@@ -53,7 +53,6 @@ class RabbitMQConsumer {
 
             const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
 
-            await this.notifyAndBroadcast(roomId, filteredUserIDs, message);
 
             const [saveMessage] = await Promise.all([
                 ChatRepository.saveMessage(message.user_id, roomId, message.message, now, now),
@@ -61,6 +60,7 @@ class RabbitMQConsumer {
             ]);
 
             const transformedMessage = await ChatRepository.transformForClient(saveMessage);
+            await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
 
         } catch (error) {
             console.error(`Error processing message for room ${roomId}:`, error);
