@@ -7,6 +7,8 @@ const { findUserById } = require('./user.repository');
 const RedisService = require('../../services/redis.service');
 const { chat } = require('googleapis/build/src/apis/chat');
 
+const MESSAGES_PER_PAGE = 12;
+
 class ChatRepository {
     transform(chatData) {
         return {
@@ -51,8 +53,17 @@ class ChatRepository {
         return message;
     }
 
+    updateRedisCache = async (room_id) => {
+        const keyPattern = `room:messages:${room_id}:*`;
+        const keys = await RedisService.keys(keyPattern);
+        
+        if (keys.length > 0) {
+            return RedisService.del(keys);
+        }
+        return Promise.resolve(); 
+    }
+
     saveMessage = async (user_id, room_id, message, created_at, updated_at) => {
-        const key = `room:messages`;
         try {
             const newMessage = new ChatModel({
                 user_id,
@@ -61,19 +72,19 @@ class ChatRepository {
                 createdAt: created_at,
                 updatedAt: updated_at
             });
-    
-            const [, savedMessage] = await Promise.all([
-                RedisService.storeOrUpdateMessage(key, room_id, newMessage),
-                newMessage.save()
+
+            const [savedMessage] = await Promise.all([
+                newMessage.save(),
+                this.updateRedisCache(room_id)
             ]);
-    
+
             return savedMessage;
         } catch (error) {
             throw new BadRequestError(error);
         }
     }
 
-    getMessagesByRoomId = async (room_id, skip = 0, limit = 10) => {
+    getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
         const key = `room:messages:${room_id}:${skip}:${limit}`;
     
         let cachedMessages = await RedisService.get(key);
@@ -97,7 +108,16 @@ class ChatRepository {
     }
     
     countMessagesByRoomId = async (room_id) => {
-        return ChatModel.countDocuments({ room_id });
+        const cacheKey = `room:messages:count:${room_id}`;
+        let cachedCount = await RedisService.get(cacheKey);
+
+        if (cachedCount !== null) {
+            return parseInt(cachedCount, 10);
+        }
+
+        const count = await ChatModel.countDocuments({ room_id });
+        await RedisService.set(cacheKey, count.toString(), 3600);
+        return count;
     }
     
 }
