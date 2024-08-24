@@ -62,8 +62,6 @@ class RabbitMQConsumer {
 
             const transformedMessage = await ChatRepository.transformForClient(saveMessage);
 
-            this.broadcastSavedMessage(roomId, transformedMessage);
-
         } catch (error) {
             console.error(`Error processing message for room ${roomId}:`, error);
             throw error;
@@ -77,16 +75,11 @@ class RabbitMQConsumer {
         const onlineUserPromises = userIDs.map(async (userId) => {
             const userStatus = await RedisService.getUserStatus(userId);
             if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("new message", { "data": message });
+                io.to(`user_${userId}`).emit("chat message", { "data": message });
             }
         });
 
         await Promise.all(onlineUserPromises);
-    }
-
-    static broadcastSavedMessage(roomId, message) {
-        const io = global._io;
-        io.to(roomId).emit("chat message", { "data": message });
     }
 }
 
