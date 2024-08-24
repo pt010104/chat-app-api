@@ -12,7 +12,7 @@
             padding: 5px;
             font-size: 1em;
         }
-        #sendMessageButton {
+        #connectButton, #sendMessageButton {
             padding: 5px 10px;
             font-size: 1em;
             margin-top: 10px;
@@ -36,8 +36,9 @@
 </head>
 <body>
     <input type="text" id="userIdInput" placeholder="Enter User ID" value="668a4c9c1174c565154564c6" />
+    <button id="connectButton">Connect</button>
     <input type="text" id="messageInput" placeholder="Type your message here..." />
-    <button id="sendMessageButton">Send Message</button>
+    <button id="sendMessageButton" disabled>Send Message</button>
     <label id="messageLabel">No messages yet</label>
     <div id="logArea"></div>
 </body>

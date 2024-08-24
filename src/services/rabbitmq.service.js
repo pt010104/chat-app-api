@@ -7,6 +7,8 @@ class RabbitMQService {
         this.channel = null;
         this.connecting = false;
         this.reconnectTimeout = null;
+        this.maxReconnectAttempts = 10;
+        this.reconnectAttempts = 0;
     }
 
     async connect() {
@@ -18,31 +20,42 @@ class RabbitMQService {
             this.connection = await amqp.connect(amqpUrl);
             this.channel = await this.connection.createChannel();
 
-            this.connection.on('error', (err) => {
-                console.error('RabbitMQ connection error', err);
-                this.reconnect();
-            });
-
-            this.connection.on('close', () => {
-                console.error('RabbitMQ connection closed');
-                this.reconnect();
-            });
+            this.connection.on('error', this.handleConnectionError.bind(this));
+            this.connection.on('close', this.handleConnectionClose.bind(this));
 
             console.info("Connected to RabbitMQ successfully");
             this.connecting = false;
+            this.reconnectAttempts = 0;
         } catch (error) {
             console.error('Failed to connect to RabbitMQ', error);
-            this.reconnect();
+            this.handleReconnect();
         }
     }
 
-    reconnect() {
+    handleConnectionError(err) {
+        console.error('RabbitMQ connection error', err);
+        this.handleReconnect();
+    }
+
+    handleConnectionClose() {
+        console.error('RabbitMQ connection closed');
+        this.handleReconnect();
+    }
+
+    handleReconnect() {
         if (this.reconnectTimeout) return;
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            console.error('Max reconnection attempts reached. Giving up.');
+            return;
+        }
+
+        this.reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
         this.reconnectTimeout = setTimeout(() => {
             this.reconnectTimeout = null;
             this.connecting = false;
             this.connect();
-        }, 5000);
+        }, delay);
     }
 
     async getChannel() {
@@ -65,12 +78,12 @@ class RabbitMQService {
         try {
             const channel = await this.getChannel();
             await channel.assertQueue(queue, { durable: true });
+            await channel.prefetch(10);
             channel.consume(queue, (message) => {
                 if (message) {
                     try {
                         const parsedMessage = JSON.parse(message.content.toString());
-                        callback(parsedMessage);
-                        channel.ack(message);
+                        callback(parsedMessage, channel, message);
                     } catch (error) {
                         console.error('Error processing message', error);
                         channel.nack(message, false, false);
@@ -79,7 +92,7 @@ class RabbitMQService {
             });
         } catch (error) {
             console.error('Error setting up message consumer', error);
-            this.reconnect();
+            this.handleReconnect();
         }
     }
 
