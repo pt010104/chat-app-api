@@ -72,12 +72,12 @@ class RabbitMQConsumer {
 
     static async notifyAndBroadcast(roomId, userIDs, message) {
         const io = global._io;
-        io.to(roomId).emit("new message notification", { "data": message });
+        io.to(roomId).emit("new message", { "data": message });
         
         const onlineUserPromises = userIDs.map(async (userId) => {
             const userStatus = await RedisService.getUserStatus(userId);
             if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("new message notification", { "data": message });
+                io.to(`user_${userId}`).emit("new message", { "data": message });
             }
         });
 
