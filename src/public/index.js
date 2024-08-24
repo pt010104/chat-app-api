@@ -63,8 +63,8 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
     }
 });
 
-// function sendMessage(room_id, message) {
-//     const messageData = { room_id, message };
-//     log('Sending message: ' + JSON.stringify(messageData));
-//     socket.emit('chat message', messageData);
-// }
+function sendMessage(room_id, message) {
+    const messageData = { room_id, message };
+    log('Sending message: ' + JSON.stringify(messageData));
+    socket.emit('chat message', messageData);
+}
