@@ -33,7 +33,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
         socket.on('new message', (data) => {
             log(`Received new message:`)
             if (data && data.data && data.data.message) {
-                log('New message content: ' + data.data.message);
+                log(data.data.message);
             }
         });
 
