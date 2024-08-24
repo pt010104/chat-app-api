@@ -107,7 +107,7 @@ class ChatService {
         await RedisService.set(key, JSON.stringify(message));
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 10) {
+    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
         const skip = (page - 1) * limit;
     
         const [room, messages, totalMessages] = await Promise.all([
