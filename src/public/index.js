@@ -31,9 +31,10 @@ document.getElementById('connectButton').addEventListener('click', () => {
         });
 
         socket.on('new message', (data) => {
-            data = JSON.parse(data);
-            const { message, ...otherData } = data;
-            log(`Received new message: ${message}`);
+            log(`Received new message:`)
+            if (data && data.data && data.data.message) {
+                log('New message content: ' + data.data.message);
+            }
         });
 
         socket.on('disconnect', () => {
