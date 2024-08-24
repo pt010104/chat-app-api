@@ -7,6 +7,16 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/index.js" defer></script>
     <style>
+        #userIdInput, #messageInput {
+            width: calc(100% - 120px);
+            padding: 5px;
+            font-size: 1em;
+        }
+        #sendMessageButton {
+            padding: 5px 10px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
         #messageLabel {
             display: block;
             margin-top: 20px;
@@ -25,6 +35,8 @@
     </style>
 </head>
 <body>
+    <input type="text" id="userIdInput" placeholder="Enter User ID" value="668a4c9c1174c565154564c6" />
+    <input type="text" id="messageInput" placeholder="Type your message here..." />
     <button id="sendMessageButton">Send Message</button>
     <label id="messageLabel">No messages yet</label>
     <div id="logArea"></div>
