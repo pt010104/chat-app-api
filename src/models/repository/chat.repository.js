@@ -58,7 +58,7 @@ class ChatRepository {
         const keys = await RedisService.keys(keyPattern);
         
         if (keys.length > 0) {
-            return RedisService.del(keys);
+            return RedisService.delete(keys);
         }
         return Promise.resolve(); 
     }
