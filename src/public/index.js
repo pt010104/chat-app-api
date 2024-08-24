@@ -10,9 +10,11 @@ function log(message) {
 
 document.getElementById('connectButton').addEventListener('click', () => {
     const userIdInput = document.getElementById('userIdInput');
+    const roomIdInput = document.getElementById('roomIdInput');
     const userId = userIdInput.value.trim();
+    const roomId = roomIdInput.value.trim();
 
-    if (userId) {
+    if (userId && roomId) {
         socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
             query: {
                 user_id: userId
@@ -21,7 +23,6 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
         socket.on('connect', () => {
             log(`Connected to server with user ID: ${userId}`);
-            const roomId = '66981da2388da84552594a90';
             socket.emit('join room', roomId);
             document.getElementById('sendMessageButton').disabled = false; // Enable the send button after connection
         });
@@ -31,7 +32,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
         });
 
         socket.on('new message', (data) => {
-            log(`Received new message:`)
+            log(`Received new message:`);
             if (data && data.data && data.data.message) {
                 log(data.data.message);
             }
@@ -46,7 +47,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
             log('Connection error: ' + error);
         });
     } else {
-        log('User ID cannot be empty');
+        log('User ID and Room ID cannot be empty');
     }
 });
 
@@ -56,7 +57,8 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
 
     if (message && socket) {
         const userId = socket.io.opts.query.user_id;
-        sendMessage('66981da2388da84552594a90', `${userId}: ${message}`);
+        const roomId = document.getElementById('roomIdInput').value.trim();
+        sendMessage(roomId, `${userId}: ${message}`);
         messageInput.value = ''; // Clear the input box after sending
     } else {
         log('Cannot send an empty message or socket is not connected');
