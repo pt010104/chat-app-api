@@ -54,12 +54,16 @@ class ChatRepository {
     }
 
     updateRedisCache = async (room_id) => {
-        const keyPattern = `room:messages:${room_id}:*`;
-        const keys = await RedisService.keys(keyPattern);
+        const messageKeyPattern = `room:messages:${room_id}:*`;
+        const countKey = `room:messages:count:${room_id}`;
         
-        if (keys.length > 0) {
-            return RedisService.delete(keys);
+        const messageKeys = await RedisService.keys(messageKeyPattern);
+        const keysToDelete = [...messageKeys, countKey];
+        
+        if (keysToDelete.length > 0) {
+            return RedisService.delete(keysToDelete);
         }
+
         return Promise.resolve(); 
     }
 
