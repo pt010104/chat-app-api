@@ -42,7 +42,7 @@ class RoomRepository {
             let room_avatar = null;
             if (!rooms.is_group || rooms.avt_url == "") {
                 if (rooms.is_group) {
-                    const user = await findUserById(room.created_by);
+                    const user = await findUserById(rooms.created_by);
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
                     }
@@ -53,7 +53,7 @@ class RoomRepository {
                     }
                 }
             } else {
-                dataTransformed.room_avatar = room.avt_url
+                room_avatar = rooms.avt_url
             }
             return {
                 room_id: rooms._id,
