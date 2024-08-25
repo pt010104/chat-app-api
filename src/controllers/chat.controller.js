@@ -93,7 +93,6 @@ class ChatController {
 
     updateRoom = async (req, res, next) => {
         const updateRoomValidate = Joi.object({
-            room_id: Joi.string().required(),
             name: Joi.string().optional(),
             avt_url: Joi.string().optional(),
         });

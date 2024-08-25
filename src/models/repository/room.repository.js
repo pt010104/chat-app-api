@@ -170,7 +170,8 @@ class RoomRepository {
     };
     
     updateRoom = async (room) => {
-        return room.save();
+        const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, { new: true });
+        return updatedRoom;
     };
 
     getRoomByID = async (room_id) => {

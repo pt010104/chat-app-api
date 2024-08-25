@@ -172,12 +172,14 @@ class ChatService {
             room.auto_name = false;
         }
 
-        if (params.avt_url) {
+        if (params.avt_url && room.is_group) {
             room.avt_url = params.avt_url;
         }
 
         const updatedRoom = await RoomRepository.updateRoom(room);
         await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+
+        return RoomRepository.transformForClient(updatedRoom);
     }
 }
 
