@@ -16,7 +16,8 @@ class RoomRepository {
                     room_name: room.name,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
-                    room_created_at: room.createdAt
+                    room_created_at: room.createdAt,
+                    room_updated_at: room.updatedAt
                 }
                 if (!room.is_group || room.avt_url == "") {
                     if (room.is_group) {
@@ -51,7 +52,8 @@ class RoomRepository {
                 is_group: rooms.is_group,
                 room_user_ids: rooms.user_ids,
                 room_avatar: room_avatar ?? rooms.avt_url,
-                room_created_at: rooms.createdAt
+                room_created_at: rooms.createdAt,
+                room_updated_at: rooms.updatedAt
             };
         }
     }
