@@ -113,10 +113,10 @@ class FriendshipController {
     // v1/api/friends/search-friends
     async searchFriend(req, res) {     
         const friendValidate = Joi.object({
-            search: Joi.string().required()
+            filter: Joi.string().required()
         });
 
-        const { error } = friendValidate.validate(req.body);
+        const { error } = friendValidate.validate(req.query);
         if (error) {
             return res.status(400).json({
               message: error.details[0].message,
@@ -124,10 +124,10 @@ class FriendshipController {
         }
 
         const user_id = req.user.userId
-        const { search } = req.body
+        const { filter } = req.query
         new SuccessResponse({
             message: "Search friend",
-            metadata: await FriendShip.searchFriend(user_id, search)
+            metadata: await FriendShip.searchFriend(user_id, filter)
         }).send(res)
         
     }
