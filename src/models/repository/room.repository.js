@@ -41,10 +41,19 @@ class RoomRepository {
         }  else {
             let room_avatar = null;
             if (!rooms.is_group || rooms.avt_url == "") {
-                const user = await findUserById(rooms.created_by);
-                if (user && user.avatar) {
-                    room_avatar = user.avatar; 
+                if (rooms.is_group) {
+                    const user = await findUserById(room.created_by);
+                    if (user && user.avatar) {
+                        room_avatar  = user.avatar; 
+                    }
+                } else {
+                    const user = await findUserById(rooms.user_ids.filter(id => id != rooms.created_by)[0]);
+                    if (user && user.avatar) {
+                        room_avatar  = user.avatar; 
+                    }
                 }
+            } else {
+                dataTransformed.room_avatar = room.avt_url
             }
             return {
                 room_id: rooms._id,

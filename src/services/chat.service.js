@@ -93,7 +93,7 @@ class ChatService {
                 return null;
             })
         );
-    
+                           
         const messageResults = await Promise.all(messagePromises);
     
         return roomsTransformed.map((room, index) => ({
