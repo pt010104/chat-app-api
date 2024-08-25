@@ -96,7 +96,7 @@ class RoomRepository {
             name: name,
             user_ids: user_ids,
             created_by: created_by,
-            isGroup: user_ids.length > 2 ? true : false,
+            is_group: user_ids.length > 2 ? true : false,
             auto_name: auto_name ?? false
         });
 
