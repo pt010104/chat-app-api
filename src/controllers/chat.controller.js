@@ -57,6 +57,17 @@ class ChatController {
             metadata: await ChatService.deleteMessage(message_id, userId)
         }).send(res)
     }
+
+    editMessage = async (req, res, next) => {
+        const message_id = req.params.message_id;
+        const userId = req.user.userId;
+        const content = req.body.content;
+        new OK ({
+            message: "Message edited successfully",
+            metadata: await ChatService.editMessage(message_id, userId, content)
+        }).send(res)
+    }
+
     addUsersToRoom = async (req, res, next) => {
         const room_id = req.params.room_id;
         const user_ids = req.body.user_ids;
@@ -115,12 +126,14 @@ class ChatController {
 
     listRooms = async (req, res, next) => {
         const userId = req.user.userId;
-
+        const page = req.query.page;
+        const limit = req.query.limit;
         new OK ({
             message: "Rooms retrieved successfully",
-            metadata: await ChatService.listRooms(userId)
+            metadata: await ChatService.listRooms(userId, page, limit)
         }).send(res)
     }
+
 }
 
 module.exports = new ChatController()

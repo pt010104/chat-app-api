@@ -104,7 +104,35 @@ class ChatRepository {
         await RedisService.delete(`room:message:${message_id}`);
         return ChatModel.findByIdAndDelete(message_id);
     }
-
+    
+    editMessage = async (message_id, content, userID) => {
+        const key = `room:message:${message_id}`;
+        
+        // Fetch the message from Redis
+        const message = await RedisService.get(key);
+        
+        if (!message) {
+            throw new Error("Message not found");
+        }
+    
+        const parsedMessage = JSON.parse(message);
+    
+        // Check if the user is allowed to edit the message
+        if (parsedMessage.user_id.toString() !== userID.toString()) {
+            throw new BadRequestError("You are not allowed to edit this message");
+        }
+    
+        // Update the message content and timestamp
+        parsedMessage.message = content;
+        parsedMessage.updatedAt = new Date();
+    
+        // Save the updated message back to Redis
+        await RedisService.set(key, JSON.stringify(parsedMessage));
+    
+        // Update the message in the database
+        return ChatModel.findByIdAndUpdate(message_id, { message: content }, { new: true });
+    }
+    
 }
 
 module.exports = new ChatRepository();
