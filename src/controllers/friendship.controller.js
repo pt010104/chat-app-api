@@ -102,12 +102,25 @@ class FriendshipController {
 
     }
 
-    // v1/api/friends/reject-request
-    async rejectFriendRequest(req, res) {
-    }
-
     // v1/api/friends/remove
     async removeFriend(req, res) {
+        const friendValidate = Joi.object({
+            friend_id: Joi.string().required()
+        });
+
+        const { error } = friendValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const user_id = req.user.userId
+        const { friend_id } = req.body
+        new SuccessResponse({
+            message: "Friend removed",
+            metadata: await FriendShip.removeFriend(user_id, friend_id)
+        }).send(res)
     }
     
     // v1/api/friends/search-friends
@@ -131,6 +144,10 @@ class FriendshipController {
         }).send(res)
         
     }
+    async denyFriendRequest(req, res) {
+
+    }
+
 }
 
 module.exports = new FriendshipController()

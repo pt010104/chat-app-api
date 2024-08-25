@@ -14,5 +14,6 @@ router.post("/send-request", asyncHandler(FriendshipController.sendFriendRequest
 router.post("/accept-request", asyncHandler(FriendshipController.acceptFriendRequest));
 router.post("/cancel-request", asyncHandler(FriendshipController.cancelFriendRequest));
 router.post("/search-friend", asyncHandler(FriendshipController.searchFriend));
-
+router.post("/remove-friend", asyncHandler(FriendshipController.removeFriend));
+router.post("/deny-request", asyncHandler(FriendshipController.denyFriendRequest));
 module.exports = router;
