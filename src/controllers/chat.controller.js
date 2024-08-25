@@ -41,10 +41,11 @@ class ChatController {
         }
 
         let { room_id } = req.params;
+        const userId = req.user.userId;
 
         new SuccessResponse({
             message: "Room detail retrieved successfully",
-            metadata: await ChatService.detailRoom(room_id)
+            metadata: await ChatService.detailRoom(room_id, userId)
         }).send(res)
     }
 
