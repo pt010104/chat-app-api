@@ -22,30 +22,34 @@ class ChatRepository {
     }
 
     transformForClient = async(chatData) => {
-        const user = await findUserById(chatData.user_id);
-        const user_name = user.name;
-        const user_avatar = user.avatar;
-        const user_avatar_thumb = user.thumb_avatar;
+        try {
+            const user = await findUserById(chatData.user_id);
+            const user_name = user.name;
+            const user_avatar = user.avatar;
+            const user_avatar_thumb = user.thumb_avatar;
 
-        const transformedData = {
-            user_id: chatData.user_id.toString(),
-            message: chatData.message,
-            updated_at: chatData.updatedAt,
-            created_at: chatData.createdAt,
-            status: chatData.status,
-        };
+            const transformedData = {
+                user_id: chatData.user_id.toString(),
+                message: chatData.message,
+                updated_at: chatData.updatedAt,
+                created_at: chatData.createdAt,
+                status: chatData.status,
+            };
 
-        if (user_name) {
-            transformedData.user_name = user_name;
+            if (user_name) {
+                transformedData.user_name = user_name;
+            }
+            if (user_avatar) {
+                transformedData.user_avatar = user_avatar;
+            }
+            if (user_avatar_thumb) {
+                transformedData.user_avatar_thumb = user_avatar_thumb;
+            }
+
+            return transformedData;
+        } catch (error) {
+            return 
         }
-        if (user_avatar) {
-            transformedData.user_avatar = user_avatar;
-        }
-        if (user_avatar_thumb) {
-            transformedData.user_avatar_thumb = user_avatar_thumb;
-        }
-        
-        return transformedData
     }
 
     getMessageById = async (id) => {

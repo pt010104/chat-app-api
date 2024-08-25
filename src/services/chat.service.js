@@ -84,7 +84,7 @@ class ChatService {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
         const roomsTransformed = await RoomRepository.transformForClient(rooms, userId);
     
-        const messagePromises = rooms.map(room => 
+        const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
                     const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
