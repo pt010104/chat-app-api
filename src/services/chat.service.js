@@ -77,7 +77,7 @@ class ChatService {
             throw new NotFoundError("Room not found")
         }
 
-        return RoomRepository.transformForClient(room)
+        return RoomRepository.transformForDetailRoom(room)
     }
 
     static async getNewMessagesEachRoom(userId) {
