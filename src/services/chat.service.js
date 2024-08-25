@@ -188,7 +188,7 @@ class ChatService {
       
         const isUserInRoom = room.user_ids.includes(userId);
         if (!isUserInRoom) {
-            throw new Error('User is not in the room');
+            throw new Error('User is not in the room remove');
         }
 
         if (room.is_group && room.created_by.toString() !== userId.toString()) {
@@ -214,12 +214,9 @@ class ChatService {
             updatedRoom = await RoomRepository.updateRoom(updatedRoom);
 
             await RoomRepository.updateRedisCacheForRoom(updatedRoom);
-
-            await RoomRepository.deleteListRoomRedisAfterRemoveUser(room_id, user_ids,userId);
-            
+     
+            await RoomRepository.deleteListRoomRemoveUser(room_id, user_ids);
             console.log("update list room user who remove")
-            await RoomRepository.updateRedisCacheForListRoom(room_id, userId);
-
             updatedRoom = await RoomRepository.transformForClient(updatedRoom);
             
             if (updatedRoom.room_user_ids.length === 1) {
@@ -233,7 +230,7 @@ class ChatService {
             throw new BadRequestError(error);
         }
     }
-
+// van de la da upodate redis nhung thang trong room, nhung nhung th bi kick ra thi chua dc update or delete
     static async leaveRoom(room_id, userId) {
         console.log('leave room')
         const room = await RoomRepository.getRoomByID(room_id);
@@ -243,7 +240,7 @@ class ChatService {
       
         const isUserInRoom = room.user_ids.includes(userId);
         if (!isUserInRoom) {
-            throw new Error('User is not in the room');
+            throw new Error('User is not in the room leave');
         }      
 
         if (!room.is_group) {
@@ -255,19 +252,17 @@ class ChatService {
         }
 
         console.log(room.user_ids.length +'delete')
+        await RoomRepository.deleteListRoomRemoveUser(room, [userId]);
         if (room.user_ids.length === 1) {
             await RoomRepository.deleteRoomDb(room_id);
-            console.log('delete room redis')
-            await RoomRepository.deleteListAndRoomRedis(room_id, userId);
+
+            await RedisService.delete('room:' + room_id);
             return;
         }
-        
-        await RoomRepository.removeUsersFromRoom(room_id, [userId]);
-        
-        await RoomRepository.deleteListRoomRedisAfterRemoveUser(room_id, [userId],userId);
-        
-        await RoomRepository.updateRedisCacheForListRoomLeave(room_id, userId);
-        return;
+
+        let updatedRoom = await RoomRepository.removeUsersFromRoom(room_id, [userId]);        
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+        return updatedRoom;
     }
 
     static async listRooms(userId, page, limit) {

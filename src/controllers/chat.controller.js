@@ -94,7 +94,7 @@ class ChatController {
     removeUsersFromRoom = async (req, res, next) => {
         const room_id = req.params.room_id;
         const user_ids = req.body.user_ids;
-
+        const userId = req.user.userId;
         const removeUsersFromRoomValidate = Joi.object({
             user_ids: Joi.array().required(),
         });
@@ -105,8 +105,6 @@ class ChatController {
               message: error.details[0].message,
             });
         }
-
-        const userId = req.user.userId;
 
         new OK ({
             message: "Users removed from room successfully",

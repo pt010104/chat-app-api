@@ -158,17 +158,17 @@ class RoomRepository {
 
         await Promise.all(redisOperations);
     };
-    
-    updateRedisCacheForListRoom = async (room_id,userId) => {
-        try{
+
+    updateRedisCacheForListRoom = async (room_id, userId) => {
+        try {
             const roomListKey = `room:${userId}`;
             console.log(roomListKey + "meo meo");
             const roomList = await RedisService.get(roomListKey);
-            if(roomList){
+            if (roomList) {
                 console.log(roomList + "enter list room");
                 const parsedRoomList = JSON.parse(roomList);
                 if (Array.isArray(parsedRoomList)) {
-                    const updatedRoomList = parsedRoomList.filter( _id => id !== room_id);
+                    const updatedRoomList = parsedRoomList.filter(_id => id !== room_id);
                     if (updatedRoomList.length > 0) {
                         await RedisService.set(roomListKey, JSON.stringify(updatedRoomList));
                     } else {
@@ -180,34 +180,13 @@ class RoomRepository {
                 }
             }
         }
-         catch (error) {
+        catch (error) {
             console.log("kkki");
             throw new BadRequestError(error);
         }
     }
 
-    updateRedisCacheForListRoomLeave = async (room_id,userId) => {
-        try{
-            const roomListKey = `room:${userId}`;
-            const roomList = await RedisService.get(roomListKey);
-            if(roomList){
-                const parsedRoomList = JSON.parse(roomList);
-                if (Array.isArray(parsedRoomList)) {
-                    const updatedRoomList = parsedRoomList.filter(id => id !== room_id);
-                    if (updatedRoomList.length > 0) {
-                        await RedisService.set(roomListKey, JSON.stringify(updatedRoomList));
-                    } else {
-                        await RedisService.delete(roomListKey);
-                    }
-                } else {
-                    throw new BadRequestError(`Expected room list to be an array, but got ${typeof parsedRoomList}`);
-                }
-            }
-        }
-         catch (error) {
-            throw new BadRequestError(error);
-        }
-    }
+
     addUsersToRoom = async (room_id, newUserIds) => {
         const updatedRoom = await RoomModel.findByIdAndUpdate(
             room_id,
@@ -258,30 +237,10 @@ class RoomRepository {
 
         return updatedRoom;
     };
-    
-    deleteListRoomRedisAfterRemoveUser = async (room_id, user_ids,userId) => {
-        const room = await RoomModel.findById(room_id).lean();
-        for (let i = 0; i < user_ids.length; i++) {
-            const key = `room:${user_ids[i]}`;
-            await RedisService.delete(key);
-            console.log("delete list room1 "+ key);
-        }
-       
-        for(let i=0;i<room.user_ids.length;i++){
-            if(room.user_ids[i].toString()!==userId.toString()){
-            const key = `room:${room.user_ids[i]}`;
-            await RedisService.delete(key);
-            console.log("delete list room2 "+ key);
-            }
-        } 
-    }
+
 
     deleteRoomDb = async (room_id) => {
-        console.log(room_id);
-        const find=await RoomModel.findByIdAndDelete(room_id);
-       if(find){
-           console.log("deleted");
-       }
+        await RoomModel.findByIdAndDelete(room_id);
     }
 
     deleteRoomRedis = async (room_id) => {
@@ -289,52 +248,37 @@ class RoomRepository {
         await RedisService.delete(key);
     }
 
-    //this function for list and delete room in redis of userId
-    deleteListAndRoomRedis = async (room_id, userId) => {
-        try {
-            const roomListKey = `room:${userId}`;
-            const roomList = await RedisService.get(roomListKey);
-        
-            // If the list exists, filter out the specific room_id
-            if (roomList) {
-                const parsedRoomList = JSON.parse(roomList);
-                console.log(parsedRoomList);
-                // Check if parsedRoomList is actually an array
-                if (Array.isArray(parsedRoomList)) {
-                    const updatedRoomList = parsedRoomList.filter(id => id !== room_id);
-    
-                    // Update the list in Redis, or delete the key if the list is empty
-                    if (updatedRoomList.length > 0) {
-                        await RedisService.set(roomListKey, JSON.stringify(updatedRoomList));
-                    } else {
-                        await RedisService.delete(roomListKey);
+    deleteListRoomRemoveUser = async (roomUser, user_ids) => {
+        for (const removedUserId of user_ids) {
+            const roomListKey = `room:${removedUserId}`;
+            const roomList = await RedisService.lrange(roomListKey, 0, -1);  // Retrieve the full list
+
+            if (roomList && Array.isArray(roomList)) {
+                const updatedRoomList = roomList.filter(room => {
+                    try {
+                        const parsedRoom = JSON.parse(room);
+                        return parsedRoom._id !== roomUser._id; // Compare the `_id` with the room to be removed
+                    } catch (e) {
+                        console.error('Error parsing room:', e);
+                        return true; // If there's an error in parsing, keep the room in the list
+                    }
+                });
+
+                if (updatedRoomList.length > 0) {
+                    // Update the list in Redis by deleting the old one and pushing the new one
+                    await RedisService.delete(roomListKey);  // Delete the existing list
+                    for (const eroom of updatedRoomList) {
+                        await RedisService.rPush(roomListKey, eroom);  // Push each element individually
                     }
                 } else {
-                    throw new BadRequestError(`Expected room list to be an array, but got ${typeof parsedRoomList}`);
+                    await RedisService.delete(roomListKey);  // Delete the key if the list is empty
                 }
+
             }
-    
-            // Check room detail is in redis and ensure it's the correct type before deleting
-            const roomDetailKey = `room:${room_id}`;
-            const roomDetail = await RedisService.get(roomDetailKey);
-            const length = JSON.parse(roomDetail).user_ids.length;
-            if (roomDetail) {
-                const typeOfRoomDetail = await RedisService.type(roomDetailKey);
-                
-                if (typeOfRoomDetail === 'string'  ) {
-                    await RedisService.delete(roomDetailKey);                    
-                } else {
-                    throw new BadRequestError(`Expected room detail to be a string, but got ${typeOfRoomDetail}`);
-                }
-            }
-        } catch (error) {
-            // Handle any errors that occur during the process
-            console.error(`Error deleting room ${room_id} from Redis: ${error}`);
-            throw new BadRequestError(error);
         }
     }
 
-    
 }
+
 
 module.exports = new RoomRepository();
