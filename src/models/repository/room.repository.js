@@ -6,7 +6,7 @@ const { findById } = require('../keytoken.model');
 const { findUserById } = require('./user.repository');
 
 class RoomRepository {
-    transformForClient = async (rooms) => {
+    transformForClient = async (rooms, userID) => {
         if (Array.isArray(rooms)) {
             let data = [];
             for (let i = 0; i < rooms.length; i++) {
@@ -26,7 +26,8 @@ class RoomRepository {
                             dataTransformed.room_avatar = user.avatar; 
                         }
                     } else {
-                        const user = await findUserById(room.user_ids.filter(id => id != room.created_by)[0]);
+                        const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
+                        console.log(user)
                         if (user && user.avatar) {
                             dataTransformed.room_avatar = user.avatar; 
                         }
@@ -47,7 +48,7 @@ class RoomRepository {
                         room_avatar  = user.avatar; 
                     }
                 } else {
-                    const user = await findUserById(rooms.user_ids.filter(id => id != rooms.created_by)[0]);
+                    const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
                     }
@@ -67,7 +68,7 @@ class RoomRepository {
         }
     }
 
-    transformForDetailRoom = async (rooms) => {
+    transformForDetailRoom = async (rooms, userID) => {
         if (Array.isArray(rooms)) {
             let data = [];
             for (let i = 0; i < rooms.length; i++) {
@@ -87,7 +88,7 @@ class RoomRepository {
                             dataTransformed.room_avatar = user.avatar; 
                         }
                     } else {
-                        const user = await findUserById(room.user_ids.filter(id => id != room.created_by)[0]);
+                        const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
                         if (user && user.avatar) {
                             dataTransformed.room_avatar = user.avatar; 
                         }
@@ -124,7 +125,7 @@ class RoomRepository {
                         room_avatar  = user.avatar; 
                     }
                 } else {
-                    const user = await findUserById(rooms.user_ids.filter(id => id != rooms.created_by)[0]);
+                    const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
                     }

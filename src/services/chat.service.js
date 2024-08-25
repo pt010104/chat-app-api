@@ -35,7 +35,7 @@ class ChatService {
         if(params.user_ids.length == 2) {
             const checkExistRoom = await RoomRepository.getRoomByUserIDs(params.user_ids)
             if(checkExistRoom) {
-                return RoomRepository.transformForClient(checkExistRoom)
+                return RoomRepository.transformForClient(checkExistRoom, params.userId)
             }
         }
 
@@ -66,23 +66,23 @@ class ChatService {
 
         let newRoom = await RoomRepository.createRoom(params);
 
-        newRoom = await RoomRepository.transformForClient(newRoom);
+        newRoom = await RoomRepository.transformForClient(newRoom, params.userId);
 
         return newRoom
     }
 
-    static async detailRoom(room_id) {
+    static async detailRoom(room_id, userId) {
         const room = await RoomRepository.getRoomByID(room_id);
         if (!room) {
             throw new NotFoundError("Room not found")
         }
 
-        return RoomRepository.transformForDetailRoom(room)
+        return RoomRepository.transformForDetailRoom(room, userId)
     }
 
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
-        const roomsTransformed = await RoomRepository.transformForClient(rooms);
+        const roomsTransformed = await RoomRepository.transformForClient(rooms, userId);
     
         const messagePromises = rooms.map(room => 
             RedisService.get('newMessage:' + room._id).then(async message => {
@@ -156,7 +156,7 @@ class ChatService {
     
         await RoomRepository.updateRedisCacheForRoom(updatedRoom);
     
-        updatedRoom = await RoomRepository.transformForClient(updatedRoom);
+        updatedRoom = await RoomRepository.transformForClient(updatedRoom, userId);
     
         return updatedRoom;
     }
@@ -179,7 +179,7 @@ class ChatService {
         const updatedRoom = await RoomRepository.updateRoom(room);
         await RoomRepository.updateRedisCacheForRoom(updatedRoom);
 
-        return RoomRepository.transformForClient(updatedRoom);
+        return RoomRepository.transformForClient(updatedRoom, params);
     }
 }
 
