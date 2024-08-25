@@ -9,7 +9,6 @@ class FriendshipController {
 
     // v1/api/friends/list/all
     listFriends = async(req, res, next) => {        
-       //pagination
        try {
         const user_id = req.user.userId;
         const limit = parseInt(req.query.limit, 10) || 10;

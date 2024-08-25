@@ -164,5 +164,42 @@ class FriendShip {
             friend.user_phone === filter
         );
     }
+
+    static removeFriend = async (user_id, friend_id) => {
+        const friend = await FriendShipModel.findOneAndDelete({
+            $or: [
+                { user_id_send: user_id, user_id_receive: friend_id },
+                { user_id_send: friend_id, user_id_receive: user_id }
+            ],
+            status: "accepted"
+        }).lean()
+        
+        if (!friend) {
+            throw new NotFoundError("Friend does not exist")
+        }
+        const key = `listFriends:${user_id}`;
+        await RedisService.delete(key);
+
+        return {
+            friend
+        }
+    }
+
+    static async denyFriendRequest(user_id, request_id) {
+        const denyRequest = await FriendShipModel.findOneAndDelete({
+            _id: request_id,
+            user_id_receive: user_id,
+            status: "pending"
+        }, {
+            status: "rejected",
+        }, {
+            new: true
+        }).lean()
+
+        if (!denyRequest) {
+            throw new NotFoundError("Friend request does not exist")
+        }
+
+    }
 }
 module.exports = FriendShip
