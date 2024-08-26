@@ -14,13 +14,11 @@ const generateOTPRandom = () => {
 
 const newOTP = async ({ email, type }) => {
     const otp = generateOTPRandom();
-    const key = `otp:${email}:${type}`;
-   
-    await RedisService.set(key, otp, 'EX', 180);
+    const key = `otp:${email}:${type}`;   
+    await  RedisService.executeCommand('set', key, otp.toString(), 'EX', 180);
 
     return { email, otp, type };
 
-    return newOTP;
 };
 
 const verifyOTP = async (email, otp, type) => {
