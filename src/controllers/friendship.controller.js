@@ -172,6 +172,27 @@ class FriendshipController {
         }).send(res)
     }
 
+    async listFriendsNotInRoomChat(req, res, next) {
+        const listFriendsNotInRoomChatValidate = Joi.object({
+            room_id: Joi.string().required()
+        });
+
+        const { error } = listFriendsNotInRoomChatValidate.validate(req.params);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const room_id = req.params.room_id 
+        const user_id = req.user.userId
+
+        new SuccessResponse({
+            message: "List friends not in room",
+            metadata: await FriendShip.listFriendsNotInRoomChat(user_id, room_id)
+        }).send(res)
+    }
+
 }
 
 module.exports = new FriendshipController()
