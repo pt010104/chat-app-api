@@ -75,10 +75,11 @@ class UserController {
     }
 
     const { filter } = req.query;
+    const userID = req.user.userId;
 
     new SuccessResponse({
       message: "Search for user successful",
-      metadata: await UserService.SearchForUser(filter),
+      metadata: await UserService.SearchForUser(filter, userID),
     }).send(res);
   };
 }

@@ -34,16 +34,21 @@ class UserService {
     return result;
   };
 
-  static SearchForUser = async (filter) => {
-    const users = await UserModel.find({
-      $or: [
-        { name: { $regex: filter, $options: "i" } },
-        { email: filter },
-        { phone: filter },
-      ],
-    }).select("-password");
-
-    return users;
+  static SearchForUser = async (filter, userID) => {
+      const users = await UserModel.find({
+        $and: [
+          { _id: { $ne: userID } },
+          {
+            $or: [
+              { name: { $regex: filter, $options: "i" } },
+              { email: filter },
+              { phone: filter },
+            ],
+          },
+        ],
+      }).select("-password");
+  
+      return users;
   }
 }
 
