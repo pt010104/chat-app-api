@@ -29,9 +29,10 @@ class FriendShip {
         const friends = await this.findFriends(user_id);
 
         const paginatedFriends = friends.slice(offset, offset + limit);
-        
+
+        console.log("friends")
         const friendPromises = paginatedFriends.map(async (friend) => {
-            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
                 const friend_info = await findUserById(friend_id);
                 return FriendRepo.transformFriend(friend_info);
