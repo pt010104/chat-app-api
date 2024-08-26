@@ -179,14 +179,13 @@ class FriendShip {
         }
         const key = `listFriends:${user_id}`;
         await RedisService.delete(key);
-
         return {
             friend
         }
     }
 
     static async denyFriendRequest(user_id, request_id) {
-        const denyRequest = await FriendShipModel.findOneAndDelete({
+        const denyRequest = await FriendShipModel.findOneAndUpdate({
             _id: request_id,
             user_id_receive: user_id,
             status: "pending"
@@ -200,6 +199,18 @@ class FriendShip {
             throw new NotFoundError("Friend request does not exist")
         }
 
+    }
+
+    static async checkIsFriend(user_id, friend_id) {
+        const friend = await FriendShipModel.findOne({
+            $or: [
+                { user_id_send: user_id, user_id_receive: friend_id },
+                { user_id_send: friend_id, user_id_receive: user_id }
+            ],
+            status: "accepted"
+        }).lean()
+
+        return friend ? true : false;
     }
 }
 module.exports = FriendShip

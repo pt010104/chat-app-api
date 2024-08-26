@@ -144,7 +144,32 @@ class FriendshipController {
         
     }
     async denyFriendRequest(req, res) {
+        const friendValidate = Joi.object({
+            request_id: Joi.string().required()
+        });
 
+        const { error } = friendValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const user_id = req.user.userId
+        const { request_id } = req.body
+        new SuccessResponse({
+            message: "Friend request denied",
+            metadata: await FriendShip.denyFriendRequest(user_id, request_id)
+        }).send(res)
+    }
+
+    async checkIsFriend(req, res) {
+        const user_id = req.user.userId
+        const friend_id = req.body.id
+        new SuccessResponse({
+            message: "Check is friend",
+            metadata: await FriendShip.checkIsFriend(user_id, friend_id)
+        }).send(res)
     }
 
 }
