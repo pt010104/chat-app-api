@@ -58,7 +58,8 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
     if (message && socket) {
         const userId = socket.io.opts.query.user_id;
         const roomId = document.getElementById('roomIdInput').value.trim();
-        sendMessage(roomId, message);
+        sendMessage(roomId, `${userId}: ${message}`);
+        messageInput.value = ''; // Clear the input box after sending
     } else {
         log('Cannot send an empty message or socket is not connected');
     }
