@@ -31,7 +31,6 @@ class UserService {
   
   static checkOTP = async (email, otp, type) => {
     const result = await verifyOTP(email, otp, type);
-  
     return result;
   };
 
