@@ -14,7 +14,9 @@ class FriendShip {
 
         if (!friends) {
             friends = await FriendRepo.listFriends(user_id);
-            await RedisService.set(key, JSON.stringify(friends), 3600);
+            if (friends) {
+                await RedisService.set(key, JSON.stringify(friends), 3600);
+            }
         } else {
             friends = JSON.parse(friends);
         }
@@ -27,9 +29,10 @@ class FriendShip {
         const friends = await this.findFriends(user_id);
 
         const paginatedFriends = friends.slice(offset, offset + limit);
-        
+
+        console.log("friends")
         const friendPromises = paginatedFriends.map(async (friend) => {
-            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
                 const friend_info = await findUserById(friend_id);
                 return FriendRepo.transformFriend(friend_info);
@@ -124,7 +127,7 @@ class FriendShip {
 
     static cancelFriendRequest = async (user_id, request_id) => {
         const cancelRequest = await FriendShipModel.findOneAndDelete({
-            user_id_send: user_id,
+            user_id_receive: user_id,
             _id: request_id,
             status: "pending"
         }).lean()

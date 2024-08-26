@@ -35,11 +35,6 @@ class UserService {
   };
 
   static SearchForUser = async (filter) => {
-    const cachedResult = await RedisService.get(`userSearch:${filter}`);
-    if (cachedResult) {
-      return JSON.parse(cachedResult);
-    }
-
     const users = await UserModel.find({
       $or: [
         { name: { $regex: filter, $options: "i" } },
@@ -47,8 +42,6 @@ class UserService {
         { phone: filter },
       ],
     }).select("-password");
-
-    await RedisService.set(`userSearch:${filter}`, JSON.stringify(users), 1800); 
 
     return users;
   }
