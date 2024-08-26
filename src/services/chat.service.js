@@ -102,31 +102,7 @@ class ChatService {
         }));
     }
 
-    static async deleteMessage(message_id, userId) {
-        const message = await ChatRepository.getMessageById(message_id);
-
-        if (!message) {
-            throw new NotFoundError("Message not found");
-        }
-
-        if (message.user_id.toString() !== userId.toString()) {
-            throw new BadRequestError("You are not allowed to delete this message");
-        }
-
-        await ChatRepository.deleteMessage(message_id);
-    }
-
-    static async editMessage(message_id, userId, content) {
-        const message = await ChatRepository.getMessageById(message_id);
-        if (!message) {
-            throw new NotFoundError("Message not found");
-        }
-        if (message.user_id.toString() !== userId.toString()) {
-            throw new BadRequestError("You are not allowed to edit this message");
-        }
-
-        await ChatRepository.editMessage(message_id, content, userId);
-    }
+   
 
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;

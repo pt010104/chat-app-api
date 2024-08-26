@@ -367,13 +367,13 @@ class RoomRepository {
     deleteListRoomRemoveUser = async (roomUser, user_ids) => {
         for (const removedUserId of user_ids) {
             const roomListKey = `room:${removedUserId}`;
-            const roomList = await RedisService.lrange(roomListKey, 0, -1);  // Retrieve the full list
+            const roomList = await RedisService.lrange(roomListKey, 0, -1);  
 
             if (roomList && Array.isArray(roomList)) {
                 const updatedRoomList = roomList.filter(room => {
                     try {
                         const parsedRoom = JSON.parse(room);
-                        return parsedRoom._id !== roomUser._id; // Compare the `_id` with the room to be removed
+                        return parsedRoom._id !== roomUser._id; 
                     } catch (e) {
                         console.error('Error parsing room:', e);
                         return true; // If there's an error in parsing, keep the room in the list
@@ -381,13 +381,12 @@ class RoomRepository {
                 });
 
                 if (updatedRoomList.length > 0) {
-                    // Update the list in Redis by deleting the old one and pushing the new one
-                    await RedisService.delete(roomListKey);  // Delete the existing list
+                    await RedisService.delete(roomListKey);  
                     for (const eroom of updatedRoomList) {
                         await RedisService.rPush(roomListKey, eroom);  // Push each element individually
                     }
                 } else {
-                    await RedisService.delete(roomListKey);  // Delete the key if the list is empty
+                    await RedisService.delete(roomListKey);  
                 }
 
             }
