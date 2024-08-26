@@ -215,7 +215,6 @@ class RoomRepository {
         let rooms = await RedisService.getMessages(type, user_id);
 
         if (rooms.length > 0) {
-            console.log('redis ok')
             return rooms
         }
 
