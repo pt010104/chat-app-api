@@ -13,8 +13,6 @@ route.post('/add-users/:room_id', asyncHandler(chatController.addUsersToRoom));
 route.post('/remove-users/:room_id', asyncHandler(chatController.removeUsersFromRoom));
 route.post('/leave/:room_id', asyncHandler(chatController.leaveRoom));
 route.get('/list-rooms', asyncHandler(chatController.listRooms));
-route.get('/delete/:room_id', asyncHandler(chatController.deleteMessage));
-route.get('/edit/:room_id', asyncHandler(chatController.editMessage));
 route.get('/:room_id', asyncHandler(chatController.detailRoom));
 route.patch('/:room_id', asyncHandler(chatController.updateRoom));
 
