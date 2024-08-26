@@ -14,7 +14,6 @@ class SocketServices {
             await RedisService.setUserStatus(user_id, 'online');
     
             //Join vào user_id channel để nhận message từ home
-            socket.join(`user_${user_id}`);
             socket.emit('connected', user_id);
     
             this.registerEventHandlers(socket, user_id);
@@ -30,6 +29,7 @@ class SocketServices {
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
+        socket.on('join user', userId => this.handleJoinUser(socket, userId))
         socket.on('read message', (roomId, status) => this.MarkMessage(socket, roomId, status))
         socket.on('error', error => this.handleError(socket, error))
     }
@@ -62,6 +62,11 @@ class SocketServices {
     handleJoinRoom(socket, roomId) {
         socket.join(roomId);
         socket.emit('joined room', roomId);
+    }
+
+    handleJoinUser(socket, userId) {
+        socket.join(`user_${userId}`);
+        socket.emit('joined user', userId);
     }
 
     handleError(socket, error) {

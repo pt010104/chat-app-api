@@ -23,7 +23,7 @@
         <div class="content">
             <h1>Friendship Routes</h1>
 
-            <h3>GET /v1/api/friends/list/all (Chưa có)</h3>
+            <h3>GET /v1/api/friends/list/all</h3>
             <div class="indent">
                 <p><strong>Description:</strong> Get a list of all friends.</p>
                 <p><strong>URL:</strong> <code>/v1/api/friends/list/all</code></p>
@@ -34,8 +34,52 @@ x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
 {
-    "message": "List of friends",
-    "metadata": { ...friendsList }
+    "message": "List friends",
+    "status": 200,
+    "metadata": [
+        {
+            "id": "66a5b5c9d52b0386c76e99d5",
+            "user_name": "test001",
+            "user_email": "haigr2004@gmail.com",
+            "avatar": "https://i.pinimg.com/474x/8a/eb/67/8aeb672598aaabad530c6f401fc2cf35.jpg"
+        },
+        {
+            "id": "66a78c888768d98d7fa40fdc",
+            "user_name": "test001",
+            "user_email": "thinhtest25@gmail.com",
+            "avatar": "https://i.pinimg.com/474x/8a/eb/67/8aeb672598aaabad530c6f401fc2cf35.jpg"
+        },
+        {
+            "id": "665eade43b456fb822c35e8d",
+            "user_name": "thinhtest3",
+            "user_email": "thinhtest234@gmail.com",
+            "avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/665eade43b456fb822c35e8d/665eade43b456fb822c35e8d_1721990318358.jpg?_a=BAMADKXw0"
+        }
+    ]
+}</code></pre>
+            </div>
+
+            <h3>GET /v1/api/friends/search-friend</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Search for a friend using their email, phone, or name.</p>
+                <p><strong>URL:</strong> <code>/v1/api/friends/search-friend?filter=&lt;query&gt;</code></p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Search friend",
+    "status": 200,
+    "metadata": [
+        {
+            "id": "665eade43b456fb822c35e8d",
+            "user_name": "thinhtest3",
+            "user_email": "thinhtest234@gmail.com",
+            "avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/665eade43b456fb822c35e8d/665eade43b456fb822c35e8d_1721990318358.jpg?_a=BAMADKXw0"
+        }
+    ]
 }</code></pre>
             </div>
 
@@ -65,7 +109,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
-    "user_id_recieve": "string (required)"
+    "user_id_receive": "string (required)"
 }</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
