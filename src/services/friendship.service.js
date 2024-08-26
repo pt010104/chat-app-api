@@ -30,7 +30,6 @@ class FriendShip {
 
         const paginatedFriends = friends.slice(offset, offset + limit);
 
-        console.log("friends")
         const friendPromises = paginatedFriends.map(async (friend) => {
             const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
@@ -85,12 +84,15 @@ class FriendShip {
         }
 
         const check_request = await FriendShipModel.findOne({
-            user_id_send: user_id,
-            user_id_receive: user_id_receive
-        }).lean()
+            $or: [
+                { user_id_send: user_id, user_id_receive: user_id_receive },
+                { user_id_send: user_id_receive, user_id_receive: user_id }
+            ]
+        }).lean();
         if (check_request) {
             throw new BadRequestError("Friend request already exists")
         }
+
         const sendRequest = await FriendShipModel.create({
             user_id_send: user_id,
             user_id_receive: user_id_receive,
@@ -201,15 +203,19 @@ class FriendShip {
     }
 
     static async checkIsFriend(user_id, friend_id) {
-        const friend = await FriendShipModel.findOne({
-            $or: [
-                { user_id_send: user_id, user_id_receive: friend_id },
-                { user_id_send: friend_id, user_id_receive: user_id }
-            ],
-            status: "accepted"
-        }).lean()
+        const friends = await this.findFriends(user_id);
 
-        return friend ? true : false;
+        if (friends.length === 0) {
+            return false;
+        }
+
+        friends.forEach(friend => {
+            if (friend._id == friend_id) {
+                return true
+            }
+        })
+
+        return false
     }
 }
 module.exports = FriendShip
