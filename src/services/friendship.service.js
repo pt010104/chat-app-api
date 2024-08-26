@@ -146,9 +146,7 @@ class FriendShip {
     
         const regex = new RegExp(filter, 'i');
         const transformPromises = friends.map(async (friend) => {
-            friend.user_id_send = friend.user_id_send.toString();
-            friend.user_id_receive = friend.user_id_receive.toString();
-            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
                 const friend_info = await findUserById(friend_id)
                 const transformed_friend = await FriendRepo.transformFriend(friend_info);
@@ -182,9 +180,7 @@ class FriendShip {
         }
         const key = `listFriends:${user_id}`;
         await RedisService.delete(key);
-        return {
-            friend
-        }
+        return friend
     }
 
     static async denyFriendRequest(user_id, request_id) {
