@@ -131,6 +131,56 @@ class FriendshipController {
         }).send(res)
         
     }
+    async denyFriendRequest(req, res) {
+        const friendValidate = Joi.object({
+            request_id: Joi.string().required()
+        });
+
+        const { error } = friendValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const user_id = req.user.userId
+        const { request_id } = req.body
+        new SuccessResponse({
+            message: "Friend request denied",
+            metadata: await FriendShip.denyFriendRequest(user_id, request_id)
+        }).send(res)
+    }
+
+    async checkIsFriend(req, res) {
+        const user_id = req.user.userId
+        const friend_id = req.body.id
+        new SuccessResponse({
+            message: "Check is friend",
+            metadata: await FriendShip.checkIsFriend(user_id, friend_id)
+        }).send(res)
+    }
+
+    async listFriendsNotInRoomChat(req, res, next) {
+        const listFriendsNotInRoomChatValidate = Joi.object({
+            room_id: Joi.string().required()
+        });
+
+        const { error } = listFriendsNotInRoomChatValidate.validate(req.params);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const room_id = req.params.room_id 
+        const user_id = req.user.userId
+
+        new SuccessResponse({
+            message: "List friends not in room",
+            metadata: await FriendShip.listFriendsNotInRoomChat(user_id, room_id)
+        }).send(res)
+    }
+
 }
 
 module.exports = new FriendshipController()

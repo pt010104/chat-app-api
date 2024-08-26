@@ -6,6 +6,7 @@ const UserProfile = require('./profile.service')
 const RedisService = require("./redis.service")
 const FriendRepo = require('../models/repository/friend.repository')
 const { findUserById } = require('../models/repository/user.repository')
+const roomRepository = require('../models/repository/room.repository')
 
 class FriendShip {
     static async findFriends(user_id) {
@@ -218,6 +219,36 @@ class FriendShip {
         })
 
         return false
+    }
+
+    static async listFriendsNotInRoomChat(userID, room_id) {
+        const friends = await this.findFriends(userID);
+
+        const friends_ids = friends.map(friend => {
+            return userID == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+        });
+
+        console.log(friends_ids)
+
+        const room = await roomRepository.getRoomByID(room_id)
+        const room_user_ids = room.user_ids
+
+        console.log(room_user_ids)
+
+        const friends_not_in_room = friends_ids.filter(friend_id => !room_user_ids.includes(friend_id));
+
+        const promises = friends_not_in_room.map(async (friend_id) => {
+            try {
+                const friend_info = await findUserById(friend_id);
+                return FriendRepo.transformFriend(friend_info);
+            } catch (error) {
+                console.error(`Error processing friend ${friend_id}:`, error);
+                return null;
+            }
+        });
+
+        const results = await Promise.all(promises);
+        return results.filter(Boolean);
     }
 }
 module.exports = FriendShip
