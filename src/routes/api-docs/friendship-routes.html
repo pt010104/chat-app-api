@@ -158,6 +158,22 @@ x-client-id: &lt;client_id&gt;</code></pre>
     "metadata": { ...cancelRequestDetails }
 }</code></pre>
             </div>
+
+            <h3>POST /v1/api/friends/list/:room_id</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> List friends not in a specific room.</p>
+                <p><strong>URL:</strong> <code>/v1/api/friends/list/:room_id</code></p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Friends not in the room",
+    "metadata": { ...friendsNotInRoomDetails }
+}</code></pre>
+            </div>
         </div>
     </div>
 </body>
