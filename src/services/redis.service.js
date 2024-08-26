@@ -49,6 +49,10 @@ class RedisService {
         return this.executeCommand('exists', key);
     }
 
+    keys(pattern) {
+        return this.executeCommand('keys', pattern);
+    }
+
     setUserStatus(userId, status) {
         return this.set(userId, status);
     }
@@ -88,18 +92,11 @@ class RedisService {
     
     
     
-    async getMessages(type, id, limit = 0, skip = 0) {
+    async getMessages(type, id) {
         const key = `${type}:${id}`;
     
         let existingMessages;
-    
-        if (skip > 0 || limit > 0) {
-            const end = limit > 0 ? skip + limit - 1 : -1;
-            existingMessages = await this.executeCommand('lRange', key, skip, end);
-        } else {
-            existingMessages = await this.executeCommand('lRange', key, 0, -1);
-        }
-        
+        existingMessages = await this.executeCommand('lRange', key, 0, -1);
         const parsedMessages = existingMessages.map(msg => JSON.parse(msg));
     
         return parsedMessages;

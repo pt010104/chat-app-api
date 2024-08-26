@@ -1,8 +1,4 @@
-const socket = io('http://localhost:5050', {
-    query: {
-        user_id: '668a4c9c1174c565154564c6'
-    }
-});
+let socket;
 
 function log(message) {
     const logArea = document.getElementById('logArea');
@@ -12,39 +8,60 @@ function log(message) {
     console.log(`[${timestamp}] ${message}`);
 }
 
-socket.on('connect', () => {
-    const userId = socket.io.opts.query.user_id;
-    log(`Connected to server with user ID: ${userId}`);
+document.getElementById('connectButton').addEventListener('click', () => {
+    const userIdInput = document.getElementById('userIdInput');
+    const roomIdInput = document.getElementById('roomIdInput');
+    const userId = userIdInput.value.trim();
+    const roomId = roomIdInput.value.trim();
+
+    if (userId && roomId) {
+        socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
+            query: {
+                user_id: userId
+            }
+        });
+
+        socket.on('connect', () => {
+            log(`Connected to server with user ID: ${userId}`);
+            socket.emit('join room', roomId);
+            document.getElementById('sendMessageButton').disabled = false; // Enable the send button after connection
+        });
+
+        socket.on('joined room', (roomId) => {
+            log(`Successfully joined room: ${roomId}`);
+        });
+
+        socket.on('new message', (data) => {
+            log(`Received new message:`);
+            if (data && data.data && data.data.message) {
+                log(data.data.message);
+            }
+        });
+
+        socket.on('disconnect', () => {
+            log('Disconnected from server');
+            document.getElementById('sendMessageButton').disabled = true; // Disable the send button on disconnect
+        });
+
+        socket.on('error', (error) => {
+            log('Connection error: ' + error);
+        });
+    } else {
+        log('User ID and Room ID cannot be empty');
+    }
 });
 
-socket.on('connected', (userId) => {
-    log(`Successfully joined to channel user_${userId}`);
+document.getElementById('sendMessageButton').addEventListener('click', () => {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
 
-})
-
-socket.on('ready', () => {
-    const roomId = '66981da2388da84552594a90';
-    socket.emit('join room', roomId);
-});
-
-socket.on('joined room', (roomId) => {
-    log(`Successfully joined room: ${roomId}`);
-});
-
-socket.on('chat message', (data) => {
-    log('Received chat message: ' + JSON.stringify(data));
-});
-
-socket.on('new message', (data) => {
-    log('Received new message: ' + JSON.stringify(data));
-});
-
-socket.on('disconnect', () => {
-    log('Disconnected from server');
-});
-
-socket.on('error', (error) => {
-    log('Connection error: ' + error);
+    if (message && socket) {
+        const userId = socket.io.opts.query.user_id;
+        const roomId = document.getElementById('roomIdInput').value.trim();
+        sendMessage(roomId, message);
+    } else {
+        log('Cannot send an empty message or socket is not connected');
+    }
 });
 
 function sendMessage(room_id, message) {
@@ -52,15 +69,3 @@ function sendMessage(room_id, message) {
     log('Sending message: ' + JSON.stringify(messageData));
     socket.emit('chat message', messageData);
 }
-
-function connectRoom(roomId) {
-    socket.emit('join room', roomId);
-}
-
-document.getElementById('sendMessageButton').addEventListener('click', () => {
-    sendMessage('66981da2388da84552594a90', 'Message sent from button');
-});
-
-document.getElementById('connectRoomButton').addEventListener('click', () => {
-    connectRoom('66981da2388da84552594a90');
-});

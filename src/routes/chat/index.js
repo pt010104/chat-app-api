@@ -15,4 +15,7 @@ route.post('/leave/:room_id', asyncHandler(chatController.leaveRoom));
 route.get('/list-rooms', asyncHandler(chatController.listRooms));
 route.get('/delete/:room_id', asyncHandler(chatController.deleteMessage));
 route.get('/edit/:room_id', asyncHandler(chatController.editMessage));
+route.get('/:room_id', asyncHandler(chatController.detailRoom));
+route.patch('/:room_id', asyncHandler(chatController.updateRoom));
+
 module.exports = route;

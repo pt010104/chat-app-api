@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socket.IO Chat</title>
+    <title>Chat App</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/index.js" defer></script>
     <style>
+        #userIdInput, #roomIdInput, #messageInput {
+            width: calc(100% - 120px);
+            padding: 5px;
+            font-size: 1em;
+        }
+        #connectButton, #sendMessageButton {
+            padding: 5px 10px;
+            font-size: 1em;
+            margin-top: 10px;
+        }
         #messageLabel {
             display: block;
             margin-top: 20px;
@@ -25,7 +35,11 @@
     </style>
 </head>
 <body>
-    <button id="sendMessageButton">Send Message</button>
+    <input type="text" id="userIdInput" placeholder="Enter User ID" value="668a4c9c1174c565154564c6" />
+    <input type="text" id="roomIdInput" placeholder="Enter Room ID" value="66981da2388da84552594a90" />
+    <button id="connectButton">Connect</button>
+    <input type="text" id="messageInput" placeholder="Type your message here..." />
+    <button id="sendMessageButton" disabled>Send Message</button>
     <label id="messageLabel">No messages yet</label>
     <div id="logArea"></div>
 </body>

@@ -34,8 +34,8 @@ class ChatService {
         //Chỉ có trường hợp one-to-one chat mới check exist room
         if (params.user_ids.length == 2) {
             const checkExistRoom = await RoomRepository.getRoomByUserIDs(params.user_ids)
-            if (checkExistRoom) {
-                return RoomRepository.transformForClient(checkExistRoom)
+            if(checkExistRoom) {
+                return RoomRepository.transformForClient(checkExistRoom, params.userId)
             }
         }
 
@@ -64,19 +64,26 @@ class ChatService {
 
         params.created_by = params.userId
 
-        console.log(params)
-
         let newRoom = await RoomRepository.createRoom(params);
 
-        newRoom = await RoomRepository.transformForClient(newRoom);
+        newRoom = await RoomRepository.transformForClient(newRoom, params.userId);
 
         return newRoom
     }
 
+    static async detailRoom(room_id, userId) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found")
+        }
+
+        return RoomRepository.transformForDetailRoom(room, userId)
+    }
+
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
-        const roomsTransformed = await RoomRepository.transformForClient(rooms);
-
+        const roomsTransformed = await RoomRepository.transformForClient(rooms, userId);
+    
         const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
@@ -86,7 +93,7 @@ class ChatService {
                 return null;
             })
         );
-
+                           
         const messageResults = await Promise.all(messagePromises);
 
         return roomsTransformed.map((room, index) => ({
@@ -126,7 +133,7 @@ class ChatService {
         await RedisService.set(key, JSON.stringify(message));
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 10) {
+    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
         const skip = (page - 1) * limit;
 
         const [room, messages, totalMessages] = await Promise.all([
@@ -174,10 +181,31 @@ class ChatService {
         updatedRoom = await RoomRepository.updateRoom(updatedRoom);
 
         await RoomRepository.updateRedisCacheForRoom(updatedRoom);
-
-        updatedRoom = await RoomRepository.transformForClient(updatedRoom);
-
+    
+        updatedRoom = await RoomRepository.transformForClient(updatedRoom, userId);
+    
         return updatedRoom;
+    }
+
+    static async updateRoom(params) {
+        const room = await RoomRepository.getRoomByID(params.room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        if (params.name) {
+            room.name = params.name;
+            room.auto_name = false;
+        }
+
+        if (params.avt_url && room.is_group) {
+            room.avt_url = params.avt_url;
+        }
+
+        const updatedRoom = await RoomRepository.updateRoom(room);
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+
+        return RoomRepository.transformForClient(updatedRoom, params);
     }
 
     static async removeUsersFromRoom(room_id, user_ids, userId) {

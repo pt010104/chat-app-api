@@ -8,7 +8,7 @@ const router = express.Router();
 router.use("/api-docs", express.static(path.join(__dirname, 'api-docs')));
 
 
-router.get('/', (req, res) => {
+router.get('/page1', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'index.html'));
 });
 

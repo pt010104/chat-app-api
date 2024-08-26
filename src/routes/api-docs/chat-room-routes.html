@@ -23,13 +23,69 @@
         <div class="content">
             <h1>Chat Room Routes</h1>
 
+            <h3>GET /v1/api/room/:room_id</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Retrieve details of a specific chat room.</p>
+                <p><strong>URL:</strong> <code>/v1/api/room/:room_id</code></p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Response:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Room detail retrieved successfully",
+    "status": 200,
+    "metadata": {
+        "room_id": "66981da2388da84552594a90",
+        "room_name": "Thịnh Trần",
+        "is_group": false,
+        "room_user_ids": [
+            "6697de6d3786fe3f2bc2c125",
+            "668a4c9c1174c565154564c6"
+        ],
+        "room_avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/6697de6d3786fe3f2bc2c125/6697de6d3786fe3f2bc2c125_1722718769419.jpg?_a=BAMADKZU0"
+    }
+}</code></pre>
+            </div>
+
+            <h3>PATCH /v1/api/room/:room_id</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Update details of a specific chat room.</p>
+                <p><strong>URL:</strong> <code>/v1/api/room/:room_id</code></p>
+                <p><strong>Method:</strong> PATCH</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "name": "string (optional)",
+    "avt_url": "string (optional)"
+}</code></pre>
+                <p><strong>Response:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Room updated successfully",
+    "status": 200,
+    "metadata": {
+        "room_id": "66981da2388da84552594a90",
+        "room_name": "Thịnh Trann",
+        "is_group": false,
+        "room_user_ids": [
+            "6697de6d3786fe3f2bc2c125",
+            "668a4c9c1174c565154564c6"
+        ],
+        "room_avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/6697de6d3786fe3f2bc2c125/6697de6d3786fe3f2bc2c125_1722718769419.jpg?_a=BAMADKZU0"
+    }
+}</code></pre>
+
             <h3>POST /v1/api/room/create</h3>
             <div class="indent">
                 <p><strong>Description:</strong> Create a new chat room.</p>
                 <p><strong>URL:</strong> <code>/v1/api/room/create</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
@@ -60,7 +116,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/new-messages</code></p>
                 <p><strong>Method:</strong> GET</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
@@ -106,7 +162,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/messages/:room_id</code></p>
                 <p><strong>Method:</strong> GET</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Query Parameters:</strong></p>
                 <pre><code>page: integer
@@ -149,7 +205,7 @@ limit: integer</code></pre>
                 <p><strong>URL:</strong> <code>/v1/api/room/add-users/:room_id</code></p>
                 <p><strong>Method:</strong> POST</p>
                 <p><strong>Headers:</strong></p>
-                <pre><code>authorization: Bearer &lt;token&gt;
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{

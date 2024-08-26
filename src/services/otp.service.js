@@ -6,6 +6,7 @@ const { createTokenPair } = require("../auth/authUtils");
 const KeyTokenService = require("./keyToken.service");
 const KeyRepository = require("../models/repository/key.repository");
 const crypto = require("node:crypto");
+const RedisService = require("./redis.service");
 
 const generateOTPRandom = () => {
     return Math.floor(100000 + Math.random() * 900000);
@@ -13,59 +14,47 @@ const generateOTPRandom = () => {
 
 const newOTP = async ({ email, type }) => {
     const otp = generateOTPRandom();
-    const newOTP = await OTP.findOneAndUpdate({
-        email: email,
-        type: type
-    }, {
-        email: email,
-        otp: otp,
-        type: type
-    }, {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true
-    })
+    const key = `otp:${email}:${type}`;   
+    await  RedisService.executeCommand('set', key, otp.toString(), 'EX', 180);
 
-    return newOTP;
+    return { email, otp, type };
+
 };
 
 const verifyOTP = async (email, otp, type) => {
-    const _otp = await OTP.findOne({
-        email: email,
-        otp: otp,
-        type: type,
-    });
-
-    if (!_otp) {
+    const key = `otp:${email}:${type}`;
+    
+    // Retrieve the OTP from Redis
+    const storedOtp = await RedisService.get(key);
+    
+    if (!storedOtp || storedOtp !== otp) {
         throw new Error("OTP not found or invalid");
     }
 
-    await OTP.deleteOne({
-        email: email,
-        otp: otp,
-        type: type
-    })
+    // Delete the OTP from Redis after verification
+    await RedisService.delete(key);
 
-    if (type == "reset-password") {
+    if (type === "reset-password") {
         const user = await findUserByEmail(email);
         const keyStore = await KeyTokenService.FindOrCreateKeyToken(user._id);
 
-        console.log("KeyStore: ", keyStore);
-        const tokens = await createTokenPair({
-            email: email,
-            userId: user._id,
-        },
-        keyStore.public_key,
-        keyStore.private_key
-    );        
+        const tokens = await createTokenPair(
+            {
+                email: email,
+                userId: user._id,
+            },
+            keyStore.public_key,
+            keyStore.private_key
+        );
+        
         return {
-            otp: _otp,
+            otp: storedOtp,
             user_id: user._id,
             tokens: tokens
         };
     }
 
-    return _otp;
+    return { email, otp, type };
 };
 
 module.exports = {

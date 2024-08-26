@@ -7,6 +7,8 @@ const { findUserById } = require('./user.repository');
 const RedisService = require('../../services/redis.service');
 const { chat } = require('googleapis/build/src/apis/chat');
 
+const MESSAGES_PER_PAGE = 12;
+
 class ChatRepository {
     transform(chatData) {
         return {
@@ -20,32 +22,34 @@ class ChatRepository {
     }
 
     transformForClient = async(chatData) => {
-        console.log(chatData)
-        const user = await findUserById(chatData.user_id);
-        const user_name = user.name;
-        const user_avatar = user.avatar;
-        const user_avatar_thumb = user.thumb_avatar;
+        try {
+            const user = await findUserById(chatData.user_id);
+            const user_name = user.name;
+            const user_avatar = user.avatar;
+            const user_avatar_thumb = user.thumb_avatar;
 
-        console.log(chatData)
-        const transformedData = {
-            user_id: chatData.user_id.toString(),
-            message: chatData.message,
-            updated_at: chatData.updatedAt,
-            created_at: chatData.createdAt,
-            status: chatData.status,
-        };
+            const transformedData = {
+                user_id: chatData.user_id.toString(),
+                message: chatData.message,
+                updated_at: chatData.updatedAt,
+                created_at: chatData.createdAt,
+                status: chatData.status,
+            };
 
-        if (user_name) {
-            transformedData.user_name = user_name;
+            if (user_name) {
+                transformedData.user_name = user_name;
+            }
+            if (user_avatar) {
+                transformedData.user_avatar = user_avatar;
+            }
+            if (user_avatar_thumb) {
+                transformedData.user_avatar_thumb = user_avatar_thumb;
+            }
+
+            return transformedData;
+        } catch (error) {
+            return 
         }
-        if (user_avatar) {
-            transformedData.user_avatar = user_avatar;
-        }
-        if (user_avatar_thumb) {
-            transformedData.user_avatar_thumb = user_avatar_thumb;
-        }
-        
-        return transformedData
     }
 
     getMessageById = async (id) => {
@@ -53,8 +57,21 @@ class ChatRepository {
         return message;
     }
 
+    updateRedisCache = async (room_id) => {
+        const messageKeyPattern = `room:messages:${room_id}:*`;
+        const countKey = `room:messages:count:${room_id}`;
+        
+        const messageKeys = await RedisService.keys(messageKeyPattern);
+        const keysToDelete = [...messageKeys, countKey];
+        
+        if (keysToDelete.length > 0) {
+            return RedisService.delete(keysToDelete);
+        }
+
+        return Promise.resolve(); 
+    }
+
     saveMessage = async (user_id, room_id, message, created_at, updated_at) => {
-        const key = `room:message`;
         try {
             const newMessage = new ChatModel({
                 user_id,
@@ -63,41 +80,52 @@ class ChatRepository {
                 createdAt: created_at,
                 updatedAt: updated_at
             });
-    
-            const [, savedMessage] = await Promise.all([
-                RedisService.storeOrUpdateMessage(key, room_id, newMessage),
-                newMessage.save()
+
+            const [savedMessage] = await Promise.all([
+                newMessage.save(),
+                this.updateRedisCache(room_id)
             ]);
-    
+
             return savedMessage;
         } catch (error) {
             throw new BadRequestError(error);
         }
     }
 
-    getMessagesByRoomId = async (room_id, skip = 0, limit = 10) => {
-        const key = `room:message`
-        let messages = await RedisService.getMessages(key, room_id, limit, skip);
+    getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
+        const key = `room:messages:${room_id}:${skip}:${limit}`;
     
-        if (messages.length > 0) {
-            return messages;
+        let cachedMessages = await RedisService.get(key);
+    
+        if (cachedMessages) {
+            return JSON.parse(cachedMessages);
         }
     
-        messages = await ChatModel.find({ room_id })
+        const messages = await ChatModel.find({ room_id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
-    
-        messages.forEach(async (message) => {
-            await RedisService.storeOrUpdateMessage(key, room_id, message);
-        });
+        
+        if (messages.length > 0) {
+            await RedisService.set(key, JSON.stringify(messages)); 
+            console.log(`Cached ${messages.length} messages for room ${room_id} with key ${key}`);
+        }
     
         return messages;
     }
-
+    
     countMessagesByRoomId = async (room_id) => {
-        return ChatModel.countDocuments({ room_id });
+        const cacheKey = `room:messages:count:${room_id}`;
+        let cachedCount = await RedisService.get(cacheKey);
+
+        if (cachedCount !== null) {
+            return parseInt(cachedCount, 10);
+        }
+
+        const count = await ChatModel.countDocuments({ room_id });
+        await RedisService.set(cacheKey, count.toString(), 3600);
+        return count;
     }
 
     deleteMessage = async (message_id) => {
@@ -132,6 +160,7 @@ class ChatRepository {
         // Update the message in the database
         return ChatModel.findByIdAndUpdate(message_id, { message: content }, { new: true });
     }
+    
     
 }
 

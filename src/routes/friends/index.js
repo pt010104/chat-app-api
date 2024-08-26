@@ -13,6 +13,6 @@ router.get("/list/requests", asyncHandler(FriendshipController.listRequestsFrien
 router.post("/send-request", asyncHandler(FriendshipController.sendFriendRequest));
 router.post("/accept-request", asyncHandler(FriendshipController.acceptFriendRequest));
 router.post("/cancel-request", asyncHandler(FriendshipController.cancelFriendRequest));
-
+router.post("/search-friend", asyncHandler(FriendshipController.searchFriend));
 
 module.exports = router;

@@ -2,12 +2,28 @@
 const { BadRequestError } = require('../core/error.response')
 const { SuccessResponse } = require('../core/success.response')
 const FriendShip = require('../services/friendship.service')
+
 const Joi = require("joi");
 
 class FriendshipController {
 
     // v1/api/friends/list/all
-    listFriends = async(req, res, next) => {
+    listFriends = async(req, res, next) => {        
+       //pagination
+       try {
+        const user_id = req.user.userId;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const page = parseInt(req.query.page, 10) || 1;
+
+        const friendsList = await FriendShip.listFriends(user_id, limit, page);
+
+        new SuccessResponse({
+            message: "List friends",
+            metadata: friendsList
+        }).send(res);
+    } catch (error) {
+        next(error);  // Passes the error to the next middleware
+    }
     }
 
     // v1/api/friends/list/requests
@@ -23,7 +39,7 @@ class FriendshipController {
     sendFriendRequest = async(req, res, next) =>  {
          
         const friendValidate = Joi.object({
-            user_id_recieve: Joi.string().required()
+            user_id_receive: Joi.string().required()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -34,10 +50,10 @@ class FriendshipController {
         }
 
         const user_id = req.user.userId
-        const { user_id_recieve } = req.body
+        const { user_id_receive } = req.body
         new SuccessResponse({
             message: "Friend request sent",
-            metadata: await FriendShip.sendFriendRequest(user_id, user_id_recieve)
+            metadata: await FriendShip.sendFriendRequest(user_id, user_id_receive)
         }).send(res)
     }
 
@@ -93,7 +109,28 @@ class FriendshipController {
     // v1/api/friends/remove
     async removeFriend(req, res) {
     }
+    
+    // v1/api/friends/search-friends
+    async searchFriend(req, res) {     
+        const friendValidate = Joi.object({
+            filter: Joi.string().required()
+        });
 
+        const { error } = friendValidate.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const user_id = req.user.userId
+        const { filter } = req.query
+        new SuccessResponse({
+            message: "Search friend",
+            metadata: await FriendShip.searchFriend(user_id, filter)
+        }).send(res)
+        
+    }
 }
 
 module.exports = new FriendshipController()
