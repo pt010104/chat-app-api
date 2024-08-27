@@ -14,7 +14,7 @@ const chatSchema = new Schema({
         type: String,
         required: true
     },
-    status: {type: String, default: 'unread', enum: ['unread', 'read', 'sent', 'deleted']},
+    status: {type: String, default: 'unread', enum: ['unread', 'read', 'sent']},
     is_Edited: {type: Boolean, default: false},
     room_id: {
         type: Types.ObjectId,

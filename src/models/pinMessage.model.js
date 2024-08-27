@@ -6,7 +6,7 @@ const COLLECTION_NAME = 'pinMessages'
 
 const pinMessageSchema = new Schema({
     message_id: {
-        type: Types.ObjectId,
+        type: [Types.ObjectId],
         required: true,
         ref: 'chats'
     },
