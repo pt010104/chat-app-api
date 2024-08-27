@@ -277,10 +277,9 @@ class RoomRepository {
     updateRedisCacheForListRoom = async (room_id, userId) => {
         try {
             const roomListKey = `room:${userId}`;
-            console.log(roomListKey + "meo meo");
             const roomList = await RedisService.get(roomListKey);
+
             if (roomList) {
-                console.log(roomList + "enter list room");
                 const parsedRoomList = JSON.parse(roomList);
                 if (Array.isArray(parsedRoomList)) {
                     const updatedRoomList = parsedRoomList.filter(_id => id !== room_id);
@@ -289,14 +288,13 @@ class RoomRepository {
                     } else {
                         await RedisService.delete(roomListKey);
                     }
-
                 } else {
                     throw new BadRequestError(`Expected room list to be an array, but got ${typeof parsedRoomList}`);
                 }
             }
         }
+
         catch (error) {
-            console.log("kkki");
             throw new BadRequestError(error);
         }
     }

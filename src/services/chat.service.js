@@ -220,11 +220,10 @@ class ChatService {
             await RoomRepository.updateRedisCacheForRoom(updatedRoom);
      
             await RoomRepository.deleteListRoomRemoveUser(room_id, user_ids);
-            console.log("update list room user who remove")
+
             updatedRoom = await RoomRepository.transformForClient(updatedRoom);
             
             if (updatedRoom.room_user_ids.length === 1) {
-                console.log('delete room')
                 await this.leaveRoom(room_id, userId);
                 return;
             }
@@ -234,9 +233,8 @@ class ChatService {
             throw new BadRequestError(error);
         }
     }
-// van de la da upodate redis nhung thang trong room, nhung nhung th bi kick ra thi chua dc update or delete
+
     static async leaveRoom(room_id, userId) {
-        console.log('leave room')
         const room = await RoomRepository.getRoomByID(room_id);
         if (!room) {
             throw new Error('Room not found');
@@ -255,7 +253,6 @@ class ChatService {
             throw new BadRequestError("User is not in the room");
         }
 
-        console.log(room.user_ids.length +'delete')
         await RoomRepository.deleteListRoomRemoveUser(room, [userId]);
         if (room.user_ids.length === 1) {
             await RoomRepository.deleteRoomDb(room_id);
