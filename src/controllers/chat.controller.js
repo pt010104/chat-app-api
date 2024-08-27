@@ -149,6 +149,16 @@ updateRoom = async (req, res, next) => {
             metadata: await ChatService.updateRoom(params)
         }).send(res)
     }
+
+    deleteRoom= async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const userId = req.user.userId;
+
+        new OK ({
+            message: "Room deleted successfully",
+            metadata: await ChatService.deleteRoom(room_id, userId)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

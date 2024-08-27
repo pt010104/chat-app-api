@@ -272,6 +272,23 @@ class ChatService {
         const roomsTransformed = await RoomRepository.transformForClient(rooms);
         return roomsTransformed;
     }
+
+    static async deleteRoom(room_id, userId) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        if (room.created_by.toString() !== userId.toString()) {
+            throw new BadRequestError("You are not the creator of the room");
+        }
+
+        await RoomRepository.deleteRoomDb(room_id);
+        await RedisService.delete('room:' + room_id);
+        for(const user_id of room.user_ids)
+            await RoomRepository.deleteListRoomRemoveUser(room_id, [user_id]);
+        return true;
+    }
 }
 
 module.exports = ChatService
