@@ -128,6 +128,31 @@ class ChatRepository {
         return count;
     }
     
+    editMessageInRoom = async (chatMessage,message_id) => {
+        const updatedMessage = await ChatModel.findByIdAndUpdate({
+            _id : message_id
+        }, {
+            message : chatMessage.message,
+            isEdited : true,
+            updatedAt : new Date()
+        }, {new : true}
+    ).lean()
+
+        return updatedMessage;
+    }
+
+    deleteMessageInRoom = async (message_id) => {
+        const deletedMessage = await ChatModel.findByIdAndUpdate({
+            _id : message_id
+        }, {
+            delete_at : new Date()
+        }
+    ).lean()
+    
+        return deletedMessage;
+    }
+
+           
 }
 
 module.exports = new ChatRepository();

@@ -181,6 +181,42 @@ class ChatService {
 
         return RoomRepository.transformForClient(updatedRoom, params);
     }
+
+    static async deleteMessagesInRoom(room_id,message_ids) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+        
+        await ChatRepository.deleteMessagesInRoom(room_id, message_ids);
+    }
+
+    static async editMessageInRoom(user_id,room_id, message_id, message) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const infoMessage = await ChatRepository.getMessageById(message_id);
+        if (!infoMessage) {
+            throw new NotFoundError("Message not found");
+        }
+
+        if (infoMessage.user_id !== user_id) {
+            throw new BadRequestError("You are not the author of this message");
+        }
+        
+        const chatMessage = {
+            user_id,
+            message,
+            room_id,
+        }
+
+        await RabbitMQService.sendMessage(room_id, chatMessage);
+        const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
+        
+        return ChatRepository.transformForClient(updatedMessage);
+    }
 }
 
 module.exports = ChatService

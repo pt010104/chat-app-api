@@ -15,11 +15,13 @@ const chatSchema = new Schema({
         required: true
     },
     status: {type: String, default: 'unread', enum: ['unread', 'read', 'sent', 'deleted']},
+    is_Edited: {type: Boolean, default: false},
     room_id: {
         type: Types.ObjectId,
         required: true,
         ref: 'Room'
-    }
+    },
+    deleted_at: {type: Date, default: null}
 }, {
     timestamps: true,
     collection: COLLECTION_NAME

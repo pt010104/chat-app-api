@@ -29,11 +29,11 @@ class ChatController {
     }
 
     detailRoom = async (req, res, next) => {
-        const RoomValidat = Joi.object({
+        const RoomValidate = Joi.object({
             room_id: Joi.string().required()
         })
 
-        const { error } = RoomValidat.validate(req.params);
+        const { error } = RoomValidate.validate(req.params);
         if (error) {
             return res.status(400).json({
               message: error.details[0].message,
@@ -111,6 +111,50 @@ class ChatController {
         new SuccessResponse({
             message: "Room updated successfully",
             metadata: await ChatService.updateRoom(params)
+        }).send(res)
+    }
+
+    deleteMessagesInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        
+        const deleteMessagesInRoomValidate = Joi.object({
+            message_id: Joi.array().required()
+        });
+
+        const { error } = deleteMessagesInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+        
+        new SuccessResponse({
+            message: "Messages deleted successfully",
+            metadata: await ChatService.deleteMessagesInRoom(room_id, message_id)
+        }).send(res)
+    }
+
+    editMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const content = req.body.content;
+
+        const editMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required(),
+            content: Joi.string().required()
+        });
+
+        const { error } = editMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message edited successfully",
+            metadata: await ChatService.editMessageInRoom(room_id, message_id, content)
         }).send(res)
     }
 }

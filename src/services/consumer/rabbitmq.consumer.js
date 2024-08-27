@@ -55,7 +55,6 @@ class RabbitMQConsumer {
 
             const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
 
-
             const [saveMessage] = await Promise.all([
                 ChatRepository.saveMessage(message.user_id, roomId, message.message, now, now),
                 ChatService.updateNewMessagesInRoom(roomId, message)
