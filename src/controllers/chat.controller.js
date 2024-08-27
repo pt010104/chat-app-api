@@ -117,7 +117,7 @@ class ChatController {
     deleteMessagesInRoom = async (req, res, next) => {
         const room_id = req.params.room_id;
         const message_id = req.body.message_id;
-        
+        const userId = req.user.userId;
         const deleteMessagesInRoomValidate = Joi.object({
             message_id: Joi.array().required()
         });
@@ -131,7 +131,7 @@ class ChatController {
         
         new SuccessResponse({
             message: "Messages deleted successfully",
-            metadata: await ChatService.deleteMessagesInRoom(room_id, message_id)
+            metadata: await ChatService.deleteMessagesInRoom(userId,room_id, message_id)
         }).send(res)
     }
 
@@ -139,7 +139,7 @@ class ChatController {
         const room_id = req.params.room_id;
         const message_id = req.body.message_id;
         const content = req.body.content;
-
+        const userId = req.user.userId;
         const editMessageInRoomValidate = Joi.object({
             message_id: Joi.string().required(),
             content: Joi.string().required()
@@ -154,7 +154,7 @@ class ChatController {
 
         new SuccessResponse({
             message: "Message edited successfully",
-            metadata: await ChatService.editMessageInRoom(room_id, message_id, content)
+            metadata: await ChatService.editMessageInRoom(userId,room_id, message_id, content)
         }).send(res)
     }
 }

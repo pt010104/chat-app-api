@@ -182,13 +182,19 @@ class ChatService {
         return RoomRepository.transformForClient(updatedRoom, params);
     }
 
-    static async deleteMessagesInRoom(room_id,message_ids) {
+    static async deleteMessagesInRoom(userId,room_id,message_ids) {
         const room = await RoomRepository.getRoomByID(room_id);
         if (!room) {
             throw new NotFoundError("Room not found");
         }
         
-        await ChatRepository.deleteMessagesInRoom(room_id, message_ids);
+        const messages = await ChatRepository.getMessagesByIds(message_ids);
+
+        if(messages.user_id !== userId) {
+            throw new BadRequestError("You are not the author of this message");
+        }
+        
+        await ChatRepository.deleteMessagesInRoom( message_ids);
     }
 
     static async editMessageInRoom(user_id,room_id, message_id, message) {
@@ -202,7 +208,7 @@ class ChatService {
             throw new NotFoundError("Message not found");
         }
 
-        if (infoMessage.user_id !== user_id) {
+        if (infoMessage.user_id.toString() !== user_id.toString()) {
             throw new BadRequestError("You are not the author of this message");
         }
         
@@ -211,7 +217,7 @@ class ChatService {
             message,
             room_id,
         }
-
+        
         await RabbitMQService.sendMessage(room_id, chatMessage);
         const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
         

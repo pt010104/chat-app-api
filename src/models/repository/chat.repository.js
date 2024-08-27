@@ -141,9 +141,9 @@ class ChatRepository {
         return updatedMessage;
     }
 
-    deleteMessageInRoom = async (message_id) => {
+    deleteMessagesInRoom = async (message_ids)  => {
         const deletedMessage = await ChatModel.findByIdAndUpdate({
-            _id : message_id
+            _id : message_ids
         }, {
             delete_at : new Date()
         }
