@@ -163,15 +163,6 @@ class FriendshipController {
         }).send(res)
     }
 
-    async checkIsFriend(req, res) {
-        const user_id = req.user.userId
-        const friend_id = req.body.id
-        new SuccessResponse({
-            message: "Check is friend",
-            metadata: await FriendShip.checkIsFriend(user_id, friend_id)
-        }).send(res)
-    }
-
     async listFriendsNotInRoomChat(req, res, next) {
         const listFriendsNotInRoomChatValidate = Joi.object({
             room_id: Joi.string().required()
