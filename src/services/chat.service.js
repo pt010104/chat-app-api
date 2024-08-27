@@ -218,7 +218,6 @@ class ChatService {
             room_id,
         }
         
-        await RabbitMQService.sendMessage(room_id, chatMessage);
         const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
         
         return ChatRepository.transformForClient(updatedMessage);

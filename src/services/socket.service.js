@@ -28,6 +28,7 @@ class SocketServices {
         socket.on('chat message', msg => this.handleChatMessage(socket, user_id, msg))
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
         socket.on('edit message', msg => this.handleEditMessage(socket, user_id, msg))
+        socket.on('delete message', msg => this.handleDeleteMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
         socket.on('join user', userId => this.handleJoinUser(socket, userId))
@@ -57,6 +58,15 @@ class SocketServices {
             await ChatService.editMessageInRoom(user_id,room_id, message_id, message)
         } catch (error) {
             this.log(`Error handling edit message for ${user_id}: ${error}`, true);
+        }
+    }
+
+    async handleDeleteMessage(socket, user_id, msg) {
+        try {
+            const { room_id, message_id } = msg;
+            await ChatService.deleteMessagesInRoom(user_id,room_id, message_id)
+        } catch (error) {
+            this.log(`Error handling delete message for ${user_id}: ${error}`, true);
         }
     }
 
