@@ -119,15 +119,15 @@ class ChatController {
         }).send(res)
     }
 
-    listRooms = async (req, res, next) => {
-        const userId = req.user.userId;
-        const page = req.query.page;
-        const limit = req.query.limit;
-        new OK ({
-            message: "Rooms retrieved successfully",
-            metadata: await ChatService.listRooms(userId, page, limit)
-        }).send(res)
-    }
+    // listRooms = async (req, res, next) => {
+    //     const userId = req.user.userId;
+    //     const page = req.query.page;
+    //     const limit = req.query.limit;
+    //     new OK ({
+    //         message: "Rooms retrieved successfully",
+    //         metadata: await ChatService.listRooms(userId, page, limit)
+    //     }).send(res)
+    // }
 
 updateRoom = async (req, res, next) => {
     const updateRoomValidate = Joi.object({
