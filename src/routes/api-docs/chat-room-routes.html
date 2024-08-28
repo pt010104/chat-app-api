@@ -21,6 +21,34 @@
             </ul>
         </div>
         <div class="content">
+            <h3>POST /v1/api/room/search</h3>
+<div class="indent">
+    <p><strong>Description:</strong> Search for chat rooms based on a filter.</p>
+    <p><strong>URL:</strong> <code>/v1/api/room/search</code></p>
+    <p><strong>Method:</strong> POST</p>
+    <p><strong>Headers:</strong></p>
+    <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+    <p><strong>Request Body:</strong></p>
+    <pre><code>{
+    "filter": "string (required)"
+}</code></pre>
+    <p><strong>Response:</strong></p>
+    <pre><code>200 OK:
+{
+    "message": "Room searched successfully",
+    "metadata": [
+        {
+            "room_id": "string",
+            "room_name": "string",
+            "is_group": boolean,
+            "room_user_ids": ["string"],
+            "room_avatar": "string"
+        }
+    ]
+}</code></pre>
+</div>
+
             <h1>Chat Room Routes</h1>
 
             <h3>GET /v1/api/room/:room_id</h3>
