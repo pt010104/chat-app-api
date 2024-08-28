@@ -184,14 +184,15 @@ class RoomRepository {
     }
 
     createRoom = async (params) => {
-        const { name, avt_url, user_ids, userId, auto_name, created_by } = params;
+        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign } = params;
         
         const newRoom = await RoomModel.create({
             name: name,
+            name_remove_sign: name_remove_sign,
             user_ids: user_ids,
             created_by: created_by,
             is_group: user_ids.length > 2 ? true : false,
-            auto_name: auto_name ?? false
+            auto_name: auto_name ?? false,
         });
 
         if (avt_url && newRoom.is_group) {
