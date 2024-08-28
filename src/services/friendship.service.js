@@ -35,7 +35,10 @@ class FriendShip {
         const processedFriendIds = new Set();
     
         const uniqueFriends = paginatedFriends.filter(friend => {
+            friend.user_id_send = friend.user_id_send.toString();
+            friend.user_id_receive = friend.user_id_receive.toString();
             const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            console.log(friend_id)
             if (processedFriendIds.has(friend_id)) {
                 return false; 
             } else {
