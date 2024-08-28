@@ -34,7 +34,20 @@ const findUserByEmail = async (email) => {
     return userFound;
 };
 
+const transformUser = (users) => {
+    return users.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        is_friend: user.is_friend,
+        is_request: user.is_request
+    }));
+};
+
 module.exports = {
     findUserById,
-    findUserByEmail
+    findUserByEmail,
+    transformUser,
 };

@@ -15,7 +15,7 @@ class FriendShip {
 
         if (!friends) {
             friends = await FriendRepo.listFriends(user_id);
-            if (friends) {
+            if (friends.length != 0) {
                 await RedisService.set(key, JSON.stringify(friends), 3600);
             }
         } else {
@@ -221,17 +221,29 @@ class FriendShip {
     }
 
     static async checkIsFriend(user_id, friend_id) {
-        const friends = await this.findFriends(user_id);
+        const isFriend = await FriendShipModel.findOne({
+            $or: [
+                { user_id_send: user_id, user_id_receive: friend_id },
+                { user_id_send: friend_id, user_id_receive: user_id }
+            ],
+            status: "accepted"
+        }).lean()
+    
+        return isFriend ? true : false;
+    }
 
-        if (friends.length === 0) {
-            return false;
+    static async checkIsRequest(user_id, friend_id) {
+        const request = await FriendShipModel.findOne({
+            $or: [
+                { user_id_send: user_id, user_id_receive: friend_id },
+                { user_id_send: friend_id, user_id_receive: user_id }
+            ],
+            status: "pending"
+        }).lean()
+
+        if (request) {
+            return true
         }
-
-        friends.forEach(friend => {
-            if (friend._id == friend_id) {
-                return true
-            }
-        })
 
         return false
     }
