@@ -53,7 +53,8 @@ const userModel = new Schema({
     default: []
   },
   avatar: String,
-  thumb_avatar: String
+  thumb_avatar: String,
+  name_remove_sign: String,
 }, {
   timestamps: true,
 })

@@ -7,6 +7,7 @@ const RedisService = require("./redis.service")
 const FriendRepo = require('../models/repository/friend.repository')
 const { findUserById } = require('../models/repository/user.repository')
 const roomRepository = require('../models/repository/room.repository')
+const { removeVietNamese } = require('../utils')
 
 class FriendShip {
     static async findFriends(user_id) {
@@ -159,6 +160,7 @@ class FriendShip {
     }
 
     static async searchFriend(user_id, filter) {
+        filter = removeVietNamese(filter);
         let friends = await this.findFriends(user_id);
     
         const regex = new RegExp(filter, 'i');
@@ -175,9 +177,10 @@ class FriendShip {
         });
 
         const transformedFriends = (await Promise.all(transformPromises)).filter(Boolean);
+        console.log(transformedFriends)
     
         return transformedFriends.filter(friend => 
-            regex.test(friend.user_name) ||
+            regex.test(friend.user_name_remove_sign) ||
             friend.user_email === filter ||
             friend.user_phone === filter
         );

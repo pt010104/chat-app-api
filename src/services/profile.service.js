@@ -37,13 +37,8 @@ class ProfileService {
   static updateUserCache = async (newUserInfo) => { 
     if (newUserInfo) {
       const redisOperations = [];
-      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo)))
+      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo), 7200))
       redisOperations.push(RedisService.delete(`user:${newUserInfo.email}`))
-
-      const userSearchKeys = await RedisService.keys('userSearch:*');  
-      if (userSearchKeys.length > 0) {
-          redisOperations.push(RedisService.delete(userSearchKeys));
-      }
 
       await Promise.all(redisOperations);
     } else {

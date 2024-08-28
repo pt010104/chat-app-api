@@ -10,6 +10,7 @@ const { verifyOTP } = require("./otp.service");
 const RedisService = require("./redis.service");
 const { transformUser } = require("../models/repository/user.repository");
 const FriendShipService = require("./friendship.service");
+const { removeVietNamese } = require("../utils");
 
 class UserService {
   static sendOTP = async (email, type) => {
@@ -37,18 +38,19 @@ class UserService {
   };
 
   static async SearchForUser(filter, userID) {
+    filter = removeVietNamese(filter);
     let users = await UserModel.find({
         $and: [
             { _id: { $ne: userID } },
             {
                 $or: [
-                    { name: { $regex: filter, $options: "i" } },
+                    { name_remove_sign: { $regex: filter, $options: "i" } },
                     { email: filter },
                     { phone: filter },
                 ],
             },
         ],
-    }).select("-password").lean();
+    }).select("-password").lean();    
 
     const userChecks = await Promise.all(users.map(async (user) => {
         const is_friend = await FriendShipService.checkIsFriend(userID, user._id);

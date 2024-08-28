@@ -17,7 +17,7 @@ const findUserById = async (id) => {
             throw new NotFoundError("User not found");
         }
 
-        await RedisService.set(key, JSON.stringify(userFound), 3600);
+        await RedisService.set(key, JSON.stringify(userFound), 7200);
 
         return userFound;
     } catch (error) {
