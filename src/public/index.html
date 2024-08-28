@@ -7,12 +7,12 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/index.js" defer></script>
     <style>
-        #userIdInput, #roomIdInput, #messageInput {
+        #userIdInput, #roomIdInput, #messageInput, #editMessageIdInput, #newMessageInput, #deleteMessageIdInput {
             width: calc(100% - 120px);
             padding: 5px;
             font-size: 1em;
         }
-        #connectButton, #sendMessageButton {
+        #connectButton, #sendMessageButton, #editMessageButton, #deleteMessageButton {
             padding: 5px 10px;
             font-size: 1em;
             margin-top: 10px;
@@ -32,6 +32,13 @@
             padding: 10px;
             font-family: monospace;
         }
+        .message-item {
+            margin-bottom: 10px;
+        }
+        .editButton, .deleteButton {
+            margin-left: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +47,15 @@
     <button id="connectButton">Connect</button>
     <input type="text" id="messageInput" placeholder="Type your message here..." />
     <button id="sendMessageButton" disabled>Send Message</button>
+
+    <input type="text" id="editMessageIdInput" placeholder="Enter Message ID to Edit" />
+    <input type="text" id="newMessageInput" placeholder="Enter New Message" />
+    <button id="editMessageButton">Edit Message</button>
+
+    <!-- New input for deleting a message -->
+    <input type="text" id="deleteMessageIdInput" placeholder="Enter Message ID to Delete" />
+    <button id="deleteMessageButton">Delete Message</button>
+
     <label id="messageLabel">No messages yet</label>
     <div id="logArea"></div>
 </body>

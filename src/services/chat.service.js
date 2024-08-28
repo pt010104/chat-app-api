@@ -198,6 +198,7 @@ class ChatService {
     }
 
     static async editMessageInRoom(user_id,room_id, message_id, message) {
+        console.log(user_id, room_id, message_id, message)
         const room = await RoomRepository.getRoomByID(room_id);
         if (!room) {
             throw new NotFoundError("Room not found");
