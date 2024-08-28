@@ -27,4 +27,19 @@ const chatSchema = new Schema({
     collection: COLLECTION_NAME
 })
 
+chatSchema.pre('find', function() {
+    this.where({ deleted_at: null });
+});
+
+chatSchema.pre('findOne', function() {
+    this.where({ deleted_at: null });
+});
+
+chatSchema.pre('findOneAndUpdate', function() {
+    this.where({ deleted_at: null });
+});
+
+chatSchema.pre('countDocuments', function() {
+    this.where({ deleted_at: null });
+});
 module.exports = model(DOCUMENT_NAME, chatSchema)
