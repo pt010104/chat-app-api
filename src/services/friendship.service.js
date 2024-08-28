@@ -8,6 +8,7 @@ const FriendRepo = require('../models/repository/friend.repository')
 const { findUserById } = require('../models/repository/user.repository')
 const roomRepository = require('../models/repository/room.repository')
 const { removeVietNamese } = require('../utils')
+const ChatService = require('./chat.service')
 
 class FriendShip {
     static async findFriends(user_id) {
@@ -136,6 +137,13 @@ class FriendShip {
         if (!acceptRequest) {
             throw new NotFoundError("Friend request does not exist")
         }
+
+        const createRoomParams = {
+            user_ids: [acceptRequest.user_id_send.toString(), acceptRequest.user_id_receive.toString()],
+            userId: user_id
+        }
+
+        ChatService.createRoom(createRoomParams)
 
         return {
             acceptRequest
