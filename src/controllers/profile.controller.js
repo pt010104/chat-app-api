@@ -7,9 +7,10 @@ const ProfileService = require("../services/profile.service");
 class ProfileController {
     infoProfile = async (req, res, next) => {
         const id = req.params.id;
+        const userID = req.user.userId;
         new SuccessResponse({
             message: "Get user profile successfully",
-            metadata: await ProfileService.infoProfile(id),
+            metadata: await ProfileService.infoProfile(id, userID),
         }).send(res);
 
     }
