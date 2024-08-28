@@ -30,10 +30,21 @@ class FriendShip {
     static async listFriends(user_id, limit, page) {
         const offset = (page - 1) * limit;
         const friends = await this.findFriends(user_id);
-
+    
         const paginatedFriends = friends.slice(offset, offset + limit);
-
-        const friendPromises = paginatedFriends.map(async (friend) => {
+        const processedFriendIds = new Set();
+    
+        const uniqueFriends = paginatedFriends.filter(friend => {
+            const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            if (processedFriendIds.has(friend_id)) {
+                return false; 
+            } else {
+                processedFriendIds.add(friend_id);
+                return true; 
+            }
+        });
+    
+        const friendPromises = uniqueFriends.map(async (friend) => {
             const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
                 const friend_info = await findUserById(friend_id);
@@ -43,10 +54,11 @@ class FriendShip {
                 return null;
             }
         });
-
+    
         const results = await Promise.all(friendPromises);
         return results.filter(Boolean);
     }
+    
     
     static async findRequestsFriends(user_id) {
         const key = `listRequestsFriend:${user_id}`;
