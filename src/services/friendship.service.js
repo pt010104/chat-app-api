@@ -15,7 +15,6 @@ class FriendShip {
 
         if (!friends) {
             friends = await FriendRepo.listFriends(user_id);
-            console.log(friends)
             if (friends.length != 0) {
                 await RedisService.set(key, JSON.stringify(friends), 3600);
             }
@@ -46,19 +45,33 @@ class FriendShip {
         const results = await Promise.all(friendPromises);
         return results.filter(Boolean);
     }
+    
+    static async findRequestsFriends(user_id) {
+        const key = `listRequestsFriend:${user_id}`;
+        let requests = await RedisService.get(key);
+        if (!requests) {
+            requests = await FriendShipModel.find({
+                user_id_receive: user_id,
+                status: "pending"
+            }).lean();
+            if (requests) {
+                await RedisService.set(key, JSON.stringify(requests), 3600);
+            }
+        } else {
+            requests = JSON.parse(requests);
+        }
 
-    static listRequestsFriends = async (user_id) => {
-        const listRequests = await FriendShipModel.find({
-            user_id_receive: user_id,
-            status: "pending"
-        }).lean();
-
-        if (listRequests.length === 0) {
+        return requests;
+    }
+    static listRequestsFriends = async (user_id,limit,page) => {
+        let list = await this.findRequestsFriends(user_id);
+        
+        if (list.length === 0) {
             return;
         }
 
         const results = [];
-        for (let request of listRequests) {
+        for (let request of list) {
             try {
                 const user_send_info = await findUserById(request.user_id_send);
                 results.push({
@@ -75,7 +88,7 @@ class FriendShip {
 
         return results;
     }
-
+    
     static sendFriendRequest = async (user_id, user_id_receive) => {
 
         const check_user_receive = await UserModel.findOne({
@@ -150,9 +163,7 @@ class FriendShip {
     
         const regex = new RegExp(filter, 'i');
         const transformPromises = friends.map(async (friend) => {
-            friend.user_id_send = friend.user_id_send.toString();
-            friend.user_id_receive = friend.user_id_receive.toString();
-            const friend_id = user_id === friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
             try {
                 const friend_info = await findUserById(friend_id)
                 const transformed_friend = await FriendRepo.transformFriend(friend_info);
@@ -190,6 +201,7 @@ class FriendShip {
     }
 
     static async denyFriendRequest(user_id, request_id) {
+
         const denyRequest = await FriendShipModel.findOneAndUpdate({
             _id: request_id,
             user_id_receive: user_id,
@@ -199,11 +211,13 @@ class FriendShip {
         }, {
             new: true
         }).lean()
-
+        
         if (!denyRequest) {
             throw new NotFoundError("Friend request does not exist")
         }
-
+        const key = `listRequestsFriend:${user_id}`;
+        await RedisService.delete(key);
+        return denyRequest
     }
 
     static async checkIsFriend(user_id, friend_id) {

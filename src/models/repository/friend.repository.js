@@ -24,6 +24,9 @@ class FriendRepository {
         };
         return user_info;
     }
+
+    
+
 }
 
 module.exports = FriendRepository;
