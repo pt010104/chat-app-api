@@ -197,6 +197,15 @@ class ChatController {
             metadata: await ChatService.unpinMessageInRoom(room_id, message_id)
         }).send(res)
     }
+
+    listPinnedMessages = async (req, res, next) => {
+        const room_id = req.params.room_id;
+
+        new SuccessResponse({
+            message: "Pinned messages retrieved successfully",
+            metadata: await ChatService.listPinnedMessages(room_id)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

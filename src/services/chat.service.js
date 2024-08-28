@@ -256,6 +256,22 @@ class ChatService {
         
         return ChatRepository.transformForClient(updatedMessage);
     }
+
+    static async listPinnedMessages (room_id)  {
+        const key = 'pinMessage:' + room_id;
+        let message_ids = await RedisService.lRange(key, 0, -1);
+        if (!message_ids) {
+            return [];
+        }
+        message_ids = await Promise.all(message_ids.map(async message_id => {
+            const message = await ChatRepository.getMessageById(message_id);
+            if (!message) {
+                return null;
+            }
+            return ChatRepository.transformForClient(message);
+        }));
+        return message_ids;
+    }
 }
 
 module.exports = ChatService

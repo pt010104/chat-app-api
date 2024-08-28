@@ -61,7 +61,7 @@ class RedisService {
         return this.get(userId);
     }
     
-    lrange(key, start, end) {
+    lRange(key, start, end) {
         return this.executeCommand('lRange', key, start, end);
     }
     

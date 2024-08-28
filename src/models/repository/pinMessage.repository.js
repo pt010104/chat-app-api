@@ -14,7 +14,7 @@ class pinMessageRepository {
         let message = await pinMessageModel.findById(room_id);
 
         if (!message) {
-        
+
             message = await pinMessageModel.create({
                 room_id: room_id,
                 message_id: [message_id]
@@ -51,6 +51,10 @@ class pinMessageRepository {
         }
         const key = 'pinMessage:' + room_id;
         await RedisService.lRem(key, 0, message_id);
+        // const listLength = await RedisService.lLen(key); // Gets the length of the list
+        // if (listLength === 0) {
+        //     await RedisService.del(key); // Delete the key if the list is empty
+        // }
         return message;
     }
 }
