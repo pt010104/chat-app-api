@@ -10,11 +10,7 @@ const pinMessageSchema = new Schema({
         required: true,
         ref: 'chats'
     },
-    message: {
-        type: [String],
-        required: true
-    },
-    
+
     room_id: {
         type: Types.ObjectId,
         required: true,

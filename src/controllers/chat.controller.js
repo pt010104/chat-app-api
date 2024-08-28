@@ -157,6 +157,46 @@ class ChatController {
             metadata: await ChatService.editMessageInRoom(userId,room_id, message_id, content)
         }).send(res)
     }
+
+    pinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const pinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = pinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message pinned successfully",
+            metadata: await ChatService.pinMessageInRoom(room_id, message_id)
+        }).send(res)
+    }
+
+    unpinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const unpinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = unpinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message unpinned successfully",
+            metadata: await ChatService.unpinMessageInRoom(room_id, message_id)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

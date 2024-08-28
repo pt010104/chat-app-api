@@ -7,7 +7,7 @@ const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
 const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
-
+const pinMessageRepository = require("../models/repository/pinMessage.repository")
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
         const chatMessage = {
@@ -220,6 +220,39 @@ class ChatService {
         }
         
         const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
+        
+        return ChatRepository.transformForClient(updatedMessage);
+    }
+
+    static async pinMessageInRoom( room_id, message_id) {
+        
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const infoMessage = await ChatRepository.getMessageById(message_id);
+        if (!infoMessage) {
+            throw new NotFoundError("Message not found");
+        }
+        
+        const updatedMessage = await pinMessageRepository.pinMessage(room_id, message_id);
+        
+        return ChatRepository.transformForClient(updatedMessage);
+    }
+
+    static async unpinMessageInRoom( room_id, message_id) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const infoMessage = await ChatRepository.getMessageById(message_id);
+        if (!infoMessage) {
+            throw new NotFoundError("Message not found");
+        }
+
+        const updatedMessage = await pinMessageRepository.unpinMessage(room_id, message_id);
         
         return ChatRepository.transformForClient(updatedMessage);
     }

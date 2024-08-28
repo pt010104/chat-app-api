@@ -60,7 +60,18 @@ class RedisService {
     getUserStatus(userId) {
         return this.get(userId);
     }
-
+    
+    lrange(key, start, end) {
+        return this.executeCommand('lRange', key, start, end);
+    }
+    
+    rPush(key, value) {
+        return this.executeCommand('rPush', key, value);
+    }
+    lRem(key, count, value) {
+        return this.executeCommand('lRem', key, count, value);
+    }
+    
     async storeOrUpdateMessage(type, id, message, field = '') {
         const key = `${type}:${id}`;
         
