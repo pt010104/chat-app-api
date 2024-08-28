@@ -7,6 +7,7 @@ const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
 const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
+const { removeVietNamese } = require("../utils")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
@@ -63,6 +64,7 @@ class ChatService {
         }
 
         params.created_by = params.userId
+        params.name_remove_sign = removeVietNamese(params.name);
 
         let newRoom = await RoomRepository.createRoom(params);
 
@@ -180,6 +182,24 @@ class ChatService {
         await RoomRepository.updateRedisCacheForRoom(updatedRoom);
 
         return RoomRepository.transformForClient(updatedRoom, params);
+    }
+
+    static async searchRoom(userId, filter) {
+        const rooms = await RoomRepository.getRoomsByUserID(userId);
+
+        console.log(rooms)
+
+        filter = removeVietNamese(filter);
+        const regex = new RegExp(filter, 'i');
+        
+        const filteredRooms = rooms.filter(room => {
+            const roomName = room.name_remove_sign;
+            return regex.test(roomName);
+        });
+
+        const transformedRooms = await Promise.all(filteredRooms.map(room => RoomRepository.transformForClient(room, userId)));
+
+        return transformedRooms;
     }
 }
 
