@@ -200,7 +200,7 @@ class RoomRepository {
             await newRoom.save();
         }   
 
-        RedisService.storeOrUpdateMessage('room', userId, newRoom);
+        RedisService.delete(`room:${userId}`, newRoom);
         await this.invalidateRoomsCache();
         return newRoom;
     }
