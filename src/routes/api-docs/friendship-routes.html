@@ -22,6 +22,25 @@
         </div>
         <div class="content">
             <h1>Friendship Routes</h1>
+                <h3>POST /v1/api/friends/remove-friend</h3>
+                <div class="indent">
+                    <p><strong>Description:</strong> Remove a friend from friends list.</p>
+                    <p><strong>URL:</strong> <code>/v1/api/friends/remove-friend</code></p>
+                    <p><strong>Method:</strong> POST</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                    <p><strong>Request Body:</strong></p>
+                    <pre><code>{
+    "friend_id": "string (required)"
+}</code></pre>
+                    <p><strong>Responses:</strong></p>
+                    <pre><code>200 OK:
+{
+    "message": "Friend removed successfully",
+    "metadata": { ...removeFriendDetails }
+}</code></pre>
+                </div>
 
             <h3>GET /v1/api/friends/list/all</h3>
             <div class="indent">
