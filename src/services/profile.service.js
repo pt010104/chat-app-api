@@ -7,9 +7,10 @@ const {
 const user = require("../models/user.model");
 const RedisService = require('./redis.service');
 const RoomRepository = require("../models/repository/room.repository");
+const FriendService = require("./friendship.service");
 
 class ProfileService {
-  static infoProfile = async (id) => {
+  static infoProfile = async (id, userID) => {
 
     const redisKey = `user:${id}`;
 
@@ -29,8 +30,19 @@ class ProfileService {
     if(!userInfo) {
         throw new NotFoundError("User does not exist");
     }
+
+    if (userID != id) {
+      const [is_friend, is_request] = await Promise.all([
+        FriendService.checkIsFriend(userID, id),
+        FriendService.checkIsRequest(userID, id)
+      ]);
+
+      userInfo.is_friend = is_friend;
+      userInfo.is_request = is_request;
+    }
+
     return {
-        user: userInfo
+      user: userInfo
     };
   }
 
