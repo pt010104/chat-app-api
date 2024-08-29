@@ -30,6 +30,8 @@ class ChatService {
         const matchingUserIds = params.user_ids.filter(id => id === params.userId);
         if (matchingUserIds.length >= 2) {
             throw new BadRequestError("Invalid Request")
+        } else if (params.user_ids.length == 1 && matchingUserIds.length != 0) {
+            throw new BadRequestError("Invalid Request")
         }
 
         // Nếu user_ids không chứa id của user hiện tại thì thêm vào 
