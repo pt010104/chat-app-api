@@ -44,9 +44,6 @@ class ChatService {
         //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
         if (params.user_ids.length == 2) {
             const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
-
-            const user = await findUserById(friend_user_id);
-            params.name = user.name
             params.auto_name = true
         }
 
