@@ -7,7 +7,9 @@ const {
 const UserModel = require("../models/user.model");
 const { sendEmailOTP } = require("./email.service");
 const { verifyOTP } = require("./otp.service");
-const FriendShipService = require("../services/friendship.service");
+const RedisService = require("./redis.service");
+const { transformUser } = require("../models/repository/user.repository");
+const FriendShipService = require("./friendship.service");
 
 class UserService {
   static sendOTP = async (email, type) => {
@@ -34,25 +36,35 @@ class UserService {
     return result;
   };
 
-  static SearchForUser = async (filter, userID) => {
-      const users = await UserModel.find({
+  static async SearchForUser(filter, userID) {
+    let users = await UserModel.find({
         $and: [
-          { _id: { $ne: userID } },
-          {
-            $or: [
-              { name: { $regex: filter, $options: "i" } },
-              { email: filter },
-              { phone: filter },
-            ],
-          },
+            { _id: { $ne: userID } },
+            {
+                $or: [
+                    { name: { $regex: filter, $options: "i" } },
+                    { email: filter },
+                    { phone: filter },
+                ],
+            },
         ],
-      }).select("-password");
-      const is_friend = await FriendShipService.checkIsFriend(userID, users.map((user) => user._id));
-      users.forEach((user) => {
-        user.is_friend = is_friend[user._id];
-      });
-      return users;
+    }).select("-password").lean();
+
+    const userChecks = await Promise.all(users.map(async (user) => {
+        const is_friend = await FriendShipService.checkIsFriend(userID, user._id);
+        const is_request = await FriendShipService.checkIsRequest(userID, user._id);
+        return {
+            ...user,
+            is_friend,
+            is_request
+        };
+    }));
+
+    const transformedUsers = transformUser(userChecks);
+
+    return transformedUsers;
   }
+
 }
 
 
