@@ -81,7 +81,12 @@ class FriendShip {
         return requests;
     }
     static listRequestsFriends = async (user_id,limit,page) => {
-        let list = await this.findRequestsFriends(user_id);
+        // let list = await this.findRequestsFriends(user_id);
+
+        const list = await FriendShipModel.find({
+            user_id_receive: user_id,
+            status: "pending"
+        }).lean();
         
         if (list.length === 0) {
             return;
