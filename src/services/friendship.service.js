@@ -263,20 +263,24 @@ class FriendShip {
         return isFriend ? true : false;
     }
 
-    static async checkIsRequest(user_id, friend_id) {
+    static async CheckSentRequest(user_id, friend_id) {
         const request = await FriendShipModel.findOne({
-            $or: [
-                { user_id_send: user_id, user_id_receive: friend_id },
-                { user_id_send: friend_id, user_id_receive: user_id }
-            ],
+            user_id_send: user_id,
+            user_id_receive: friend_id,
             status: "pending"
-        }).lean()
+        }).lean();
 
-        if (request) {
-            return true
-        }
+        return !!request;
+    }
 
-        return false
+    static async CheckReceivedRequest(user_id, friend_id) {
+        const request = await FriendShipModel.findOne({
+            user_id_send: friend_id,
+            user_id_receive: user_id,
+            status: "pending"
+        }).lean();
+
+        return !!request;
     }
 
     static async listFriendsNotInRoomChat(userID, room_id) {
