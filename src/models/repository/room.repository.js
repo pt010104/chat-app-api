@@ -13,7 +13,6 @@ class RoomRepository {
                 const room = rooms[i];
                 let dataTransformed = {
                     room_id: room._id,  
-                    room_name: room.name,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
                     room_created_at: room.createdAt,
@@ -21,6 +20,7 @@ class RoomRepository {
                 }
                 if (!room.is_group || room.avt_url == "") {
                     if (room.is_group) {
+                        dataTransformed.room_name = room.name;
                         const user = await findUserById(room.created_by);
                         if (user && user.avatar) {
                             dataTransformed.room_avatar = user.avatar; 
@@ -28,6 +28,7 @@ class RoomRepository {
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
                         if (user && user.avatar) {
+                            dataTransformed.room_name = user.name;
                             dataTransformed.room_avatar = user.avatar; 
                         }
                     }
