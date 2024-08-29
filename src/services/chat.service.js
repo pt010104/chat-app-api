@@ -8,19 +8,19 @@ const RedisService = require("./redis.service")
 const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
+const QueueNames = require("../utils/queueNames")
 
 class ChatService {
-    static sendMessage = async (user_id, room_id, message) => {
+    static async sendMessage(user_id, room_id, message) {
         const chatMessage = {
             user_id,
             message,
             room_id,
-        }
+        };
 
-        await RabbitMQService.sendMessage(room_id, chatMessage);
-
-        return chatMessage 
-    }
+        await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES,chatMessage); 
+        return chatMessage;
+    }   
 
     static createRoom = async (params) => {
         if (params.user_ids.length < 1) {

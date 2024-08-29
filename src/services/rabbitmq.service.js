@@ -67,7 +67,7 @@ class RabbitMQService {
         try {
             const channel = await this.getChannel();
             await channel.assertQueue(queue, { durable: true });
-            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)));
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { persistent: true });
         } catch (error) {
             console.error('Error sending message', error);
             throw error;
