@@ -223,8 +223,10 @@ class FriendShip {
         if (!friend) {
             throw new NotFoundError("Friend does not exist")
         }
-        const key = `listFriends:${user_id}`;
-        await RedisService.delete(key);
+        const key1 = `listFriends:${user_id}`;
+        const key2 = `listFriends:${friend_id}`;
+        RedisService.delete(key1);
+        RedisService.delete(key2)
         return friend
     }
 
