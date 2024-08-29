@@ -194,7 +194,9 @@ class ChatService {
             throw new BadRequestError("You are not the author of this message");
         }
 
-        await ChatRepository.deleteMessagesInRoom(message_ids);
+        const deletedMessage=await ChatRepository.deleteMessagesInRoom(message_ids);
+        await updateRedisCache(room_id);
+        return ChatRepository.transformForClient(deletedMessage);
     }
 
     static async editMessageInRoom(user_id, room_id, message_id, message) {
@@ -220,7 +222,7 @@ class ChatService {
         }
 
         const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
-
+        await updateRedisCache(room_id);
         return ChatRepository.transformForClient(updatedMessage);
     }
 
