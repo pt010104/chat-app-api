@@ -252,17 +252,16 @@ class ChatService {
         if (!room.user_ids.includes(userId)) {
             throw new BadRequestError("User is not in the room");
         }
-
-        await RoomRepository.deleteListRoomRemoveUser(room, [userId]);
-        if (room.user_ids.length === 1) {
-            await RoomRepository.deleteRoomDb(room_id);
-
-            await RedisService.delete('room:' + room_id);
+        // update list room user remove user
+        let updatedRoom = await RoomRepository.removeUsersFromRoom(room_id, [userId]); //DB       
+        await RoomRepository.updateRedisCacheForRoom(updatedRoom);//user in room
+        await RoomRepository.deleteListRoomRemoveUser(room, [userId]);//user leave
+        if (room.user_ids.length === 0) {
+            await RoomRepository.deleteRoomDb(room_id);            
             return;
         }
 
-        let updatedRoom = await RoomRepository.removeUsersFromRoom(room_id, [userId]);        
-        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+
         return updatedRoom;
     }
 
@@ -283,10 +282,14 @@ class ChatService {
             throw new BadRequestError("You are not the creator of the room");
         }
 
+        if(!room.is_group){
+            throw new BadRequestError("Cannot delete a one-to-one chat");
+        }
+
         await RoomRepository.deleteRoomDb(room_id);
-        await RedisService.delete('room:' + room_id);
+        
         for(const user_id of room.user_ids)
-            await RoomRepository.deleteListRoomRemoveUser(room_id, [user_id]);
+            await RoomRepository.deleteListRoomRemoveUser(room, [user_id]);
         return true;
     }
 }
