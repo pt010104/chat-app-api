@@ -11,10 +11,8 @@ class FriendshipController {
     listFriends = async(req, res, next) => {        
        try {
         const user_id = req.user.userId;
-        const limit = parseInt(req.query.limit, 10) || 10;
-        const page = parseInt(req.query.page, 10) || 1;
 
-        const friendsList = await FriendShip.listFriends(user_id, limit, page);
+        const friendsList = await FriendShip.listFriends(user_id);
 
         new SuccessResponse({
             message: "List friends",

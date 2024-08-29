@@ -27,14 +27,12 @@ class FriendShip {
         return friends;
     }
 
-    static async listFriends(user_id, limit, page) {
-        const offset = (page - 1) * limit;
+    static async listFriends(user_id) {
         const friends = await this.findFriends(user_id);
     
-        const paginatedFriends = friends.slice(offset, offset + limit);
         const processedFriendIds = new Set();
-    
-        const uniqueFriends = paginatedFriends.filter(friend => {
+        
+        const uniqueFriends = friends.filter(friend => {
             friend.user_id_send = friend.user_id_send.toString();
             friend.user_id_receive = friend.user_id_receive.toString();
             const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
@@ -61,7 +59,6 @@ class FriendShip {
         const results = await Promise.all(friendPromises);
         return results.filter(Boolean);
     }
-    
     
     static async findRequestsFriends(user_id) {
         const key = `listRequestsFriend:${user_id}`;
