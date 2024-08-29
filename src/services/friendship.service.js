@@ -65,11 +65,11 @@ class FriendShip {
     }
     static listRequestsFriends = async (user_id,limit,page) => {
         let list = await this.findRequestsFriends(user_id);
-        
+        const offset = (page - 1) * limit;
         if (list.length === 0) {
             return;
         }
-
+        list = list.slice(offset, offset + limit);
         const results = [];
         for (let request of list) {
             try {
@@ -135,7 +135,8 @@ class FriendShip {
         if (!acceptRequest) {
             throw new NotFoundError("Friend request does not exist")
         }
-
+        const key = `listRequestsFriend:${user_id}`;
+        await RedisService.delete(key);
         return {
             acceptRequest
         }
