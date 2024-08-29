@@ -7,35 +7,25 @@ const ChatService = require('../chat.service');
 class RabbitMQConsumer {
     static async listenForMessages() {
         await RabbitMQService.connect();
-        const rooms = await RoomRepository.getAllRooms();
-    
-        if (rooms && rooms.length > 0) {
-            await Promise.all(rooms.map(room => this.processQueue(room._id.toString())));
-        }
-    }
+        const channel = await RabbitMQService.getChannel();
+        const queueName = 'chat_messages'; 
 
-    static async processQueue(roomId) {
-        try {
-            const channel = await RabbitMQService.getChannel();
-            await channel.assertQueue(roomId, { durable: true });
-            await channel.prefetch(10); 
+        await channel.assertQueue(queueName, { durable: true });
+        await channel.prefetch(10);
 
-            await channel.consume(roomId, async (msg) => {
-                if (msg) {
-                    try {
-                        const message = JSON.parse(msg.content.toString());
-                        await this.processMessage(message, roomId);
-                        channel.ack(msg);
-                    } catch (error) {
-                        console.error(`Error processing message in room ${roomId}:`, error);
-                        channel.nack(msg, false, false); 
-                    }
+        channel.consume(queueName, async (msg) => {
+            if (msg) {
+                try {
+                    const message = JSON.parse(msg.content.toString());
+                    const roomId = message.room_id;
+                    await this.processMessage(message, roomId);
+                    channel.ack(msg);
+                } catch (error) {
+                    console.error(`Error processing message:`, error);
+                    channel.nack(msg, false, false); 
                 }
-            });
-
-        } catch (error) {
-            console.error(`Error setting up queue for room ${roomId}:`, error);
-        }
+            }
+        });
     }
 
     static async processMessage(message, roomId) {
@@ -55,7 +45,6 @@ class RabbitMQConsumer {
 
             const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
 
-
             const [saveMessage] = await Promise.all([
                 ChatRepository.saveMessage(message.user_id, roomId, message.message, now, now),
                 ChatService.updateNewMessagesInRoom(roomId, message)
@@ -73,7 +62,7 @@ class RabbitMQConsumer {
     static async notifyAndBroadcast(roomId, userIDs, message) {
         const io = global._io;
         io.to(roomId).emit("new message", { "data": message });
-        
+
         const onlineUserPromises = userIDs.map(async (userId) => {
             const userStatus = await RedisService.getUserStatus(userId);
             if (userStatus === 'online') {
