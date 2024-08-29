@@ -207,9 +207,10 @@ class RoomRepository {
 
     getRoomByUserIDs = async (user_ids) => {
         return await RoomModel.findOne({
-            user_ids: { $eq: user_ids }
+            user_ids: { $all: user_ids, $size: user_ids.length }
         });
     }
+    
 
     getRoomsByUserID = async (user_id) => {
         const type = 'room';
