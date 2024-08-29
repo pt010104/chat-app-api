@@ -10,7 +10,7 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
+import './../shim.js';
 // Global variables
 global.__basedir = __dirname;
 global._io = io;
