@@ -195,7 +195,7 @@ class ChatService {
         }
 
         const deletedMessage=await ChatRepository.deleteMessagesInRoom(message_ids);
-        await updateRedisCache(room_id);
+        await ChatRepository.updateRedisCache(room_id);
         return ChatRepository.transformForClient(deletedMessage);
     }
 
@@ -222,7 +222,7 @@ class ChatService {
         }
 
         const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
-        await updateRedisCache(room_id);
+        await ChatRepository.updateRedisCache(room_id);
         return ChatRepository.transformForClient(updatedMessage);
     }
 
