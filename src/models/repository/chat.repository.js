@@ -111,7 +111,9 @@ class ChatRepository {
             await RedisService.set(key, JSON.stringify(messages)); 
             console.log(`Cached ${messages.length} messages for room ${room_id} with key ${key}`);
         }
-    
+        //decrypted messages
+
+        
         return messages;
     }
     

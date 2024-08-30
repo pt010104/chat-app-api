@@ -133,6 +133,27 @@ class ChatController {
             metadata: await ChatService.searchRoom(userId, filter)
         }).send(res)
     }
+
+    createE2EE = async (req, res, next) => {
+        const user_id = req.body.user_id;
+        const createE2EEValidate = Joi.object({
+            user_id: Joi.string().required(),
+        });
+
+        const { error } = createE2EEValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+
+        new SuccessResponse({
+            message: "E2EE create successfully",
+            metadata: await ChatService.createE2EE(user_id, userId)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

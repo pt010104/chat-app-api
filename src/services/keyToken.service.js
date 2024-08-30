@@ -2,7 +2,6 @@
 
 const keyToken = require("../models/keytoken.model");
 const crypto = require("node:crypto");
-
 class KeyTokenService {
   static createKeyToken = async (data) => {
     try {
@@ -29,7 +28,7 @@ class KeyTokenService {
       throw new Error(error);
     }
   };
-  
+
   static removeKeyToken = async (userId) => {
     try {
       const tokens = await keyToken.findOneAndDelete({
@@ -52,16 +51,16 @@ class KeyTokenService {
       const refreshToken = crypto.randomBytes(32).toString("hex");
 
       return await this.createKeyToken({
-          _id: userId,
-          publicKey,
-          privateKey,
-          refreshToken,
+        _id: userId,
+        publicKey,
+        privateKey,
+        refreshToken,
       })
 
     }
 
     return tokens;
-  }
+  };
 }
 
 module.exports = KeyTokenService;

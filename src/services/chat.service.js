@@ -2,12 +2,15 @@
 
 const { NotFoundError } = require("../core/error.response")
 const RoomRepository = require("../models/repository/room.repository")
+const RoomE2EERepository = require("../models/repository/roomE2EE.repository")
+const E2EEService = require("../services/E2EE.service")
 const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")
 const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
+const roomE2EEModel = require("../models/roomE2EE.model")
 
 class ChatService {
     static sendMessage = async (user_id, room_id, message) => {
@@ -16,7 +19,8 @@ class ChatService {
             message,
             room_id,
         }
-
+        //encrypt message
+        
         await RabbitMQService.sendMessage(room_id, chatMessage);
 
         return chatMessage 
@@ -201,6 +205,32 @@ class ChatService {
 
         return transformedRooms;
     }
+
+    static async createE2EE(user_id,userId)   {
+        // const status = await RedisService.getUserStatus(user_id); 
+        // if (status !== 'online') {
+        //     throw new BadRequestError("User is not online");
+        // }
+        
+        const newRoom = await RoomE2EERepository.createRoom(
+            userId
+        );
+        await E2EEService.generateKeyPairForRoom(newRoom._id);
+        const publicKey = await E2EEService.getPublicKeyByRoom(newRoom._id);
+        const privateKey= await E2EEService.getPrivateKeyByRoom(newRoom._id);
+        const updatedRoom = await roomE2EEModel.findByIdAndUpdate({
+            _id:newRoom._id,
+        },{
+            publicKey1:publicKey
+        });
+        const encryptedMessage = await E2EEService.encryptMessage(publicKey, 'Hello, world!');
+        const decryptedMessage = await E2EEService.decryptMessage(privateKey, encryptedMessage);
+        console.log('Encrypted message:', encryptedMessage);
+        console.log('Decrypted message:', decryptedMessage);
+        return RoomE2EERepository.transformForClient(updatedRoom, user_id);
+    }
+
+
 }
 
-module.exports = ChatService
+module.exports = ChatService;
