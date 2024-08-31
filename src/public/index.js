@@ -15,7 +15,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
     const roomId = roomIdInput.value.trim();
 
     if (userId && roomId) {
-        socket = io('http://localhost:5050', {
+        socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
             query: {
                 user_id: userId
             }
