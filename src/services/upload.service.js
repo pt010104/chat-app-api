@@ -78,6 +78,9 @@ class UploadService {
             } else if (type === "room") {
                 folderName = type  + "/" + params.room_id;
                 publicIDBase = params.room_id;
+            } else if (type === "message") {
+                folderName = type + "/" + params.room_id;
+                publicIDBase = params.room_id;
             } else {
                 throw new BadRequestError("Invalid type");
             }
@@ -145,6 +148,22 @@ class UploadService {
                 const { room_url } = generateUrls();
 
                 return { room_url };
+            } 
+
+            if (type === "message") {
+                const generateUrls = () => {
+                    const url = cloudinary.url(uploadImage.public_id, {
+                        width: CONSTANT.WIDTH_AVATAR,
+                        height: CONSTANT.HEIGHT_AVATAR,
+                        crop: "fill",
+                        format: 'jpg'
+                    });
+                    return { url };
+                };
+
+                const { url } = generateUrls();
+
+                return { url };
             }
     
             return { url: uploadImage.url };
