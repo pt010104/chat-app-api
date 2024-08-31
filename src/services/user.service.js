@@ -56,11 +56,13 @@ class UserService {
         const is_friend = await FriendShipService.checkIsFriend(userID, user._id);
         const is_sent_request = await FriendShipService.CheckSentRequest(userID, user._id);
         const is_received_request = await FriendShipService.CheckReceivedRequest(userID, user._id);
+        const mutual_friends = await FriendShipService.countMutualFriends(userID, user._id);
         return {
             ...user,
             is_friend,
             is_sent_request,
-            is_received_request
+            is_received_request,
+            mutual_friends
         };
     }));
 

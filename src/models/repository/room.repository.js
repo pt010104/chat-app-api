@@ -32,7 +32,7 @@ class RoomRepository {
                             dataTransformed.room_avatar = user.avatar; 
                         } else {
                             dataTransformed.room_name = room.name;
-                        }
+                        } 
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
