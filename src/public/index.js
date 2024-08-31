@@ -29,6 +29,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
         socket.on('ready', () => {
             socket.emit('join user', userId);
             socket.emit('join room', roomId);
+            log('Successfully joined room:', roomId)
         });
 
         socket.on('joined room', (roomId) => {
