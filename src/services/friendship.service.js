@@ -77,9 +77,8 @@ class FriendShip {
 
         return requests;
     }
-    static listRequestsFriends = async (user_id,limit,page) => {
-        // let list = await this.findRequestsFriends(user_id);
 
+    static listRequestsFriends = async (user_id, limit, page) => {
         const list = await FriendShipModel.find({
             user_id_receive: user_id,
             status: "pending"
@@ -88,24 +87,51 @@ class FriendShip {
         if (list.length === 0) {
             return;
         }
-
-        const results = [];
-        for (let request of list) {
+    
+        const resultsPromises = list.map(async (request) => {
             try {
-                const user_send_info = await findUserById(request.user_id_send);
-                results.push({
+                const [user_send_info, mutual_friends] = await Promise.all([
+                    findUserById(request.user_id_send),
+                    this.countMutualFriends(user_id, request.user_id_send)
+                ]);
+    
+                return {
                     request_id: request._id,
                     user_id_send: user_send_info._id,
                     user_name_send: user_send_info.name,
                     avatar: user_send_info.avatar,
+                    mutual_friends, 
                     created_at: request.createdAt
-                })
+                };
             } catch (error) {
-                console.log(error);
+                console.error(error);
+                return null; 
             }
-        }
+        });
+    
+        const results = await Promise.all(resultsPromises);
+    
+        return results.filter(result => result !== null);
+    }
 
-        return results;
+    static countMutualFriends = async (user_id, friend_id) => {
+        const [friends, friend_friends] = await Promise.all([
+            this.findFriends(user_id),
+            this.findFriends(friend_id)
+        ]);
+    
+        const mutualFriends = friends.filter(friend => {
+            return friend_friends.some(friend_friend => {
+                return (
+                    (friend.user_id_send.toString() === friend_friend.user_id_send.toString() ||
+                     friend.user_id_send.toString() === friend_friend.user_id_receive.toString()) ||
+                    (friend.user_id_receive.toString() === friend_friend.user_id_send.toString() ||
+                     friend.user_id_receive.toString() === friend_friend.user_id_receive.toString())
+                );
+            });
+        });
+    
+        return mutualFriends.length;
     }
     
     static sendFriendRequest = async (user_id, user_id_receive) => {
@@ -284,20 +310,21 @@ class FriendShip {
 
     static async listFriendsNotInRoomChat(userID, room_id) {
         const friends = await this.findFriends(userID);
-
+    
         const friends_ids = friends.map(friend => {
-            return userID == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            return userID.toString() === friend.user_id_send.toString() ? 
+                friend.user_id_receive.toString() : friend.user_id_send.toString();
         });
-
-        console.log(friends_ids)
-
-        const room = await roomRepository.getRoomByID(room_id)
-        const room_user_ids = room.user_ids
-
-        console.log(room_user_ids)
-
-        const friends_not_in_room = friends_ids.filter(friend_id => !room_user_ids.includes(friend_id));
-
+    
+        console.log(friends_ids);
+    
+        const room = await roomRepository.getRoomByID(room_id);
+        const room_user_ids = room.user_ids.map(id => id.toString());
+        
+        const friends_not_in_room = friends_ids.filter(friend_id => 
+            !room_user_ids.includes(friend_id.toString())
+        );
+    
         const promises = friends_not_in_room.map(async (friend_id) => {
             try {
                 const friend_info = await findUserById(friend_id);
@@ -307,9 +334,10 @@ class FriendShip {
                 return null;
             }
         });
-
+    
         const results = await Promise.all(promises);
         return results.filter(Boolean);
     }
+    
 }
 module.exports = FriendShip

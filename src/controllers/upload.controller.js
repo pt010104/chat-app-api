@@ -15,18 +15,20 @@ class UploadController {
 
     }
 
-    uploadFileAvatar = async (req, res, next) => {
+    uploadFileImage = async (req, res, next) => {
         const { file } = req;
         if (!file) {
             throw new NotFoundError("File not found");
         }
+
+        const params = req.query;
     
         new SuccessResponse({
             message: "Upload file successfully",
             metadata: await UploadService.uploadImageFromBuffer({
                 buffer: file.buffer,
                 user_id: req.user.userId,
-                type: "avatar",
+                params,
             }),
         }).send(res);
     }
