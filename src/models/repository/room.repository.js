@@ -27,9 +27,11 @@ class RoomRepository {
                         }
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
-                        if (user && user.avatar) {
+                        if (user && user.avatar && room.auto_name) {
                             dataTransformed.room_name = user.name;
                             dataTransformed.room_avatar = user.avatar; 
+                        } else {
+                            dataTransformed.room_name = room.name;
                         }
                     }
                 } else {
@@ -51,9 +53,11 @@ class RoomRepository {
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
-                    if (user && user.avatar) {
+                    if (user && user.avatar && rooms.auto_name) {
                         room_avatar  = user.avatar; 
                         room_name = user.name;
+                    } else {
+                        room_name = rooms.name;
                     }
                 }
             } else {
@@ -92,9 +96,11 @@ class RoomRepository {
                         }
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
-                        if (user && user.avatar) {
+                        if (user && user.avatar && room.auto_name) {
                             dataTransformed.room_avatar = user.avatar; 
                             dataTransformed.room_name = user.name;
+                        } else {
+                            dataTransformed.room_name = room.name;
                         }
                     }
                 } else {
@@ -132,9 +138,11 @@ class RoomRepository {
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
-                    if (user && user.avatar) {
+                    if (user && user.avatar && rooms.auto_name) {
                         room_avatar  = user.avatar; 
                         room_name = user.name;
+                    } else {
+                        room_name = rooms.name;
                     }
                 }
             } else {
