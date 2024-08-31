@@ -32,6 +32,7 @@ class RoomRepository {
                             dataTransformed.room_avatar = user.avatar; 
                         } else {
                             dataTransformed.room_name = room.name;
+                            dataTransformed.room_avatar = user.avatar; 
                         } 
                     }
                 } else {
@@ -58,6 +59,7 @@ class RoomRepository {
                         room_name = user.name;
                     } else {
                         room_name = rooms.name;
+                        room_avatar = user.avatar;
                     }
                 }
             } else {
@@ -101,6 +103,7 @@ class RoomRepository {
                             dataTransformed.room_name = user.name;
                         } else {
                             dataTransformed.room_name = room.name;
+                            dataTransformed.room_avatar = user.avatar;
                         }
                     }
                 } else {
@@ -143,6 +146,7 @@ class RoomRepository {
                         room_name = user.name;
                     } else {
                         room_name = rooms.name;
+                        room_avatar = user.avatar;
                     }
                 }
             } else {
