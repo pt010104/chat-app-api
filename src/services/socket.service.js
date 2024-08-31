@@ -34,7 +34,7 @@ class SocketServices {
         socket.on('read message', (roomId, status) => this.MarkMessage(socket, roomId, status))
         socket.on('error', error => this.handleError(socket, error))
     }
-
+//
     async handleChatMessage(socket, user_id, msg) {
         try {
             const { room_id, message, buffer } = msg;
