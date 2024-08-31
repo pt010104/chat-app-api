@@ -74,6 +74,17 @@ class RabbitMQService {
         }
     }
 
+    async sendMedia(queue, mediaData) {
+        try {
+            const channel = await this.getChannel();
+            await channel.assertQueue(queue, { durable: true });
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(mediaData)), { persistent: true });
+        } catch (error) {
+            console.error('Error sending media', error);
+            throw error;
+        }
+    }
+
     async receiveMessage(queue, callback) {
         try {
             const channel = await this.getChannel();

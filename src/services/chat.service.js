@@ -11,14 +11,20 @@ const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
 
 class ChatService {
-    static async sendMessage(user_id, room_id, message) {
+    static async sendMessage(user_id, room_id, message, buffer) {
         const chatMessage = {
             user_id,
             message,
             room_id,
         };
 
-        await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES,chatMessage); 
+        if (buffer) {
+            chatMessage.buffer = buffer
+            await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+        } else {
+            await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+        }
+
         return chatMessage;
     }   
 
@@ -110,6 +116,10 @@ class ChatService {
 
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;
+        if (message.image_url) {
+            message.message = 'Sent an image';
+        }
+        
         await RedisService.set(key, JSON.stringify(message));
     }
 
