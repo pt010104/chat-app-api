@@ -19,6 +19,10 @@ const chatSchema = new Schema({
         type: Types.ObjectId,
         required: true,
         ref: 'Room'
+    },
+    image_url: {
+        type: String,
+        default: null
     }
 }, {
     timestamps: true,

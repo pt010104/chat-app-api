@@ -1,5 +1,6 @@
 const ChatService = require("./chat.service");
 const RedisService = require("./redis.service");
+const QueueNames = require("../utils/queueNames")
 
 class SocketServices {
     constructor(io) {
