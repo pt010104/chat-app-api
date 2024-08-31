@@ -23,12 +23,20 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
         socket.on('connect', () => {
             log(`Connected to server with user ID: ${userId}`);
-            socket.emit('join room', roomId);
             document.getElementById('sendMessageButton').disabled = false; // Enable the send button after connection
+        });
+
+        socket.on('ready', () => {
+            socket.emit('join user', userId);
+            socket.emit('join room', roomId);
         });
 
         socket.on('joined room', (roomId) => {
             log(`Successfully joined room: ${roomId}`);
+        });
+
+        socket.on('joined user', (userId) => {
+            log(`Successfully joined user channel: ${userId}`);
         });
 
         socket.on('new message', (data) => {
