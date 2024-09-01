@@ -12,19 +12,11 @@ const { removeVietNamese } = require("../utils")
 const roomE2EEModel = require("../models/roomE2EE.model")
 const roomE2EERepository = require("../models/repository/roomE2EE.repository")
 
-class ChatService {
+class PrivateChatService {
 
 
     static sendMessagePrivate = async (user_id, room_id, message) => {
-        const chatMessage = {
-            user_id,
-            message,
-            room_id,
-        }
-        //encrypt message
-        //truoc khi gui detect xem co room_id trong danh sach roomE2EE khong, detect trong purse co room_id khong, neu co thi lay public key cua room do de encrypt message, 
-        //neu khong thi 
-        //neu co thi lay public key cua room do de encrypt message
+
         const findRoom = await roomE2EEModel.findById(room_id);
         if (!findRoom) {// vi friend end session
             await E2EEService.clearKeys(room_id);
@@ -45,7 +37,12 @@ class ChatService {
             publicKey = await roomE2EERepository.getPublicKey(room_id, user_id);
             await E2EEService.setPublicKeyByRoom(room_id, publicKey);
         }
-        const messageEncrypt = await E2EEService.encryptMessage(message, publicKey);
+        const messageEncrypt = await E2EEService.encryptMessage(room_id, message);
+        const chatMessage = {
+            user_id,
+            message: messageEncrypt,
+            room_id,
+        }
         await RabbitMQService.sendMessage(room_id, chatMessage);
 
         return chatMessage
@@ -62,7 +59,7 @@ class ChatService {
             throw new BadRequestError("You are not in this room")
         }
         const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
-        if (!hasRoom) {
+        if (!hasRoom) {//not accept E2EE before, now accept E2EE and create key pair or session already end and need create key for new session
             let publicKey = await E2EEService.generateKeyPairForRoom(room_id);
             await roomE2EERepository.setPublicKey(room_id, publicKey, userId);
             publicKey = await roomE2EERepository.getPublicKey(room_id, userId);
@@ -145,7 +142,8 @@ class ChatService {
         const messagePromises = rooms.map(room =>
             RedisService.get('Pri newMessage:' + room._id).then(async message => {
                 if (message) {
-                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
+                    const messageDecrypt = await E2EEService.decryptMessage( room._id,message);
+                    const transformedData = await ChatRepository.transformForClient(JSON.parse(messageDecrypt));
                     return { message: transformedData };
                 }
                 return null;
@@ -279,4 +277,4 @@ class ChatService {
 
 }
 
-module.exports = ChatService;
+module.exports = PrivateChatService;

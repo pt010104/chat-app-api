@@ -1,5 +1,6 @@
 const RabbitMQService = require('../rabbitmq.service');
 const RoomRepository = require('../../models/repository/room.repository');
+const RoomE2EERepository = require('../../models/repository/roomE2EE.repository');
 const RedisService = require('../redis.service');
 const ChatRepository = require('../../models/repository/chat.repository');
 const ChatService = require('../chat.service');
@@ -78,6 +79,7 @@ class RabbitMQConsumer {
             message.updatedAt = now;
 
             const [checkRoom, userIDsInRoom] = await Promise.all([
+                //here
                 RoomRepository.getRoomByID(roomId),
                 RoomRepository.getUserIDsByRoom(roomId)
             ]);

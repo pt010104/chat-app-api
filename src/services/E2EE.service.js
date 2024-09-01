@@ -75,13 +75,14 @@ class E2EE {
         return true;
     }
     
-    static encryptMessage = async (publicKey, message) => {
-        // Encrypt a message using the provided public key
+    static encryptMessage = async (room_id,message) => {
+        const publicKey = await this.getPublicKeyByRoom(room_id);
         return crypto.publicEncrypt(publicKey, Buffer.from(message)).toString('base64');
     }
 
-    static decryptMessage = async (privateKey, encryptedMessage) => {
+    static decryptMessage = async (room_id, encryptedMessage) => {
         // Decrypt an encrypted message using the provided private key
+        const privateKey = await this.getPrivateKeyByRoom(room_id);
         return crypto.privateDecrypt(privateKey, Buffer.from(encryptedMessage, 'base64')).toString('utf8');
     }
     
