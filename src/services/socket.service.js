@@ -37,7 +37,8 @@ class SocketServices {
 //
     async handleChatMessage(socket, user_id, msg) {
         try {
-            const params = msg;
+            let params = msg;
+            params.user_id = user_id;
             const savedMessage = await ChatService.sendMessage(params);
         } catch (error) {
             this.log(`Error handling message for ${user_id}: ${error}`, true);
