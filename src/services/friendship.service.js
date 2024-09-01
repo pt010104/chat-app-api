@@ -188,6 +188,11 @@ class FriendShip {
 
         ChatService.createRoom(createRoomParams)
 
+        const key1 = `listFriends:${user_id}`;
+        const key2 = `listFriends:${acceptRequest.user_id_send}`;
+        RedisService.delete(key1);
+        RedisService.delete(key2)
+
         return {
             acceptRequest
         }
