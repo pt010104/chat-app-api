@@ -187,6 +187,7 @@ class ChatService {
 
         if (params.name) {
             room.name = params.name;
+            room.name_remove_sign = removeVietNamese(params.name);
             room.auto_name = false;
         }
 
@@ -194,8 +195,10 @@ class ChatService {
             room.avt_url = params.avt_url;
         }
 
+        console.log(room)
+
         const updatedRoom = await RoomRepository.updateRoom(room);
-        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+        RoomRepository.updateRedisCacheForRoom(updatedRoom);
 
         return RoomRepository.transformForClient(updatedRoom, params);
     }

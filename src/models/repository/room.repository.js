@@ -18,9 +18,11 @@ class RoomRepository {
                     room_created_at: room.createdAt,
                     room_updated_at: room.updatedAt
                 }
+                console.log('room:', room)  
                 if (!room.is_group || room.avt_url == "") {
                     if (room.is_group) {
                         dataTransformed.room_name = room.name;
+                        console.log('room:', dataTransformed.room_name)
                         const user = await findUserById(room.created_by);
                         if (user && user.avatar) {
                             dataTransformed.room_avatar = user.avatar; 
@@ -37,6 +39,7 @@ class RoomRepository {
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
+                    dataTransformed.room_name = room.name
                 }
 
                 data.push(dataTransformed);
@@ -46,8 +49,10 @@ class RoomRepository {
             let room_avatar = null;
             let room_name = "";
             if (!rooms.is_group || rooms.avt_url == "") {
+                console.log('rooms:', rooms)
                 if (rooms.is_group) {
                     const user = await findUserById(rooms.created_by);
+                    console.log('rooms', rooms)
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
                         room_name = rooms.name;
@@ -64,6 +69,7 @@ class RoomRepository {
                 }
             } else {
                 room_avatar = rooms.avt_url
+                room_name = rooms.name;
             }
             return {
                 room_id: rooms._id,
@@ -108,6 +114,7 @@ class RoomRepository {
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
+                    dataTransformed.room_name = room.name
                 }
 
                 for (let j = 0; j < rooms.user_ids.length; j++) {
@@ -151,6 +158,7 @@ class RoomRepository {
                 }
             } else {
                 room_avatar = rooms.avt_url
+                room_name = rooms.name
             }
 
             let room_users = []
@@ -303,7 +311,10 @@ class RoomRepository {
     };
     
     updateRoom = async (room) => {
-        const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, { new: true });
+        const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, {
+            new: true,
+            runValidators: true,
+        });
         return updatedRoom;
     };
 
