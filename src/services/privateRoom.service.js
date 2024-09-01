@@ -20,6 +20,9 @@ class PrivateChatService {
             await E2EEService.clearKeys(room_id);
             throw new BadRequestError("Room not found")
         }
+        else if(findRoom.type_group!=='private'){
+            throw new BadRequestError("Invalid Request")
+        }
         else {
             //vd case ta da generate key pair, 
             //set public key cho room, nhung friend chua accept E2EE, chua set public key cho room, chua gui message dc
