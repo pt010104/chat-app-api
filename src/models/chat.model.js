@@ -23,6 +23,10 @@ const chatSchema = new Schema({
     image_url: {
         type: String,
         default: null
+    },
+    is_gift: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true,

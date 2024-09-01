@@ -37,8 +37,8 @@ class SocketServices {
 //
     async handleChatMessage(socket, user_id, msg) {
         try {
-            const { room_id, message, buffer } = msg;
-            const savedMessage = await ChatService.sendMessage(user_id, room_id, message, buffer);
+            const { params } = msg;
+            const savedMessage = await ChatService.sendMessage(params);
         } catch (error) {
             this.log(`Error handling message for ${user_id}: ${error}`, true);
         }

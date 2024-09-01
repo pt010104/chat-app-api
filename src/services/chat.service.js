@@ -11,16 +11,39 @@ const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
 
 class ChatService {
-    static async sendMessage(user_id, room_id, message, buffer) {
+    static async sendMessage(params) {
         const chatMessage = {
-            user_id,
-            message,
-            room_id,
+            user_id: params.user_id,
+            message: params.message,
+            room_id: params.room_id,
         };
 
-        if (buffer) {
-            chatMessage.buffer = buffer
+        if (params.buffer) {
+            chatMessage.buffer = params.buffer
             await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+        } else if (params.isGift) {
+            const release_time = params.releaseTime;
+            const now = new Date();
+            const releaseTime = new Date(release_time);
+            const delay = releaseTime - now;
+            if (delay < 0) {
+                console.warn('Release time is in the past. Sending message immediately.');
+                chatMessage.is_gift = false;
+                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+            } else {
+                chatMessage.is_gift = true;
+                const saveMessage = await ChatRepository.saveMessage({
+                    user_id: chatMessage.user_id,
+                    room_id: chatMessage.room_id,
+                    message: chatMessage.message,
+                    is_gift: true,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                })
+
+                chatMessage.id = saveMessage._id;
+                await RabbitMQService.scheduleMessage(QueueNames.Gift_MESSAGES, chatMessage, delay);
+            }
         } else {
             await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
         }
