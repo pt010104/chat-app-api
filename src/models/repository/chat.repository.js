@@ -74,13 +74,14 @@ class ChatRepository {
         return Promise.resolve(); 
     }
 
-    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at}) => {
+    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift}) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
                 message,
                 image_url,
+                is_gift,
                 createdAt: created_at,
                 updatedAt: updated_at
             });
@@ -132,7 +133,11 @@ class ChatRepository {
         await RedisService.set(cacheKey, count.toString(), 3600);
         return count;
     }
-    
+
+    async updateMessageGiftStatus(message_id, is_gift) {
+        const updated_at = new Date();
+        await ChatModel.findByIdAndUpdate(message_id, { is_gift, updated_at });
+    }    
 }
 
 module.exports = new ChatRepository();

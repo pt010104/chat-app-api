@@ -13,6 +13,7 @@ class RabbitMQConsumer {
 
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
+        await channel.assertQueue(QueueNames.Gift_MESSAGES, { durable: true });
 
         await channel.prefetch(10);
 
@@ -51,6 +52,30 @@ class RabbitMQConsumer {
                 }
             }
         });
+
+        channel.consume(QueueNames.Gift_MESSAGES, async (msg) => {
+            if (msg) {
+                try {
+                    const message = JSON.parse(msg.content.toString());
+                    await this.processGiftMessage(message);
+                    channel.ack(msg);
+                } catch (error) {
+                    console.error(`Error processing gift message:`, error);
+                    channel.nack(msg, false, false);
+                }
+            }
+        });
+    }
+
+    static async processGiftMessage(message) {
+        try {
+            await ChatRepository.updateMessageGiftStatus(message.id, false);
+    
+            console.info(`Message ID ${message.id}: is_gift status updated to false`);
+        } catch (error) {
+            console.error(`Error updating gift status for message ID ${message.id}:`, error);
+            throw error;
+        }
     }
 
     static async processMessage(message, roomId) {
