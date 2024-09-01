@@ -44,6 +44,7 @@ const transformUser = (users) => {
         is_friend: user.is_friend,
         is_sent_request: user.is_sent_request,
         is_received_request: user.is_received_request,
+        mutual_friends: user.mutual_friends,
     }));
 };
 

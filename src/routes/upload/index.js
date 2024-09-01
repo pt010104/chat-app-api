@@ -10,6 +10,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 //Upload
 router.use(authentication);
-router.post("/image/avatar", upload.single('file'), asyncHandler(UploadController.uploadFileAvatar));
+router.post("/image", upload.single('file'), asyncHandler(UploadController.uploadFileImage));
 
 module.exports = router;

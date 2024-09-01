@@ -23,7 +23,12 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
         socket.on('connect', () => {
             log(`Connected to server with user ID: ${userId}`);
-            document.getElementById('sendMessageButton').disabled = false; // Enable the send button after connection
+            document.getElementById('sendMessageButton').disabled = false;
+        });
+
+        socket.on('ready', () => {
+            socket.emit('join user', userId);
+            socket.emit('join room', roomId);
         });
 
         socket.on('ready', () => {
@@ -34,24 +39,20 @@ document.getElementById('connectButton').addEventListener('click', () => {
             log(`Successfully joined room: ${roomId}`);
         });
 
+        socket.on('joined user', (userId) => {
+            log(`Successfully joined user channel: ${userId}`);
+        });
+
         socket.on('new message', (data) => {
-            log(`Received new message: ${data.data.message}`);
-            appendMessageToLog(data.data.message, data.data.message_id);
-        });
-
-        socket.on('message edited', (data) => {
-            log(`Message edited: ${data.message}`);
-            updateMessageInLog(data.message, data.message_id);
-        });
-
-        socket.on('message deleted', (messageId) => {
-            log(`Message deleted: ${messageId}`);
-            removeMessageFromLog(messageId);
+            log(`Received new message:`);
+            if (data && data.data && data.data.message) {
+                log(JSON.stringify(data.data));
+            }
         });
 
         socket.on('disconnect', () => {
             log('Disconnected from server');
-            document.getElementById('sendMessageButton').disabled = true; // Disable the send button on disconnect
+            document.getElementById('sendMessageButton').disabled = true;
         });
 
         socket.on('error', (error) => {
@@ -64,82 +65,34 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
 document.getElementById('sendMessageButton').addEventListener('click', () => {
     const messageInput = document.getElementById('messageInput');
+    const imageInput = document.getElementById('imageInput');
     const message = messageInput.value.trim();
+    const imageFile = imageInput.files[0];
 
-    if (message && socket) {
+    if (message || imageFile) {
         const userId = socket.io.opts.query.user_id;
         const roomId = document.getElementById('roomIdInput').value.trim();
-        sendMessage(roomId, message);
-        messageInput.value = '';
+
+        if (imageFile) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64String = event.target.result;
+                sendMessage(roomId, message, base64String);
+            };
+            reader.readAsDataURL(imageFile);
+        } else {
+            sendMessage(roomId, message, null);
+        }
     } else {
         log('Cannot send an empty message or socket is not connected');
     }
 });
 
-document.getElementById('editMessageButton').addEventListener('click', () => {
-    const editMessageIdInput = document.getElementById('editMessageIdInput').value.trim();
-    const newMessageInput = document.getElementById('newMessageInput').value.trim();
-    const roomId = document.getElementById('roomIdInput').value.trim();
-
-    if (editMessageIdInput && newMessageInput && socket) {
-        editMessage(roomId, editMessageIdInput, newMessageInput);
-        document.getElementById('editMessageIdInput').value = '';
-        document.getElementById('newMessageInput').value = '';
-    } else {
-        log('Cannot edit message, input or message ID is missing');
-    }
-});
-
-document.getElementById('deleteMessageButton').addEventListener('click', () => {
-    const deleteMessageIdInput = document.getElementById('deleteMessageIdInput').value.trim();
-    const roomId = document.getElementById('roomIdInput').value.trim();
-
-    if (deleteMessageIdInput && socket) {
-        deleteMessage(roomId, deleteMessageIdInput);
-        document.getElementById('deleteMessageIdInput').value = '';
-    } else {
-        log('Cannot delete message, message ID or socket is missing');
-    }
-});
-
-function appendMessageToLog(message, messageId) {
-    const logArea = document.getElementById('logArea');
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message-item');
-    messageElement.id = messageId;
-    messageElement.innerHTML = `
-        <span>${message}</span>
-        <button class="editButton" onclick="startEditingMessage('${messageId}', '${message}')">Edit</button>
-        <button class="deleteButton" onclick="startDeletingMessage('${messageId}')">Delete</button>
-    `;
-    logArea.appendChild(messageElement);
-}
-
-function updateMessageInLog(message, messageId) {
-    const messageElement = document.getElementById(messageId);
-    if (messageElement) {
-        messageElement.querySelector('span').textContent = message;
-    }
-}
-
-function removeMessageFromLog(messageId) {
-    const messageElement = document.getElementById(messageId);
-    if (messageElement) {
-        messageElement.remove();
-    }
-}
-
-function startEditingMessage(messageId, message) {
-    document.getElementById('editMessageIdInput').value = messageId;
-    document.getElementById('newMessageInput').value = message;
-}
-
-function startDeletingMessage(messageId) {
-    document.getElementById('deleteMessageIdInput').value = messageId;
-}
-
-function sendMessage(room_id, message) {
+function sendMessage(room_id, message, imageData) {
     const messageData = { room_id, message };
+    if (imageData) {
+        messageData.buffer = imageData;
+    }
     log('Sending message: ' + JSON.stringify(messageData));
     socket.emit('chat message', messageData);
 }

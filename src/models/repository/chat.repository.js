@@ -45,6 +45,9 @@ class ChatRepository {
             if (user_avatar_thumb) {
                 transformedData.user_avatar_thumb = user_avatar_thumb;
             }
+            if (chatData.image_url) {
+                transformedData.image_url = chatData.image_url;
+            }
 
             return transformedData;
         } catch (error) {
@@ -71,26 +74,28 @@ class ChatRepository {
         return Promise.resolve(); 
     }
 
-    saveMessage = async (user_id, room_id, message, created_at, updated_at) => {
+    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at}) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
                 message,
+                image_url,
                 createdAt: created_at,
                 updatedAt: updated_at
             });
-
+    
             const [savedMessage] = await Promise.all([
                 newMessage.save(),
                 this.updateRedisCache(room_id)
             ]);
-
+    
             return savedMessage;
         } catch (error) {
-            throw new BadRequestError(error);
+            throw new BadRequestError(error.message || error);
         }
     }
+    
 
     getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
         const key = `room:messages:${room_id}:${skip}:${limit}`;

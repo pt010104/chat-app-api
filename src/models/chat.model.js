@@ -21,7 +21,11 @@ const chatSchema = new Schema({
         required: true,
         ref: 'Room'
     },
-    deleted_at: {type: Date, default: null}
+    deleted_at: {type: Date, default: null},
+    image_url: {
+        type: String,
+        default: null
+    }
 }, {
     timestamps: true,
     collection: COLLECTION_NAME

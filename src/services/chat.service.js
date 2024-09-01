@@ -9,21 +9,35 @@ const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const pinMessageRepository = require("../models/repository/pinMessage.repository")
+const QueueNames = require("../utils/queueNames")
+
 class ChatService {
-    static sendMessage = async (user_id, room_id, message) => {
+    static async sendMessage(user_id, room_id, message, buffer) {
         const chatMessage = {
             user_id,
             message,
             room_id,
+        };
+
+        if (buffer) {
+            chatMessage.buffer = buffer
+            await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+        } else {
+            await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
         }
 
-        await RabbitMQService.sendMessage(room_id, chatMessage);
-
-        return chatMessage
-    }
+        return chatMessage;
+    }   
 
     static createRoom = async (params) => {
         if (params.user_ids.length < 1) {
+            throw new BadRequestError("Invalid Request")
+        }
+
+        const matchingUserIds = params.user_ids.filter(id => id === params.userId);
+        if (matchingUserIds.length >= 2) {
+            throw new BadRequestError("Invalid Request")
+        } else if (params.user_ids.length == 1 && matchingUserIds.length != 0) {
             throw new BadRequestError("Invalid Request")
         }
 
@@ -44,9 +58,6 @@ class ChatService {
         //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
         if (params.user_ids.length == 2) {
             const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
-
-            const user = await findUserById(friend_user_id);
-            params.name = user.name
             params.auto_name = true
         }
 
@@ -106,7 +117,13 @@ class ChatService {
 
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;
-        await RedisService.set(key, JSON.stringify(message));
+        if (message.image_url) {
+            message.message = 'Sent an image';
+            delete message.buffer;
+            RedisService.set(key, JSON.stringify(message));
+        } else {
+            RedisService.set(key, JSON.stringify(message));  
+        }
     }
 
     static async getMessagesInRoom(room_id, page = 1, limit = 12) {
@@ -171,6 +188,7 @@ class ChatService {
 
         if (params.name) {
             room.name = params.name;
+            room.name_remove_sign = removeVietNamese(params.name);
             room.auto_name = false;
         }
 
@@ -178,8 +196,10 @@ class ChatService {
             room.avt_url = params.avt_url;
         }
 
+        console.log(room)
+
         const updatedRoom = await RoomRepository.updateRoom(room);
-        await RoomRepository.updateRedisCacheForRoom(updatedRoom);
+        RoomRepository.updateRedisCacheForRoom(updatedRoom);
 
         return RoomRepository.transformForClient(updatedRoom, params);
     }

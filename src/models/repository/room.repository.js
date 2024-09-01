@@ -27,13 +27,17 @@ class RoomRepository {
                         }
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
-                        if (user && user.avatar) {
+                        if (user && user.avatar && room.auto_name) {
                             dataTransformed.room_name = user.name;
                             dataTransformed.room_avatar = user.avatar; 
-                        }
+                        } else {
+                            dataTransformed.room_name = room.name;
+                            dataTransformed.room_avatar = user.avatar; 
+                        } 
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
+                    dataTransformed.room_name = room.name
                 }
 
                 data.push(dataTransformed);
@@ -41,24 +45,31 @@ class RoomRepository {
             return data;
         }  else {
             let room_avatar = null;
+            let room_name = "";
             if (!rooms.is_group || rooms.avt_url == "") {
                 if (rooms.is_group) {
                     const user = await findUserById(rooms.created_by);
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
+                        room_name = rooms.name;
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
-                    if (user && user.avatar) {
+                    if (user && user.avatar && rooms.auto_name) {
                         room_avatar  = user.avatar; 
+                        room_name = user.name;
+                    } else {
+                        room_name = rooms.name;
+                        room_avatar = user.avatar;
                     }
                 }
             } else {
                 room_avatar = rooms.avt_url
+                room_name = rooms.name;
             }
             return {
                 room_id: rooms._id,
-                room_name: rooms.name,
+                room_name: room_name,
                 is_group: rooms.is_group,
                 room_user_ids: rooms.user_ids,
                 room_avatar: room_avatar ?? rooms.avt_url,
@@ -75,7 +86,6 @@ class RoomRepository {
                 const room = rooms[i];
                 let dataTransformed = {
                     room_id: room._id,  
-                    room_name: room.name,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
                     room_created_at: room.createdAt,
@@ -85,16 +95,22 @@ class RoomRepository {
                     if (room.is_group) {
                         const user = await findUserById(room.created_by);
                         if (user && user.avatar) {
-                            dataTransformed.room_avatar = user.avatar; 
+                            dataTransformed.room_avatar = user.avatar;
+                            dataTransformed.room_name = room.name;
                         }
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
-                        if (user && user.avatar) {
+                        if (user && user.avatar && room.auto_name) {
                             dataTransformed.room_avatar = user.avatar; 
+                            dataTransformed.room_name = user.name;
+                        } else {
+                            dataTransformed.room_name = room.name;
+                            dataTransformed.room_avatar = user.avatar;
                         }
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
+                    dataTransformed.room_name = room.name
                 }
 
                 for (let j = 0; j < rooms.user_ids.length; j++) {
@@ -118,20 +134,27 @@ class RoomRepository {
             return data;
         }  else {
             let room_avatar = null;
+            let room_name = ""
             if (!rooms.is_group || rooms.avt_url == "") {
                 if (rooms.is_group) {
                     const user = await findUserById(rooms.created_by);
                     if (user && user.avatar) {
                         room_avatar  = user.avatar; 
+                        room_name = rooms.name;
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
-                    if (user && user.avatar) {
+                    if (user && user.avatar && rooms.auto_name) {
                         room_avatar  = user.avatar; 
+                        room_name = user.name;
+                    } else {
+                        room_name = rooms.name;
+                        room_avatar = user.avatar;
                     }
                 }
             } else {
                 room_avatar = rooms.avt_url
+                room_name = rooms.name
             }
 
             let room_users = []
@@ -151,7 +174,7 @@ class RoomRepository {
             
             return {
                 room_id: rooms._id,
-                room_name: rooms.name,
+                room_name: room_name,
                 is_group: rooms.is_group,
                 room_user_ids: rooms.user_ids,
                 room_users: room_users,
@@ -201,8 +224,14 @@ class RoomRepository {
             await newRoom.save();
         }   
 
-        RedisService.delete(`room:${userId}`, newRoom);
-        await this.invalidateRoomsCache();
+        const redisOperations = [];
+
+        newRoom.user_ids.forEach(id => {
+            redisOperations.push(RedisService.delete(`room:${id}`));
+        });
+
+        await Promise.all(redisOperations);
+        
         return newRoom;
     }
 
@@ -250,7 +279,6 @@ class RoomRepository {
         const redisOperations = [];
       
         redisOperations.push(RedisService.delete(`room:${room._id}`));
-        redisOperations.push(RedisService.delete(`all_rooms`));
         redisOperations.push(RedisService.set(`room:${room._id}`, JSON.stringify(room), 3600));
       
         room.user_ids.forEach(id => {
@@ -279,7 +307,10 @@ class RoomRepository {
     };
     
     updateRoom = async (room) => {
-        const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, { new: true });
+        const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, {
+            new: true,
+            runValidators: true,
+        });
         return updatedRoom;
     };
 
