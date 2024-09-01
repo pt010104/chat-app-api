@@ -137,12 +137,14 @@ class ChatController {
     sendMessage = async (req, res, next) => {
         //
         const userId = req.user.userId;
-        const { message, room_id, buffer } = req.body;
-
-        if (!message && !buffer) {
-            return res.status(400).json({
-                message: "Message or buffer is required",
-            });
+        let { message, room_id, buffer } = req.body;
+        if (!message) {
+            if (!buffer) {
+                return res.status(400).json({
+                    message: "Message or buffer is required",
+                });
+            }
+            message = " ";
         }
 
         new SuccessResponse({
