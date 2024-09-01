@@ -369,10 +369,10 @@ class RoomRepository {
         if (room) {
             RedisService.set(key, JSON.stringify(room), 3600);
         }
-        if(room.user_ids[0] == userId) {//user was added so publicKey1, 
-            return room.publicKey1;
+        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey1, 
+            return room.public_Key_1;
         }
-        return room.publicKey2;//user create so publicKey2
+        return room.public_Key_2;//user create so publicKey2
     }
 
     setPublicKey = async (room_id, publicKey, userId) => {
@@ -381,20 +381,20 @@ class RoomRepository {
         if (!room) {
             throw new Error('Pri Room not found');
         }
-        if(room.user_ids[0] == userId) {//user was added so publicKey2
-            room.publicKey2 = publicKey;
+        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey2
+            room.public_Key_2 = publicKey;
         } else {//user create so publicKey1
-            room.publicKey1 = publicKey;
+            room.public_Key_1 = publicKey;
         }
         await room.save();
         return room;
     }
 
     getPublicKeyRoom = async (room,userId) => {
-        if(room.user_ids[0] == userId) {//user was added so publicKey1
-            return room.publicKey1;
+        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey1
+            return room.public_Key_1;
         }
-        return room.publicKey2;//user create so publicKey2
+        return room.public_Key_2;//user create so publicKey2
     }
 }
 

@@ -9,7 +9,7 @@ const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
-
+const E2EE = require("../services/E2EE.service")
 class ChatService {
     static async sendMessage(user_id, room_id, message, buffer) {
         const chatMessage = {
@@ -99,6 +99,11 @@ class ChatService {
         const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
+                    if(room.type === 'private') {
+                        const messageDecrypted = await E2EE.decryptMessage(room._id, message);
+                        const transformedData = await ChatRepository.transformForClient(JSON.parse(messageDecrypted));
+                        return { message: transformedData };
+                    }
                     const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
                     return { message: transformedData };
                 }

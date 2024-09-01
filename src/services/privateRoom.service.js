@@ -10,6 +10,7 @@ const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const RoomRepository = require("../models/repository/room.repository")
 const QueueNames = require("../utils/queueNames")
+const RoomModel = require("../models/room.model")
 class PrivateChatService {
 
     static sendMessagePrivate = async (user_id, room_id, message) => {
@@ -48,7 +49,7 @@ class PrivateChatService {
     //this function will be called when user create room or accept E2EE, but this session is end, (new date)
     //this function will create new session, new key pair, set public key for room
     static getAndSetKey = async (room_id, userId) => {
-        const room = await roomModel.findById(room_id);
+        const room = await RoomModel.findById(room_id);
         if (!room) {
             throw new NotFoundError("Room not found");
         }
@@ -113,7 +114,7 @@ class PrivateChatService {
 
         let newRoom = await RoomRepository.createRoomPrivate(params);
         let publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
-        newRoom == await roomModel.findByIdAndUpdate({
+        newRoom == await RoomModel.findByIdAndUpdate({
             _id: newRoom._id,
         }, {
             public_Key_1: publicKey
@@ -232,7 +233,7 @@ class PrivateChatService {
     static endE2EE = async (room_id) => {
         await E2EEService.clearKeys(room_id);
         const message = await ChatRepository.clearMessages(room_id);
-        await roomModel.findByIdAndDelete(room_id);
+        await RoomModel.findByIdAndDelete(room_id);
         return message;
     }
 
@@ -242,7 +243,7 @@ class PrivateChatService {
             throw new NotFoundError("Room not found");
         }
         const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
-        const updateRoom = await roomModel.findByIdAndUpdate({
+        const updateRoom = await RoomModel.findByIdAndUpdate({
             _id: room._id,
         }, {
             public_Key_2: publicKey

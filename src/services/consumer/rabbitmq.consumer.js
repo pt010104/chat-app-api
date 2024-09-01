@@ -32,6 +32,20 @@ class RabbitMQConsumer {
             }
         });
 
+        channel.consume(QueueNames.PRIVATE_CHAT_MESSAGES, async (msg) => {
+            if (msg) {
+                try {
+                    const message = JSON.parse(msg.content.toString());
+                    const roomId = message.room_id;
+                    await this.processMessagePrivate(message, roomId);
+                    channel.ack(msg);
+                } catch (error) {
+                    console.error(`Error processing private message:`, error);
+                    channel.nack(msg, false, false);
+                }
+            }
+        });
+
         channel.consume(QueueNames.IMAGE_MESSAGES, async (msg) => {
             if (msg) {
                 try {
@@ -101,7 +115,6 @@ class RabbitMQConsumer {
             message.updatedAt = now;
 
             const [checkRoom, userIDsInRoom] = await Promise.all([
-                //here
                 RoomRepository.getRoomByID(roomId),
                 RoomRepository.getUserIDsByRoom(roomId)
             ]);
@@ -113,7 +126,15 @@ class RabbitMQConsumer {
             const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
 
             const [saveMessage] = await Promise.all([
-                ChatRepository.saveMessage(message.user_id, roomId, message.message, now, now),
+                ChatRepository.saveMessage({
+                    user_id: message.user_id,
+                    room_id: roomId,
+                    message: message.message,
+                    image_url: message.image_url || null,
+                    created_at: message.createdAt,
+                    updated_at: message.updatedAt
+                    
+                }),
                 ChatService.updateNewMessagesInRoom(roomId, message)
             ]);
 
