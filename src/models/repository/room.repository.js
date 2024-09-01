@@ -13,7 +13,6 @@ class RoomRepository {
                 const room = rooms[i];
                 let dataTransformed = {
                     room_id: room._id,  
-                    room_name: room.name,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
                     room_created_at: room.createdAt,
@@ -21,6 +20,7 @@ class RoomRepository {
                 }
                 if (!room.is_group || room.avt_url == "") {
                     if (room.is_group) {
+                        dataTransformed.room_name = room.name;
                         const user = await findUserById(room.created_by);
                         if (user && user.avatar) {
                             dataTransformed.room_avatar = user.avatar; 
@@ -28,6 +28,7 @@ class RoomRepository {
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
                         if (user && user.avatar) {
+                            dataTransformed.room_name = user.name;
                             dataTransformed.room_avatar = user.avatar; 
                         }
                     }
@@ -184,14 +185,15 @@ class RoomRepository {
     }
 
     createRoom = async (params) => {
-        const { name, avt_url, user_ids, userId, auto_name, created_by } = params;
+        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign } = params;
         
         const newRoom = await RoomModel.create({
             name: name,
+            name_remove_sign: name_remove_sign,
             user_ids: user_ids,
             created_by: created_by,
             is_group: user_ids.length > 2 ? true : false,
-            auto_name: auto_name ?? false
+            auto_name: auto_name ?? false,
         });
 
         if (avt_url && newRoom.is_group) {
@@ -199,16 +201,17 @@ class RoomRepository {
             await newRoom.save();
         }   
 
-        RedisService.storeOrUpdateMessage('room', userId, newRoom);
+        RedisService.delete(`room:${userId}`, newRoom);
         await this.invalidateRoomsCache();
         return newRoom;
     }
 
     getRoomByUserIDs = async (user_ids) => {
         return await RoomModel.findOne({
-            user_ids: { $eq: user_ids }
+            user_ids: { $all: user_ids, $size: user_ids.length }
         });
     }
+    
 
     getRoomsByUserID = async (user_id) => {
         const type = 'room';

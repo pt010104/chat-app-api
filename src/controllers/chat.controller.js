@@ -206,6 +206,25 @@ class ChatController {
             metadata: await ChatService.listPinnedMessages(room_id)
         }).send(res)
     }
+    searchRoom = async (req, res, next) => {
+        const searchRoomValidate = Joi.object({
+            filter: Joi.string().required()
+        });
+        const { error } = searchRoomValidate.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+        const { filter } = req.query;
+
+        new SuccessResponse({
+            message: "Room searched successfully",
+            metadata: await ChatService.searchRoom(userId, filter)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()

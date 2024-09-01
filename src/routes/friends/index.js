@@ -16,6 +16,5 @@ router.post("/cancel-request", asyncHandler(FriendshipController.cancelFriendReq
 router.post("/search-friend", asyncHandler(FriendshipController.searchFriend));
 router.post("/remove-friend", asyncHandler(FriendshipController.removeFriend));
 router.post("/deny-request", asyncHandler(FriendshipController.denyFriendRequest));
-router.get("/check-Is-Friend", asyncHandler(FriendshipController.checkIsFriend));
 router.get("/list/:room_id", asyncHandler(FriendshipController.listFriendsNotInRoomChat))
 module.exports = router;

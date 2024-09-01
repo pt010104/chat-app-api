@@ -9,13 +9,10 @@ class FriendshipController {
 
     // v1/api/friends/list/all
     listFriends = async(req, res, next) => {        
-       //pagination
        try {
         const user_id = req.user.userId;
-        const limit = parseInt(req.query.limit, 10) || 10;
-        const page = parseInt(req.query.page, 10) || 1;
 
-        const friendsList = await FriendShip.listFriends(user_id, limit, page);
+        const friendsList = await FriendShip.listFriends(user_id);
 
         new SuccessResponse({
             message: "List friends",
@@ -102,12 +99,25 @@ class FriendshipController {
 
     }
 
-    // v1/api/friends/reject-request
-    async rejectFriendRequest(req, res) {
-    }
-
     // v1/api/friends/remove
     async removeFriend(req, res) {
+        const friendValidate = Joi.object({
+            friend_id: Joi.string().required()
+        });
+
+        const { error } = friendValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const user_id = req.user.userId
+        const { friend_id } = req.body
+        new SuccessResponse({
+            message: "Friend removed",
+            metadata: await FriendShip.removeFriend(user_id, friend_id)
+        }).send(res)
     }
     
     // v1/api/friends/search-friends
@@ -148,15 +158,6 @@ class FriendshipController {
         new SuccessResponse({
             message: "Friend request denied",
             metadata: await FriendShip.denyFriendRequest(user_id, request_id)
-        }).send(res)
-    }
-
-    async checkIsFriend(req, res) {
-        const user_id = req.user.userId
-        const friend_id = req.body.id
-        new SuccessResponse({
-            message: "Check is friend",
-            metadata: await FriendShip.checkIsFriend(user_id, friend_id)
         }).send(res)
     }
 

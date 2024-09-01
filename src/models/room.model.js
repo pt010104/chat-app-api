@@ -9,6 +9,9 @@ const roomSchema = new Schema({
         type: String,
         required: true
     },
+    name_remove_sign: {
+        type: String,
+    },
     auto_name: {
         type: Boolean,
         default: false

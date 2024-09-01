@@ -9,6 +9,7 @@ const crypto = require("node:crypto");
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair } = require("../auth/authUtils");
 const RedisService = require("./redis.service");
+const { removeVietNamese } = require("../utils");
 
 class AuthService {
 
@@ -26,6 +27,8 @@ class AuthService {
     // Set default avt cho user
     const defaultAvt = "https://i.pinimg.com/474x/8a/eb/67/8aeb672598aaabad530c6f401fc2cf35.jpg";
     body.avatar = defaultAvt;
+
+    body.name_remove_sign = removeVietNamese(body.name);
     let newUser = await UserModel.create(body);
 
     const publicKey = crypto.randomBytes(64).toString("hex");
@@ -53,6 +56,10 @@ class AuthService {
       publicKey,
       privateKey
     );
+
+    delete newUser.password;
+    const cacheUserKey = `user:${newUser._id}`;
+    RedisService.set(cacheUserKey, JSON.stringify(newUser), 7200);
     
     return {
       user: newUser,
@@ -99,6 +106,11 @@ class AuthService {
       keyStore.public_key,
       keyStore.private_key
     );
+
+    const cacheUserKey = `user:${user._id}`
+
+    delete user.password;
+    RedisService.set(cacheUserKey, JSON.stringify(user), 7200);
 
     return {
       user: user,

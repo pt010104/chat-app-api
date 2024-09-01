@@ -31,10 +31,10 @@ const SocketServices = require('./services/socket.service');
 new SocketServices(io);
 
 // RabbitMQ consumer
-// if (process.env.STATUS_QUEUE  == 1) {
-//     const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
-//     RabbitMQConsumer.listenForMessages();
-// }
+if (process.env.STATUS_QUEUE  == 2) {
+    const RabbitMQConsumer = require('./services/consumer/rabbitmq.consumer');
+    RabbitMQConsumer.listenForMessages();
+}
 
 // Init routes
 app.use(router);

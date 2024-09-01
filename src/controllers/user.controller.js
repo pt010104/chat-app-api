@@ -72,7 +72,7 @@ class UserController {
       return res.status(400).json({
         message: error.details[0].message,
       });
-    }
+    } 
 
     const { filter } = req.query;
     const userID = req.user.userId;
