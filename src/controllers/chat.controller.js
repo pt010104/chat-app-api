@@ -133,6 +133,28 @@ class ChatController {
             metadata: await ChatService.searchRoom(userId, filter)
         }).send(res)
     }
+
+    sendMessage = async (req, res, next) => {
+        const sendMessageValidate = Joi.object({
+            message: Joi.string().required(),
+            room_id: Joi.string().required(),
+            buffer: Joi.string().optional(),
+        });
+        const { error } = sendMessageValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+        const { message, room_id, buffer } = req.body;
+
+        new SuccessResponse({
+            message: "Message sent successfully",
+            metadata: await ChatService.sendMessage(userId, room_id, message, buffer)
+        }).send(res)
+    }
 }
 
 module.exports = new ChatController()
