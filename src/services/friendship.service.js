@@ -27,14 +27,12 @@ class FriendShip {
         return friends;
     }
 
-    static async listFriends(user_id, limit, page) {
-        const offset = (page - 1) * limit;
+    static async listFriends(user_id) {
         const friends = await this.findFriends(user_id);
     
-        const paginatedFriends = friends.slice(offset, offset + limit);
         const processedFriendIds = new Set();
-    
-        const uniqueFriends = paginatedFriends.filter(friend => {
+        
+        const uniqueFriends = friends.filter(friend => {
             friend.user_id_send = friend.user_id_send.toString();
             friend.user_id_receive = friend.user_id_receive.toString();
             const friend_id = user_id == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
@@ -62,7 +60,6 @@ class FriendShip {
         return results.filter(Boolean);
     }
     
-    
     static async findRequestsFriends(user_id) {
         const key = `listRequestsFriend:${user_id}`;
         let requests = await RedisService.get(key);
@@ -80,30 +77,61 @@ class FriendShip {
 
         return requests;
     }
-    static listRequestsFriends = async (user_id,limit,page) => {
-        let list = await this.findRequestsFriends(user_id);
+
+    static listRequestsFriends = async (user_id, limit, page) => {
+        const list = await FriendShipModel.find({
+            user_id_receive: user_id,
+            status: "pending"
+        }).lean();
         
         if (list.length === 0) {
             return;
         }
-
-        const results = [];
-        for (let request of list) {
+    
+        const resultsPromises = list.map(async (request) => {
             try {
-                const user_send_info = await findUserById(request.user_id_send);
-                results.push({
+                const [user_send_info, mutual_friends] = await Promise.all([
+                    findUserById(request.user_id_send),
+                    this.countMutualFriends(user_id, request.user_id_send)
+                ]);
+    
+                return {
                     request_id: request._id,
                     user_id_send: user_send_info._id,
                     user_name_send: user_send_info.name,
                     avatar: user_send_info.avatar,
+                    mutual_friends, 
                     created_at: request.createdAt
-                })
+                };
             } catch (error) {
-                console.log(error);
+                console.error(error);
+                return null; 
             }
-        }
+        });
+    
+        const results = await Promise.all(resultsPromises);
+    
+        return results.filter(result => result !== null);
+    }
 
-        return results;
+    static countMutualFriends = async (user_id, friend_id) => {
+        const [friends, friend_friends] = await Promise.all([
+            this.findFriends(user_id),
+            this.findFriends(friend_id)
+        ]);
+    
+        const mutualFriends = friends.filter(friend => {
+            return friend_friends.some(friend_friend => {
+                return (
+                    (friend.user_id_send.toString() === friend_friend.user_id_send.toString() ||
+                     friend.user_id_send.toString() === friend_friend.user_id_receive.toString()) ||
+                    (friend.user_id_receive.toString() === friend_friend.user_id_send.toString() ||
+                     friend.user_id_receive.toString() === friend_friend.user_id_receive.toString())
+                );
+            });
+        });
+    
+        return mutualFriends.length;
     }
     
     static sendFriendRequest = async (user_id, user_id_receive) => {
@@ -158,7 +186,12 @@ class FriendShip {
             userId: user_id
         }
 
-        ChatService.createRoom(createRoomParams)
+        await ChatService.createRoom(createRoomParams)
+
+        const key1 = `listFriends:${user_id}`;
+        const key2 = `listFriends:${acceptRequest.user_id_send}`;
+        await RedisService.delete(key1);
+        await RedisService.delete(key2)
 
         return {
             acceptRequest
@@ -221,8 +254,10 @@ class FriendShip {
         if (!friend) {
             throw new NotFoundError("Friend does not exist")
         }
-        const key = `listFriends:${user_id}`;
-        await RedisService.delete(key);
+        const key1 = `listFriends:${user_id}`;
+        const key2 = `listFriends:${friend_id}`;
+        RedisService.delete(key1);
+        RedisService.delete(key2)
         return friend
     }
 
@@ -258,38 +293,43 @@ class FriendShip {
         return isFriend ? true : false;
     }
 
-    static async checkIsRequest(user_id, friend_id) {
+    static async CheckSentRequest(user_id, friend_id) {
         const request = await FriendShipModel.findOne({
-            $or: [
-                { user_id_send: user_id, user_id_receive: friend_id },
-                { user_id_send: friend_id, user_id_receive: user_id }
-            ],
+            user_id_send: user_id,
+            user_id_receive: friend_id,
             status: "pending"
-        }).lean()
+        }).lean();
 
-        if (request) {
-            return true
-        }
+        return !!request;
+    }
 
-        return false
+    static async CheckReceivedRequest(user_id, friend_id) {
+        const request = await FriendShipModel.findOne({
+            user_id_send: friend_id,
+            user_id_receive: user_id,
+            status: "pending"
+        }).lean();
+
+        return !!request;
     }
 
     static async listFriendsNotInRoomChat(userID, room_id) {
         const friends = await this.findFriends(userID);
-
+    
         const friends_ids = friends.map(friend => {
-            return userID == friend.user_id_send ? friend.user_id_receive : friend.user_id_send;
+            return userID.toString() === friend.user_id_send.toString() ? 
+                friend.user_id_receive.toString() : friend.user_id_send.toString();
         });
-
-        console.log(friends_ids)
-
-        const room = await roomRepository.getRoomByID(room_id)
-        const room_user_ids = room.user_ids
-
-        console.log(room_user_ids)
-
-        const friends_not_in_room = friends_ids.filter(friend_id => !room_user_ids.includes(friend_id));
-
+    
+        console.log(friends_ids);
+    
+        const room = await roomRepository.getRoomByID(room_id);
+        const room_user_ids = room.user_ids.map(id => id.toString());
+        
+        const friends_not_in_room = friends_ids.filter(friend_id => 
+            !room_user_ids.includes(friend_id.toString())
+        );
+    
         const promises = friends_not_in_room.map(async (friend_id) => {
             try {
                 const friend_info = await findUserById(friend_id);
@@ -299,9 +339,10 @@ class FriendShip {
                 return null;
             }
         });
-
+    
         const results = await Promise.all(promises);
         return results.filter(Boolean);
     }
+    
 }
 module.exports = FriendShip

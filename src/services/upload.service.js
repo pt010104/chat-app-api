@@ -6,6 +6,7 @@ const User = require("../models/user.model");
 const { Readable } = require('stream'); 
 const RedisService = require("./redis.service");
 const ProfileService = require("./profile.service");
+const { BadRequestError } = require("../core/error.response");
 
 class UploadService {
     uploadImageFromLocal = async ({
@@ -65,14 +66,29 @@ class UploadService {
        
     }
 
-    uploadImageFromBuffer = async ({ buffer, user_id, type = "avatar" }) => {
+    uploadImageFromBuffer = async ({ buffer, user_id, params}) => {
         try {
-            const folderName = `${type}/${user_id}`;
+            let folderName
+            let publicIDBase
+            const { type } = params || "avatar";
+
+            if (type === "avatar") {
+                folderName = type + "/" + user_id;
+                publicIDBase = user_id;
+            } else if (type === "room") {
+                folderName = type  + "/" + params.room_id;
+                publicIDBase = params.room_id;
+            } else if (type === "message") {
+                folderName = type + "/" + params.room_id;
+                publicIDBase = params.room_id;
+            } else {
+                throw new BadRequestError("Invalid type");
+            }
     
             const uploadImagePromise = new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
-                        public_id: `${user_id}_${Date.now()}`,
+                        public_id: `${publicIDBase}_${Date.now()}`,
                         folder: folderName,
                     },
                     (error, result) => {
@@ -116,6 +132,38 @@ class UploadService {
                 ]);
     
                 return { avt_url, avt_thumb_url };
+            }
+
+            if (type === "room") {
+                const generateUrls = () => {
+                    const room_url = cloudinary.url(uploadImage.public_id, {
+                        width: CONSTANT.WIDTH_AVATAR,
+                        height: CONSTANT.HEIGHT_AVATAR,
+                        crop: "fill",
+                        format: 'jpg'
+                    });
+                    return { room_url };
+                };
+
+                const { room_url } = generateUrls();
+
+                return { room_url };
+            } 
+
+            if (type === "message") {
+                const generateUrls = () => {
+                    const url = cloudinary.url(uploadImage.public_id, {
+                        width: CONSTANT.WIDTH_AVATAR,
+                        height: CONSTANT.HEIGHT_AVATAR,
+                        crop: "fill",
+                        format: 'jpg'
+                    });
+                    return { url };
+                };
+
+                const { url } = generateUrls();
+
+                return { url };
             }
     
             return { url: uploadImage.url };

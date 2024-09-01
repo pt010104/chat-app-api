@@ -1,6 +1,7 @@
 const ChatService = require("./chat.service");
 const RedisService = require("./redis.service");
 const PrivateChatService = require("./privateRoom.service");
+const QueueNames = require("../utils/queueNames")
 
 class SocketServices {
     constructor(io) {
@@ -35,11 +36,11 @@ class SocketServices {
         socket.on('read message', (roomId, status) => this.MarkMessage(socket, roomId, status))
         socket.on('error', error => this.handleError(socket, error))
     }
-
+//
     async handleChatMessage(socket, user_id, msg) {
         try {
-            const { room_id, message } = msg;
-            const savedMessage = await ChatService.sendMessage(user_id, room_id, message);
+            const { room_id, message, buffer } = msg;
+            const savedMessage = await ChatService.sendMessage(user_id, room_id, message, buffer);
         } catch (error) {
             this.log(`Error handling message for ${user_id}: ${error}`, true);
         }

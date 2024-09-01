@@ -32,13 +32,17 @@ class ProfileService {
     }
 
     if (userID != id) {
-      const [is_friend, is_request] = await Promise.all([
+      const [is_friend, is_received_request, is_sent_request, mutual_friends] = await Promise.all([
         FriendService.checkIsFriend(userID, id),
-        FriendService.checkIsRequest(userID, id)
+        FriendService.CheckReceivedRequest(userID, id),
+        FriendService.CheckSentRequest(userID, id),
+        FriendService.countMutualFriends(userID, id)
       ]);
 
       userInfo.is_friend = is_friend;
-      userInfo.is_request = is_request;
+      userInfo.is_sent_request = is_sent_request;
+      userInfo.is_received_request = is_received_request;
+      userInfo.mutual_friends = mutual_friends;
     }
 
     return {
