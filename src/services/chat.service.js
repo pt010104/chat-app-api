@@ -206,31 +206,6 @@ class ChatService {
         return transformedRooms;
     }
 
-    static async createE2EE(user_id,userId)   {
-        // const status = await RedisService.getUserStatus(user_id); 
-        // if (status !== 'online') {
-        //     throw new BadRequestError("User is not online");
-        // }
-        
-        const newRoom = await RoomE2EERepository.createRoom(
-            userId
-        );
-        await E2EEService.generateKeyPairForRoom(newRoom._id);
-        const publicKey = await E2EEService.getPublicKeyByRoom(newRoom._id);
-        const privateKey= await E2EEService.getPrivateKeyByRoom(newRoom._id);
-        const updatedRoom = await roomE2EEModel.findByIdAndUpdate({
-            _id:newRoom._id,
-        },{
-            publicKey1:publicKey
-        });
-        const encryptedMessage = await E2EEService.encryptMessage(publicKey, 'Hello, world!');
-        const decryptedMessage = await E2EEService.decryptMessage(privateKey, encryptedMessage);
-        console.log('Encrypted message:', encryptedMessage);
-        console.log('Decrypted message:', decryptedMessage);
-        return RoomE2EERepository.transformForClient(updatedRoom, user_id);
-    }
-
-
 }
 
 module.exports = ChatService;

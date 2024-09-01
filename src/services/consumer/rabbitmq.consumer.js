@@ -3,6 +3,7 @@ const RoomRepository = require('../../models/repository/room.repository');
 const RedisService = require('../redis.service');
 const ChatRepository = require('../../models/repository/chat.repository');
 const ChatService = require('../chat.service');
+const E2EEService = require('../E2EE.service');
 
 class RabbitMQConsumer {
     static async listenForMessages() {
@@ -70,6 +71,36 @@ class RabbitMQConsumer {
         }
     }
 
+    static async processMessagePrivate(message,roomId) {
+        try {
+            const now = new Date();
+            message.createdAt = now;
+            message.updatedAt = now;
+
+            const [checkRoom, userIDsInRoom] = await Promise.all([
+                RoomRepository.getRoomByID(roomId),
+                RoomRepository.getUserIDsByRoom(roomId)
+            ]);
+
+            if (!checkRoom) {
+                throw new Error(`Room not found: ${roomId}`);
+            }
+
+            const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+
+            const [saveMessage] = await Promise.all([
+                ChatRepository.saveMessage(message.user_id, roomId, message.message, now, now),
+                ChatService.updateNewMessagesInRoom(roomId, message)
+            ]);
+
+            const transformedMessage = await ChatRepository.transformForClient(saveMessage);
+            await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
+
+        } catch (error) {
+            console.error(`Error processing message for room ${roomId}:`, error);
+            throw error;
+        }
+    }
     static async notifyAndBroadcast(roomId, userIDs, message) {
         const io = global._io;
         io.to(roomId).emit("new message", { "data": message });

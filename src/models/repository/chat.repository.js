@@ -6,7 +6,7 @@ const { BadRequestError } = require('../../core/error.response');
 const { findUserById } = require('./user.repository');
 const RedisService = require('../../services/redis.service');
 const { chat } = require('googleapis/build/src/apis/chat');
-
+const E2EEService = require('../../services/E2EE.service');
 const MESSAGES_PER_PAGE = 12;
 
 class ChatRepository {
@@ -129,6 +129,11 @@ class ChatRepository {
         await RedisService.set(cacheKey, count.toString(), 3600);
         return count;
     }
+
+    clearMessages = async (room_id) => {
+        const messages = await ChatModel.deleteMany({ room_id });
+        return messages;
+    }   
     
 }
 

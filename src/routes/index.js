@@ -23,6 +23,7 @@ router.use("/v1/api/email", require ("./email"))
 router.use("/v1/api/user", require ("./user"))
 router.use("/v1/api/friends", require ("./friends"))
 router.use("/v1/api/room", require ("./chat"))
+router.use("/v1/api/e2ee", require ("./E2EE"))
 // user profile
 module.exports = router
 

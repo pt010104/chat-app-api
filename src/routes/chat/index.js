@@ -15,5 +15,4 @@ route.patch('/:room_id', asyncHandler(chatController.updateRoom));
 route.post('/search', asyncHandler(chatController.searchRoom));
 
 
-route.post('/create-E2EE', asyncHandler(chatController.createE2EE));
 module.exports = route;

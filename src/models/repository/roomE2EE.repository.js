@@ -2,6 +2,7 @@
 
 const RoomE2EEModel = require('../roomE2EE.model');
 const RedisService = require('../../services/redis.service');
+const { findById } = require('../keytoken.model');
 const { findUserById } = require('./user.repository');
 
 class RoomE2EERepository {
@@ -12,17 +13,58 @@ class RoomE2EERepository {
                 const room = rooms[i];
                 let dataTransformed = {
                     room_id: room._id,  
+                    room_name: room.name,
+                    is_group: room.is_group,
                     room_user_ids: room.user_ids,
-                    room_public_key: room.publicKey1,
+                    room_created_at: room.createdAt,
+                    room_updated_at: room.updatedAt,
+                    room_publicKey1: room.publicKey1,
                 }
+                if (!room.is_group || room.avt_url == "") {
+                    if (room.is_group) {
+                        const user = await findUserById(room.created_by);
+                        if (user && user.avatar) {
+                            dataTransformed.room_avatar = user.avatar; 
+                        }
+                    } else {
+                        const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
+                        if (user && user.avatar) {
+                            dataTransformed.room_avatar = user.avatar; 
+                        }
+                    }
+                } else {
+                    dataTransformed.room_avatar = room.avt_url
+                }
+
                 data.push(dataTransformed);
             }
             return data;
         }  else {
+            let room_avatar = null;
+            if (!rooms.is_group || rooms.avt_url == "") {
+                if (rooms.is_group) {
+                    const user = await findUserById(rooms.created_by);
+                    if (user && user.avatar) {
+                        room_avatar  = user.avatar; 
+                    }
+                } else {
+                    const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
+                    if (user && user.avatar) {
+                        room_avatar  = user.avatar; 
+                    }
+                }
+            } else {
+                room_avatar = rooms.avt_url
+            }
             return {
                 room_id: rooms._id,
+                room_name: rooms.name,
+                is_group: rooms.is_group,
                 room_user_ids: rooms.user_ids,
-                room_public_key: rooms.publicKey1,
+                room_avatar: room_avatar ?? rooms.avt_url,
+                room_created_at: rooms.createdAt,
+                room_updated_at: rooms.updatedAt,
+                room_publicKey1: rooms.publicKey1
             };
         }
     }
@@ -124,7 +166,7 @@ class RoomE2EERepository {
     // Get all rooms
     // Return: Array of room_id
     getAllRooms = async () => {
-        const cacheKey = 'all_rooms';
+        const cacheKey = 'Pri all_rooms';
         
         let rooms = await RedisService.get(cacheKey);
         
@@ -140,16 +182,27 @@ class RoomE2EERepository {
     }
 
     invalidateRoomsCache = async () => {
-        await RedisService.delete('all_rooms');
+        await RedisService.delete('Pri all_rooms');
     }
 
-    createRoom = async (userId) => {        
+    createRoom = async (params) => {
+        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign } = params;
+        
         const newRoom = await RoomE2EEModel.create({
-            user_ids: userId,
-
+            name: name,
+            name_remove_sign: name_remove_sign,
+            user_ids: user_ids,
+            created_by: created_by,
+            is_group: user_ids.length > 2 ? true : false,
+            auto_name: auto_name ?? false,
         });
-        await newRoom.save();
-        RedisService.delete(`room:${userId}`, newRoom);
+
+        if (avt_url && newRoom.is_group) {
+            newRoom.avt_url = avt_url;
+            await newRoom.save();
+        }   
+
+        RedisService.delete(`Pri room:${userId}`, newRoom);
         await this.invalidateRoomsCache();
         return newRoom;
     }
@@ -161,7 +214,7 @@ class RoomE2EERepository {
     }
 
     getRoomsByUserID = async (user_id) => {
-        const type = 'room';
+        const type = 'Pri room';
         let rooms = await RedisService.getMessages(type, user_id);
 
         if (rooms.length > 0) {
@@ -181,7 +234,7 @@ class RoomE2EERepository {
     }
 
     getUserIDsByRoom = async (room_id) => {
-        const key = `room:${room_id}`;
+        const key = `Pri room:${room_id}`;
         let room = await RedisService.get(key);
         if (room) {
             return JSON.parse(room).user_ids;
@@ -196,12 +249,12 @@ class RoomE2EERepository {
         
         const redisOperations = [];
       
-        redisOperations.push(RedisService.delete(`room:${room._id}`));
-        redisOperations.push(RedisService.delete(`all_rooms`));
-        redisOperations.push(RedisService.set(`room:${room._id}`, JSON.stringify(room), 3600));
+        redisOperations.push(RedisService.delete(`Pri room:${room._id}`));
+        redisOperations.push(RedisService.delete(`Pri all_rooms`));
+        redisOperations.push(RedisService.set(`Pri room:${room._id}`, JSON.stringify(room), 3600));
       
         room.user_ids.forEach(id => {
-          redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
+          redisOperations.push(RedisService.storeOrUpdateMessage('Pri room', id, room, '_id'));
         });
       
         await Promise.all(redisOperations);
@@ -215,7 +268,7 @@ class RoomE2EERepository {
         );
     
         if (!updatedRoom) {
-            throw new Error('Room not found');
+            throw new Error('Pri Room not found');
         }
     
         return updatedRoom;
@@ -231,7 +284,7 @@ class RoomE2EERepository {
     };
 
     getRoomByID = async (room_id) => {
-        const key = `room:${room_id}`
+        const key = `Pri room:${room_id}`
         const room = await RedisService.get(key)
         if (room) {
             return JSON.parse(room);
@@ -243,6 +296,38 @@ class RoomE2EERepository {
         }
 
         return roomFromDB;
+    }
+
+    getPublicKey= async (room_id,userId) => {
+        const key = `Pri room:${room_id}:${userId}`;
+        let room = await RedisService.get(key);
+        if (room) {
+            return JSON.parse(room).publicKey1;
+        }
+
+        room = await RoomE2EEModel.findById(room_id).lean();
+        if (room) {
+            RedisService.set(key, JSON.stringify(room), 3600);
+        }
+        if(room.user_ids[0] == userId) {//user was added so publicKey1, 
+            return room.publicKey1;
+        }
+        return room.publicKey2;//user create so publicKey2
+    }
+
+    static setPublicKey = async (room_id, publicKey, userId) => {
+        const room = await RoomE2EEModel.findById(room_id
+        );
+        if (!room) {
+            throw new Error('Pri Room not found');
+        }
+        if(room.user_ids[0] == userId) {//user was added so publicKey2
+            room.publicKey2 = publicKey;
+        } else {//user create so publicKey1
+            room.publicKey1 = publicKey;
+        }
+        await room.save();
+        return room;
     }
 }
 

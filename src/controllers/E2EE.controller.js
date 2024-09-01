@@ -1,12 +1,11 @@
 'use strict'
 
 const { CREATED, SuccessResponse } = require("../core/success.response")
-const ChatService = require("../services/chat.service")
 const privateRoomService = require("../services/privateRoom.service")   
 const { OK } = require("../core/success.response")
 const Joi = require("joi");
 
-class ChatController {
+class E2EEController {
     createRoom = async (req, res, next) => {
         const roomValidate = Joi.object({
             name: Joi.string(),
@@ -134,6 +133,43 @@ class ChatController {
             metadata: await ChatService.searchRoom(userId, filter)
         }).send(res)
     }
+
+    createE2EE = async (req, res, next) => {
+        const user_id = req.body.user_id;
+        const createE2EEValidate = Joi.object({
+            user_id: Joi.string().required(),
+        });
+
+        const { error } = createE2EEValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+
+        new SuccessResponse({
+            message: "E2EE create successfully",
+            metadata: await ChatService.createE2EE(user_id, userId)
+        }).send(res)
+    }
+
+    endE2EE = async (req, res, next) => {
+        const room_id = req.params.room_id;
+
+        const endE2EEValidate = Joi.object({
+            room_id: Joi.string().required(),
+        });
+
+
+        const userId = req.user.userId;
+
+        new SuccessResponse({
+            message: "E2EE end successfully",
+            metadata: await ChatService.endE2EE(room_id, userId)
+        }).send(res)
+    }
 }
 
-module.exports = new ChatController()
+module.exports = new E2EEController()
