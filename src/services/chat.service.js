@@ -2,8 +2,6 @@
 
 const { NotFoundError } = require("../core/error.response")
 const RoomRepository = require("../models/repository/room.repository")
-const RoomE2EERepository = require("../models/repository/roomE2EE.repository")
-const E2EEService = require("../services/E2EE.service")
 const RabbitMQService = require("./rabbitmq.service")
 const { BadRequestError } = require("../core/error.response")
 const RedisService = require("./redis.service")

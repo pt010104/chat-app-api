@@ -328,6 +328,74 @@ class RoomRepository {
 
         return roomFromDB;
     }
+    
+    createRoomPrivate = async (params) => {
+        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign,type_group } = params;
+        
+        const newRoom = await RoomModel.create({
+            name: name,
+            name_remove_sign: name_remove_sign,
+            user_ids: user_ids,
+            created_by: created_by,
+            is_group: user_ids.length > 2 ? true : false,
+            auto_name: auto_name ?? false,
+            type_group: type_group
+        });
+
+        if (avt_url && newRoom.is_group) {
+            newRoom.avt_url = avt_url;
+            await newRoom.save();
+        }   
+
+        const redisOperations = [];
+
+        newRoom.user_ids.forEach(id => {
+            redisOperations.push(RedisService.delete(`room:${id}`));
+        });
+
+        await Promise.all(redisOperations);
+        
+        return newRoom;
+    }
+
+    getPublicKey= async (room_id,userId) => {
+        const key = `PublicKey room:${room_id}:${userId}`;
+        let room = await RedisService.get(key);
+        if (room) {
+            return JSON.parse(room).publicKey1;
+        }
+
+        room = await RoomModel.findById(room_id).lean();
+        if (room) {
+            RedisService.set(key, JSON.stringify(room), 3600);
+        }
+        if(room.user_ids[0] == userId) {//user was added so publicKey1, 
+            return room.publicKey1;
+        }
+        return room.publicKey2;//user create so publicKey2
+    }
+
+    setPublicKey = async (room_id, publicKey, userId) => {
+        const room = await RoomModel.findById(room_id
+        );
+        if (!room) {
+            throw new Error('Pri Room not found');
+        }
+        if(room.user_ids[0] == userId) {//user was added so publicKey2
+            room.publicKey2 = publicKey;
+        } else {//user create so publicKey1
+            room.publicKey1 = publicKey;
+        }
+        await room.save();
+        return room;
+    }
+
+    getPublicKeyRoom = async (room,userId) => {
+        if(room.user_ids[0] == userId) {//user was added so publicKey1
+            return room.publicKey1;
+        }
+        return room.publicKey2;//user create so publicKey2
+    }
 }
 
 module.exports = new RoomRepository();
