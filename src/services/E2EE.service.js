@@ -19,6 +19,7 @@ class E2EE {
         });
         // Store the key pair in the purse array with the associated room_id
         purse.push({ room_id, publicKey, privateKey });
+        return publicKey;
     }
     
     static async getKeyPairByRoom(room_id) {

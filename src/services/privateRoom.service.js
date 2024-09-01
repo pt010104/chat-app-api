@@ -55,14 +55,20 @@ class ChatService {
      //this function will create new session, new key pair, set public key for room
     static getAndSetKey = async (room_id,userId) =>  {
         let {publicKey,privateKey} = await E2EEService.getPairKeyByRoom(room_id);
-        if(publicKey&& privateKey){
-            throw new BadRequestError("Session already exist")
+        const room = await roomE2EEModel.findById(room_id);
+        if(publicKey&& privateKey&&room){
+            return;
         }
-        else if(!publicKey&& privateKey){//you already accept E2EE, you already sent public key and you set public key in your device is null, you wait your friend send public key
-            throw new BadRequestError("You already accept E2EE, wait your friend send public key")
+        //you already accept E2EE, you already sent public key and you set public key in your device is null, 
+        //you wait your friend send public key
+        else if(!publicKey&& privateKey){
+                publicKey = await roomE2EERepository.getPublicKeyRoom(room_id,userId);
+                await E2EEService.setPublicKeyByRoom(room_id, publicKey);            
         }
-        else{//you not accept E2EE yet, you create room, you need to create key pair, set public key for room
+        else{//you not accept E2EE yet, you need to create key pair, set public key for room
+            publicKey=await E2EEService.generateKeyPairForRoom(room_id);
 
+            await roomE2EERepository.setPublicKey(room_id,pu,userId);
         }
     }
     static createRoom = async (params) => {
@@ -100,7 +106,7 @@ class ChatService {
         params.name_remove_sign = removeVietNamese(params.name);
 
         let newRoom = await RoomE2EERepository.createRoom(params);
-        await E2EEService.generateKeyPairForRoom(newRoom._id);
+        let publicKey=await E2EEService.generateKeyPairForRoom(newRoom._id);
         newRoom == await roomE2EEModel.findByIdAndUpdate({
             _id:newRoom._id,
         },{
@@ -217,10 +223,6 @@ class ChatService {
     }
 
     static async createE2EE(user_id,userId)   {
-        // const status = await RedisService.getUserStatus(user_id); 
-        // if (status !== 'online') {
-        //     throw new BadRequestError("User is not online");
-        // }
         
         const newRoom = await RoomE2EERepository.createRoom(
             {
@@ -229,8 +231,8 @@ class ChatService {
             }
         );
         
-        await E2EEService.generateKeyPairForRoom(newRoom._id);
-        const publicKey = await E2EEService.getPublicKeyByRoom(newRoom._id);
+        
+        const publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
         const updatedRoom = await roomE2EEModel.findByIdAndUpdate({
             _id:newRoom._id,
         },{
@@ -253,7 +255,7 @@ class ChatService {
         if (!room) {
             throw new NotFoundError("Room not found");
         }
-        await E2EEService.generateKeyPairForRoom(room_id);
+        const publicKey =await E2EEService.generateKeyPairForRoom(room_id);
         const updateRoom = await roomE2EEModel.findByIdAndUpdate({
             _id:room._id,
         },{

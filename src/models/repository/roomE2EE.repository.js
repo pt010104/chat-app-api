@@ -329,6 +329,13 @@ class RoomE2EERepository {
         await room.save();
         return room;
     }
+
+    static getPublicKeyRoom = async (room,userId) => {
+        if(room.user_ids[0] == userId) {//user was added so publicKey1
+            return room.publicKey1;
+        }
+        return room.publicKey2;//user create so publicKey2
+    }
 }
 
 module.exports = new RoomE2EERepository();
