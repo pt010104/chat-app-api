@@ -50,6 +50,7 @@ class E2EE {
         }
         return pair;
     }
+
     static async setPublicKeyByRoom(room_id, publicKey) {
         // Set the public key for the specified room_id
         const pair = purse.find(pair => pair.room_id === room_id);
@@ -57,6 +58,21 @@ class E2EE {
             throw new Error(`Public key not found for room_id: ${room_id}`);
         }
         pair.publicKey = publicKey;
+        await this.saveKeys();
+    }
+
+    static async setUserInRoom(room_id){
+        const publicKey= null;
+        const privateKey= null;
+        purse.push({room_id, publicKey, privateKey});
+    }
+
+    static async checkPurseHasRoom(room_id){
+        const pair = purse.find(pair => pair.room_id === room_id);
+        if (!pair) {
+            return false;
+        }
+        return true;
     }
     
     static encryptMessage = async (publicKey, message) => {
@@ -87,7 +103,8 @@ class E2EE {
                 console.error('Error writing purse data to file:', err);
             } else {
                 console.log('Purse data with timestamp written successfully!');
-            }});
+            }
+        });
     }
 
     static async loadKeys() {

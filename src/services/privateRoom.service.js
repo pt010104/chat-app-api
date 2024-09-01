@@ -26,14 +26,14 @@ class ChatService {
         //neu khong thi 
         //neu co thi lay public key cua room do de encrypt message
         const findRoom = await roomE2EEModel.findById(room_id);
-        if(!findRoom){// vi friend end session
+        if (!findRoom) {// vi friend end session
             await E2EEService.clearKeys(room_id);
             throw new BadRequestError("Room not found")
         }
-        else{
+        else {
             //vd case ta da generate key pair, 
             //set public key cho room, nhung friend chua accept E2EE, chua set public key cho room, chua gui message dc
-            if(!findRoom.publicKey1||findRoom.publicKey2){
+            if (!findRoom.publicKey1 || findRoom.publicKey2) {
                 throw new BadRequestError("Don't enough public key to send message")
             }
         }
@@ -41,38 +41,50 @@ class ChatService {
         let publicKey = await E2EEService.getPublicKeyByRoom(room_id);
         // case ta set public key cho room,sau đó set public key client là null, nhung friend chua accept E2EE, chua set public key cho room,
         //nên ta chưa get key, chua gui message dc, bay gio ta get key
-        if(!publicKey){
-            publicKey = await roomE2EERepository.getPublicKey(room_id,user_id);
+        if (!publicKey) {
+            publicKey = await roomE2EERepository.getPublicKey(room_id, user_id);
             await E2EEService.setPublicKeyByRoom(room_id, publicKey);
         }
         const messageEncrypt = await E2EEService.encryptMessage(message, publicKey);
         await RabbitMQService.sendMessage(room_id, chatMessage);
 
-        return chatMessage 
+        return chatMessage
     }
-    
-     //this function will be called when user create room or accept E2EE, but this session is end, (new date)
-     //this function will create new session, new key pair, set public key for room
-    static getAndSetKey = async (room_id,userId) =>  {
-        let {publicKey,privateKey} = await E2EEService.getPairKeyByRoom(room_id);
+
+    //this function will be called when user create room or accept E2EE, but this session is end, (new date)
+    //this function will create new session, new key pair, set public key for room
+    static getAndSetKey = async (room_id, userId) => {
         const room = await roomE2EEModel.findById(room_id);
-        if(publicKey&& privateKey&&room){
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+        if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
+            throw new BadRequestError("You are not in this room")
+        }
+        const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
+        if (!hasRoom) {
+            let publicKey = await E2EEService.generateKeyPairForRoom(room_id);
+            await roomE2EERepository.setPublicKey(room_id, publicKey, userId);
+            publicKey = await roomE2EERepository.getPublicKey(room_id, userId);
+            await E2EEService.setPublicKeyByRoom(room_id, publicKey);
+            return publicKey;
+        }
+        let { publicKey, privateKey } = await E2EEService.getPairKeyByRoom(room_id);
+
+        if (publicKey && privateKey && room) {
             return;
         }
         //you already accept E2EE, you already sent public key and you set public key in your device is null, 
         //you wait your friend send public key
-        else if(!publicKey&& privateKey){
-                publicKey = await roomE2EERepository.getPublicKeyRoom(room_id,userId);
-                await E2EEService.setPublicKeyByRoom(room_id, publicKey);            
+        else if (!publicKey && privateKey) {
+            publicKey = await roomE2EERepository.getPublicKeyRoom(room_id, userId);
+            await E2EEService.setPublicKeyByRoom(room_id, publicKey);
         }
-        else{//you not accept E2EE yet, you need to create key pair, set public key for room
-            publicKey=await E2EEService.generateKeyPairForRoom(room_id);
-
-            await roomE2EERepository.setPublicKey(room_id,pu,userId);
-        }
+        
     }
+
     static createRoom = async (params) => {
-        if (params.user_ids.length !==1 ) {
+        if (params.user_ids.length !== 1) {
             throw new BadRequestError("Invalid Request")
         }
 
@@ -82,9 +94,9 @@ class ChatService {
         }
 
         //Chỉ có trường hợp one-to-one chat mới check exist room
-        if(params.user_ids.length == 2) {
+        if (params.user_ids.length == 2) {
             const checkExistRoom = await RoomE2EERepository.getRoomByUserIDs(params.user_ids)
-            if(checkExistRoom) {
+            if (checkExistRoom) {
                 return RoomE2EERepository.transformForClient(checkExistRoom, params.userId)
             }
         }
@@ -100,20 +112,20 @@ class ChatService {
         }
 
         // 
-        
+
 
         params.created_by = params.userId
         params.name_remove_sign = removeVietNamese(params.name);
 
         let newRoom = await RoomE2EERepository.createRoom(params);
-        let publicKey=await E2EEService.generateKeyPairForRoom(newRoom._id);
+        let publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
         newRoom == await roomE2EEModel.findByIdAndUpdate({
-            _id:newRoom._id,
-        },{
-            publicKey1:publicKey
+            _id: newRoom._id,
+        }, {
+            publicKey1: publicKey
         });
+        await E2EEService.setPublicKeyByRoom(newRoom._id, null);
         newRoom = await RoomE2EERepository.transformForClient(newRoom, params.userId);
-        await E2EEService.setPublicKeyByRoom(updatedRoom._id, null);
         return newRoom
     }
 
@@ -129,7 +141,7 @@ class ChatService {
     static async getNewMessagesEachRoom(userId) {
         const rooms = await RoomE2EERepository.getRoomsByUserID(userId);
         const roomsTransformed = await RoomE2EERepository.transformForClient(rooms, userId);
-    
+
         const messagePromises = rooms.map(room =>
             RedisService.get('Pri newMessage:' + room._id).then(async message => {
                 if (message) {
@@ -139,9 +151,9 @@ class ChatService {
                 return null;
             })
         );
-                           
+
         const messageResults = await Promise.all(messagePromises);
-    
+
         return roomsTransformed.map((room, index) => ({
             room,
             newMessage: messageResults[index]?.message
@@ -155,26 +167,26 @@ class ChatService {
 
     static async getMessagesInRoom(room_id, page = 1, limit = 12) {
         const skip = (page - 1) * limit;
-    
+
         const [room, messages, totalMessages] = await Promise.all([
             RoomE2EERepository.getRoomByID(room_id),
             ChatRepository.getMessagesByRoomId(room_id, skip, limit),
             ChatRepository.countMessagesByRoomId(room_id)
         ]);
-    
+
         if (!room) {
             throw new NotFoundError("Room not found");
         }
-    
+
         const transformedMessages = await Promise.all(
             messages.map(message => ChatRepository.transformForClient(message))
         );
-    
+
         const totalPages = Math.ceil(totalMessages / limit);
-    
+
         return {
             messages: transformedMessages,
-            currentPage: parseInt(page),    
+            currentPage: parseInt(page),
             totalPages,
             amount: transformedMessages.length,
             totalMessages,
@@ -211,7 +223,7 @@ class ChatService {
 
         filter = removeVietNamese(filter);
         const regex = new RegExp(filter, 'i');
-        
+
         const filteredRooms = rooms.filter(room => {
             const roomName = room.name_remove_sign;
             return regex.test(roomName);
@@ -222,44 +234,44 @@ class ChatService {
         return transformedRooms;
     }
 
-    static async createE2EE(user_id,userId)   {
-        
+    static async createE2EE(user_id, userId) {
+
         const newRoom = await RoomE2EERepository.createRoom(
             {
-                user_ids: [user_id, userId],               
+                user_ids: [user_id, userId],
                 name: `Private chat-${user_id}-${userId}`,
             }
         );
-        
-        
+
+
         const publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
         const updatedRoom = await roomE2EEModel.findByIdAndUpdate({
-            _id:newRoom._id,
-        },{
-            publicKey1:publicKey
+            _id: newRoom._id,
+        }, {
+            publicKey1: publicKey
         });
         await E2EEService.setPublicKeyByRoom(updatedRoom._id, null);
 
         return RoomE2EERepository.transformForClient(updatedRoom, user_id);
     }
-    
+
     static endE2EE = async (room_id) => {
         await E2EEService.clearKeys(room_id);
-        const message= await ChatRepository.clearMessages(room_id);
+        const message = await ChatRepository.clearMessages(room_id);
         await roomE2EEModel.findByIdAndDelete(room_id);
         return message;
     }
-    
+
     static acceptE2EE = async (room_id) => {
         const room = await RoomE2EERepository.getRoomByID(room_id);
         if (!room) {
             throw new NotFoundError("Room not found");
         }
-        const publicKey =await E2EEService.generateKeyPairForRoom(room_id);
+        const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
         const updateRoom = await roomE2EEModel.findByIdAndUpdate({
-            _id:room._id,
-        },{
-            publicKey2:publicKey
+            _id: room._id,
+        }, {
+            publicKey2: publicKey
         });
         E2EEService.setPublicKeyByRoom(updateRoom._id, updateRoom.publicKey1);
         return RoomE2EERepository.transformForClient(updateRoom, user_id);

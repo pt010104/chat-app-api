@@ -19,7 +19,6 @@ class ChatService {
             message,
             room_id,
         }
-        //encrypt message
         
         await RabbitMQService.sendMessage(room_id, chatMessage);
 

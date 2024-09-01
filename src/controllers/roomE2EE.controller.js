@@ -5,7 +5,7 @@ const privateRoomService = require("../services/privateRoom.service")
 const { OK } = require("../core/success.response")
 const Joi = require("joi");
 
-class E2EEController {
+class roomE2EEController {
     createRoom = async (req, res, next) => {
         const roomValidate = Joi.object({
             name: Joi.string(),
@@ -24,7 +24,7 @@ class E2EEController {
         
         new CREATED ({
             message: "Message sent successfully",
-            metadata: await ChatService.createRoom(params)
+            metadata: await privateRoomService.createRoom(params)
         }).send(res)
     }
 
@@ -45,7 +45,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "Room detail retrieved successfully",
-            metadata: await ChatService.detailRoom(room_id, userId)
+            metadata: await privateRoomService.detailRoom(room_id, userId)
         }).send(res)
     }
 
@@ -56,7 +56,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "Messages retrieved successfully",
-            metadata: await ChatService.getMessagesInRoom(room_id, page, limit)
+            metadata: await privateRoomService.getMessagesInRoom(room_id, page, limit)
         }).send(res)
     }
 
@@ -65,7 +65,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "New messages retrieved successfully",
-            metadata: await ChatService.getNewMessagesEachRoom(userId)
+            metadata: await privateRoomService.getNewMessagesEachRoom(userId)
         }).send(res)
     }
 
@@ -88,7 +88,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "Users added to room successfully",
-            metadata: await ChatService.addUsersToRoom(room_id, user_ids, userId)
+            metadata: await privateRoomService.addUsersToRoom(room_id, user_ids, userId)
         }).send(res)
     }
 
@@ -110,7 +110,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "Room updated successfully",
-            metadata: await ChatService.updateRoom(params)
+            metadata: await privateRoomService.updateRoom(params)
         }).send(res)
     }
 
@@ -130,7 +130,27 @@ class E2EEController {
 
         new SuccessResponse({
             message: "Room searched successfully",
-            metadata: await ChatService.searchRoom(userId, filter)
+            metadata: await privateRoomService.searchRoom(userId, filter)
+        }).send(res)
+    }
+    
+    getAndSetKey = async (req, res, next) => {
+        const room_id = req.body.room_id;
+        const userId= req.user.userId;
+        const getAndSetKeysValidate = Joi.object({
+            room_id: Joi.string().required(),
+        });
+
+        const { error } = getAndSetKeysValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Get and set keys successfully",
+            metadata: await privateRoomService.getAndSetKey(room_id, userId)
         }).send(res)
     }
 
@@ -151,7 +171,7 @@ class E2EEController {
 
         new SuccessResponse({
             message: "E2EE create successfully",
-            metadata: await ChatService.createE2EE(user_id, userId)
+            metadata: await privateRoomService.createE2EE(user_id, userId)
         }).send(res)
     }
 
@@ -167,9 +187,11 @@ class E2EEController {
 
         new SuccessResponse({
             message: "E2EE end successfully",
-            metadata: await ChatService.endE2EE(room_id, userId)
+            metadata: await privateRoomService.endE2EE(room_id, userId)
         }).send(res)
     }
+
+
 }
 
-module.exports = new E2EEController()
+module.exports = new roomE2EEController()

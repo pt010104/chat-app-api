@@ -315,7 +315,7 @@ class RoomE2EERepository {
         return room.publicKey2;//user create so publicKey2
     }
 
-    static setPublicKey = async (room_id, publicKey, userId) => {
+    setPublicKey = async (room_id, publicKey, userId) => {
         const room = await RoomE2EEModel.findById(room_id
         );
         if (!room) {
@@ -330,7 +330,7 @@ class RoomE2EERepository {
         return room;
     }
 
-    static getPublicKeyRoom = async (room,userId) => {
+    getPublicKeyRoom = async (room,userId) => {
         if(room.user_ids[0] == userId) {//user was added so publicKey1
             return room.publicKey1;
         }
