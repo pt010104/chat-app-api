@@ -17,9 +17,9 @@ class ChatService {
             message: params.message,
             room_id: params.room_id,
         };
-
+    
         if (params.buffer) {
-            chatMessage.buffer = params.buffer
+            chatMessage.buffer = params.buffer;
             await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
         } else if (params.isGift) {
             const release_time = params.releaseTime;
@@ -32,24 +32,22 @@ class ChatService {
                 await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
             } else {
                 chatMessage.is_gift = true;
-                const saveMessage = await ChatRepository.saveMessage({
-                    user_id: chatMessage.user_id,
-                    room_id: chatMessage.room_id,
-                    message: chatMessage.message,
-                    is_gift: true,
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                })
-
-                chatMessage.id = saveMessage._id;
+                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                
+                setTimeout(async () => {
+                    await ChatRepository.updateMessageGiftStatus(saveMessage._id, true);
+                    console.info(`Message ID ${saveMessage._id}: is_gift status updated to true`);
+                }, delay || 100); 
+    
                 await RabbitMQService.scheduleMessage(QueueNames.Gift_MESSAGES, chatMessage, delay);
             }
         } else {
             await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
         }
-
+    
         return chatMessage;
-    }   
+    }
+    
 
     static createRoom = async (params) => {
         if (params.user_ids.length < 1) {
