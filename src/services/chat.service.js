@@ -118,9 +118,11 @@ class ChatService {
         const key = 'newMessage:' + roomId;
         if (message.image_url) {
             message.message = 'Sent an image';
+            delete message.buffer;
+            RedisService.set(key, JSON.stringify(message));
+        } else {
+            RedisService.set(key, JSON.stringify(message));  
         }
-        
-        await RedisService.set(key, JSON.stringify(message));
     }
 
     static async getMessagesInRoom(room_id, page = 1, limit = 12) {
