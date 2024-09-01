@@ -48,6 +48,9 @@ class ChatRepository {
             if (chatData.image_url) {
                 transformedData.image_url = chatData.image_url;
             }
+            if (chatData.is_gift) {
+                transformedData.is_gift = chatData.is_gift;
+            }
 
             return transformedData;
         } catch (error) {

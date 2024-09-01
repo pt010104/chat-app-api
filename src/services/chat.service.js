@@ -25,21 +25,21 @@ class ChatService {
             const release_time = params.releaseTime;
             const now = new Date();
             const releaseTime = new Date(release_time);
+            console.log(now)
             const delay = releaseTime - now;
             if (delay < 0) {
                 console.warn('Release time is in the past. Sending message immediately.');
                 chatMessage.is_gift = false;
                 await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
             } else {
+                console.log(delay)
                 chatMessage.is_gift = true;
-                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                const saveMessage = await ChatRepository.saveMessage(chatMessage);
                 
                 setTimeout(async () => {
-                    await ChatRepository.updateMessageGiftStatus(saveMessage._id, true);
-                    console.info(`Message ID ${saveMessage._id}: is_gift status updated to true`);
+                    await ChatRepository.updateMessageGiftStatus(saveMessage._id, false);
+                    console.info(`Message ID ${saveMessage._id}: is_gift status updated to false`);
                 }, delay || 100); 
-    
-                await RabbitMQService.scheduleMessage(QueueNames.Gift_MESSAGES, chatMessage, delay);
             }
         } else {
             await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
