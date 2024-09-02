@@ -46,35 +46,33 @@ class PrivateChatService {
     //this function will be called when user create room or accept E2EE, but this session is end, (new date)
     //this function will create new session, new key pair, set public key for room
     static getAndSetKey = async (room_id, userId) => {
-        // const room = await RoomModel.findById(room_id);
-        // if (!room) {
-        //     throw new NotFoundError("Room not found");
-        // }
-        // if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
-        //     throw new BadRequestError("You are not in this room")
-        // }
-        // const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
-        // if (!hasRoom) {//not accept E2EE before or your session end(new Date), now accept E2EE and create key pair, or session already end and need create key for new session
-        //     const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
-        //     await RoomRepository.setPublicKey(room_id, publicKey, userId);
-        //     return publicKey;
-        // }
-        // let {privateKey } = await E2EEService.getPairKeyByRoom(room_id);
-        // if ( privateKey && room.public_Key_1 && room.public_Key_2) {
-        //     return;
-        // }
-        // //case your friend or you end session, you create new key, you set public key for room, but you don't set public key for your device
-        // if (privateKey ) {
-        //     const publicKey= await RoomRepository.getPublicKeyRoom(room_id, userId);
-        //     if (!publicKey) {
-        //     await E2EEService.clearKeys(room_id);
-        //     const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
-        //     await RoomRepository.setPublicKey(room_id, publicKey, userId);
-        //     return publicKey;
-        //     }
-        // }
-        
-        RabbitMQService.sendScheduledMessage(QueueNames.PRIVATE_CHAT_MESSAGES, room_id);
+        const room = await RoomModel.findById(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+        if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
+            throw new BadRequestError("You are not in this room")
+        }
+        const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
+        if (!hasRoom) {//not accept E2EE before or your session end(new Date),(or you sign out and now signup again), now accept E2EE and create key pair, or session already end and need create key for new session
+            const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
+            await RoomRepository.setPublicKey(room_id, publicKey, userId);
+            return publicKey;
+        }
+        let {privateKey } = await E2EEService.getPairKeyByRoom(room_id);
+        if ( privateKey && room.public_Key_1 && room.public_Key_2) {
+            return;
+        }
+        //case your friend or you end session, you create new key, you set public key for room, but you don't set public key for your device
+        if (privateKey ) {
+            const publicKey= await RoomRepository.getPublicKeyRoom(room_id, userId);
+            if (!publicKey) {
+            await E2EEService.clearKeys(room_id);
+            const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
+            await RoomRepository.setPublicKey(room_id, publicKey, userId);
+            return publicKey;
+            }
+        }
        
     }
 
@@ -114,13 +112,12 @@ class PrivateChatService {
 
         let newRoom = await RoomRepository.createRoomPrivate(params);
         let publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
-        RabbitMQService.sendScheduledMessage(QueueNames.PRIVATE_CHAT_MESSAGES, newRoom._id);
+        //RabbitMQService.sendScheduledMessage(QueueNames.PRIVATE_CHAT_MESSAGES, newRoom._id);
         newRoom == await RoomModel.findByIdAndUpdate({
             _id: newRoom._id,
         }, {
             public_Key_1: publicKey
         });
-        await E2EEService.setPublicKeyByRoom(newRoom._id, null);
         newRoom = await RoomRepository.transformForClient(newRoom, params.userId);
         return newRoom
     }
@@ -162,35 +159,7 @@ class PrivateChatService {
         await RedisService.set(key, JSON.stringify(message));
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
-        const skip = (page - 1) * limit;
 
-        const [room, messages, totalMessages] = await Promise.all([
-            RoomRepository.getRoomByID(room_id),
-            ChatRepository.getMessagesByRoomId(room_id, skip, limit),
-            ChatRepository.countMessagesByRoomId(room_id)
-        ]);
-
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
-
-        const transformedMessages = await Promise.all(
-            messages.map(message => ChatRepository.transformForClient(message))
-        );
-
-        const totalPages = Math.ceil(totalMessages / limit);
-
-        return {
-            messages: transformedMessages,
-            currentPage: parseInt(page),
-            totalPages,
-            amount: transformedMessages.length,
-            totalMessages,
-            hasNextPage: page < totalPages,
-            hasPrevPage: page > 1
-        };
-    }
 
     static async updateRoom(params) {
         const room = await RoomRepository.getRoomByID(params.room_id);

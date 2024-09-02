@@ -100,10 +100,12 @@ class ChatService {
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
                     if(room.type === 'private') {
+                        console.log('decrypting message')
                         const messageDecrypted = await E2EE.decryptMessage(room._id, message);
                         const transformedData = await ChatRepository.transformForClient(JSON.parse(messageDecrypted));
                         return { message: transformedData };
                     }
+                    console.log('normal message')
                     const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
                     return { message: transformedData };
                 }

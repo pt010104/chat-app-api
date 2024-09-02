@@ -19,6 +19,7 @@ class E2EE {
         });
         // Store the key pair in the purse array with the associated room_id
         purse.push({ room_id, privateKey });
+        await this.saveKeys();
         return publicKey;
     }
     
@@ -146,6 +147,12 @@ class E2EE {
     static async showKeys() {
         // Show the key pairs in the purse array
         console.log('Purse data:', purse);
+    }
+
+    static async clearAllKeys() {
+        // Clear all key pairs from the purse array
+        purse.length = 0;
+        await this.saveKeys();
     }
 
 

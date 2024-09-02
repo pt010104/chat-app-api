@@ -129,6 +129,7 @@ class RabbitMQConsumer {
                     user_id: message.user_id,
                     room_id: roomId,
                     message: message.message,
+                    image_url: message.image_url || null,
                     created_at: message.createdAt,
                     updated_at: message.updatedAt
                     
