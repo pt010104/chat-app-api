@@ -201,7 +201,7 @@ class FriendShip {
 
     static cancelFriendRequest = async (user_id, request_id) => {
         const cancelRequest = await FriendShipModel.findOneAndDelete({
-            user_id_receive: user_id,
+            user_id_send: user_id,
             _id: request_id,
             status: "pending"
         }).lean()
