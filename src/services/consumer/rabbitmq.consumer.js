@@ -14,7 +14,7 @@ class RabbitMQConsumer {
 
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
-
+        await channel.assertQueue(QueueNames.PRIVATE_CHAT_MESSAGES, { durable: true });
         await channel.prefetch(10);
 
         channel.consume(QueueNames.CHAT_MESSAGES, async (msg) => {
