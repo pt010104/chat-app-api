@@ -189,6 +189,8 @@ class FriendShip {
             user_ids: [acceptRequest.user_id_send.toString(), acceptRequest.user_id_receive.toString()],
             userId: user_id
         };
+
+        console.log(createRoomParams)
     
         await ChatService.createRoom(createRoomParams);
     

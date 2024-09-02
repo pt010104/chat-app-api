@@ -82,8 +82,13 @@ class ChatService {
         //Tên group:
         //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
         if (params.user_ids.length == 2) {
-            const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
-            params.auto_name = true
+            const userNames = [];
+            for (let i = 0; i < params.user_ids.length; i++) {
+                const user = await findUserById(params.user_ids[i]);
+                userNames.push(user.name);
+            }
+            params.name = userNames.join(', ');
+            params.auto_name = true;            
         }
 
         //Trường hợp user_ids.length > 2 thì tên group là param name hoặc tên của tất cả user
@@ -97,7 +102,7 @@ class ChatService {
                 params.name = userNames.join(', ');
                 params.auto_name = true;
             }
-        }
+        } 
 
         params.created_by = params.userId
         params.name_remove_sign = removeVietNamese(params.name);
@@ -235,20 +240,31 @@ class ChatService {
 
     static async searchRoom(userId, filter) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
-
-        console.log(rooms)
-
-        filter = removeVietNamese(filter);
-        const regex = new RegExp(filter, 'i');
         
-        const filteredRooms = rooms.filter(room => {
-            const roomName = room.name_remove_sign;
-            return regex.test(roomName);
-        });
-
-        const transformedRooms = await Promise.all(filteredRooms.map(room => RoomRepository.transformForClient(room, userId)));
-
-        return transformedRooms;
+        const filterNoAccents = removeVietNamese(filter);
+        const regex = new RegExp(filterNoAccents, 'i');
+    
+        const filteredRooms = await Promise.all(rooms.map(async (room) => {
+            let roomName;
+            if (room.is_group) {
+                roomName = room.name;
+            } else {
+                const otherUserId = room.user_ids.find(id => id != userId);
+                if (otherUserId && room.auto_name) {
+                    const user = await findUserById(otherUserId);
+                    roomName = user ? user.name : room.name;
+                } else {
+                    roomName = room.name;
+                }
+            }
+    
+            const roomNameNoAccents = removeVietNamese(roomName);
+            return regex.test(roomNameNoAccents) ? room : null;
+        }));
+    
+        const result = filteredRooms.filter(room => room !== null);
+    
+        return await RoomRepository.transformForClient(result, userId);
     }
 }
 

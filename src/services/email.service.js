@@ -6,12 +6,12 @@ const { newOTP } = require('./otp.service');
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true, request: {
-    agentOptions: {
-        keepAlive: true,
-        family: 4
-    }
-}});
+// const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true, request: {
+//     agentOptions: {
+//         keepAlive: true,
+//         family: 4
+//     }
+// }});
 
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
