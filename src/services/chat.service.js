@@ -34,6 +34,7 @@ class ChatService {
             } else {
                 console.log(delay)
                 chatMessage.is_gift = true;
+                chatMessage.release_time = release_time;
                 const saveMessage = await ChatRepository.saveMessage(chatMessage);
                 
                 setTimeout(async () => {
@@ -142,6 +143,7 @@ class ChatService {
             delete message.buffer;
             RedisService.set(key, JSON.stringify(message));
         } else {
+            console.log(key)
             RedisService.set(key, JSON.stringify(message));  
         }
     }
