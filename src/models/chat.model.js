@@ -27,7 +27,11 @@ const chatSchema = new Schema({
     is_gift: {
         type: Boolean,
         default: false
-    }
+    },
+    release_time: {
+        type: Date,
+        default: null
+    },
 }, {
     timestamps: true,
     collection: COLLECTION_NAME
