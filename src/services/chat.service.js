@@ -39,6 +39,7 @@ class ChatService {
                 
                 setTimeout(async () => {
                     await ChatRepository.updateMessageGiftStatus(saveMessage._id, false);
+                    ChatRepository.updateRedisCache(saveMessage.room_id);
                     console.info(`Message ID ${saveMessage._id}: is_gift status updated to false`);
                 }, delay || 100); 
             }
