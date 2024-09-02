@@ -23,7 +23,7 @@ class ChatService {
             chatMessage.buffer = params.buffer;
             await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
         } else if (params.is_gift) {
-            const release_time = params.releaseTime;
+            const release_time = params.release_time;
             const now = new Date();
             const releaseTime = new Date(release_time);
             console.log(now)
