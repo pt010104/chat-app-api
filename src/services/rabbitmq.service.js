@@ -107,6 +107,24 @@ class RabbitMQService {
         }
     }
 
+    async sendMessageWithDelay(queue, message, delay) {
+        try {
+            const channel = await this.getChannel();
+            await channel.assertQueue(queue, { durable: true });
+    
+            const delayHeaders = { 'x-delay': delay };
+    
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+                persistent: true,
+                headers: delayHeaders
+            });
+            console.log(`Message sent to ${queue} with delay of ${delay}ms`);
+        } catch (error) {
+            console.error('Error sending delayed message', error);
+            throw error;
+        }
+    }
+
     async close() {
         try {
             if (this.channel) await this.channel.close();

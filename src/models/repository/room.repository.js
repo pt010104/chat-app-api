@@ -396,6 +396,14 @@ class RoomRepository {
         }
         return room.public_Key_2;//user create so publicKey2
     }
+    resetPrivateRoom = async (room_id) => {
+        const room = await RoomModel.findByIdAndUpdate(room_id, {
+            public_Key_1: '',
+            public_Key_2: ''
+        }, { new: true });
+        
+        return room;
+    }
 }
 
 module.exports = new RoomRepository();

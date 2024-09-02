@@ -24,7 +24,7 @@ class PrivateChatService {
         else if (findRoom.type_group !== 'private') {
             throw new BadRequestError("Invalid Request")
         }
-        
+
         //neu room du key pair, thi lay public key luu o client de encrypt message
         const publicKey = await RoomRepository.getPublicKeyRoom(room, user_id);
         // case ta set public key cho room,sau đó set public key client là null, nhung friend chua accept E2EE, chua set public key cho room,
@@ -59,21 +59,21 @@ class PrivateChatService {
             await RoomRepository.setPublicKey(room_id, publicKey, userId);
             return publicKey;
         }
-        let {privateKey } = await E2EEService.getPairKeyByRoom(room_id);
-        if ( privateKey && room.public_Key_1 && room.public_Key_2) {
+        let { privateKey } = await E2EEService.getPairKeyByRoom(room_id);
+        if (privateKey && room.public_Key_1 && room.public_Key_2) {
             return;
         }
         //case your friend or you end session, you create new key, you set public key for room, but you don't set public key for your device
-        if (privateKey ) {
-            const publicKey= await RoomRepository.getPublicKeyRoom(room_id, userId);
+        if (privateKey) {
+            const publicKey = await RoomRepository.getPublicKeyRoom(room_id, userId);
             if (!publicKey) {
-            await E2EEService.clearKeys(room_id);
-            const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
-            await RoomRepository.setPublicKey(room_id, publicKey, userId);
-            return publicKey;
+                await E2EEService.clearKeys(room_id);
+                const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
+                await RoomRepository.setPublicKey(room_id, publicKey, userId);
+                return publicKey;
             }
         }
-       
+
     }
 
     static createRoom = async (params) => {
@@ -111,14 +111,17 @@ class PrivateChatService {
         params.name_remove_sign = removeVietNamese(params.name);
 
         let newRoom = await RoomRepository.createRoomPrivate(params);
+        
         let publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
-        //RabbitMQService.sendScheduledMessage(QueueNames.PRIVATE_CHAT_MESSAGES, newRoom._id);
-        newRoom == await RoomModel.findByIdAndUpdate({
+        newRoom = await RoomModel.findByIdAndUpdate({
             _id: newRoom._id,
         }, {
             public_Key_1: publicKey
         });
+        
         newRoom = await RoomRepository.transformForClient(newRoom, params.userId);
+        console.log(newRoom.room_id)
+        await this.resetPrivateRoom(newRoom.room_id);
         return newRoom
     }
 
@@ -204,20 +207,28 @@ class PrivateChatService {
         await E2EEService.clearKeys(room_id);
         const message = await ChatRepository.clearMessages(room_id);
         await RoomModel.findByIdAndUpdate(room_id, {
-            public_Key_1: null,
-            public_Key_2: null
+            public_Key_1: '',
+            public_Key_2: ''
         });
         return message;
     }
 
     static resetPrivateRoom = async (room_id) => {
         //delete public key and delete all chat releated to this room
-        const message = await ChatRepository.clearMessages(room_id);
-        await RoomModel.findByIdAndUpdate(room_id, {
-            public_Key_1: '',
-            public_Key_2: ''
-        });
-        return message;
+        try {
+            const deletionTime = new Date();
+            deletionTime.setHours(24, 0, 0, 0);  // Set to 12 AM next day
+            // Calculate delay in milliseconds
+            const delay = deletionTime - new Date();
+            // Send task to RabbitMQ with delay
+            console.log(`Room ${room_id} will be deleted at ${deletionTime} in next ${delay} milliseconds`);
+            await RabbitMQService.sendMessageWithDelay(QueueNames.RESET_ROOM, {room_id} , delay);
+            
+            return { room_id, deletionTime };
+        }
+        catch (error) {
+            throw new BadRequestError("Failed to schedule room deletion: " + error.message)
+        }
     }
 
     static deleteRoom = async (room_id) => {
