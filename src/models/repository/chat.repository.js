@@ -54,6 +54,9 @@ class ChatRepository {
             if (chatData.release_time) {
                 transformedData.release_time = chatData.release_time;   
             }
+            if(chatData._id) {
+                transformedData.id = chatData._id;
+            }
 
             return transformedData;
         } catch (error) {
