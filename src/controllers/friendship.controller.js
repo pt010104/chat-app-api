@@ -58,7 +58,8 @@ class FriendshipController {
     acceptFriendRequest = async(req, res, next) =>  {
 
         const friendValidate = Joi.object({
-            request_id: Joi.string().required()
+            request_id: Joi.string().optional(),
+            user_id: Joi.string().optional()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -68,11 +69,11 @@ class FriendshipController {
             });
         }
 
-        const user_id = req.user.userId
-        const { request_id } = req.body
+        const userId = req.user.userId
+        const { request_id, user_id } = req.body
         new SuccessResponse({
             message: "Friend request accepted",
-            metadata: await FriendShip.acceptFriendRequest(user_id, request_id)
+            metadata: await FriendShip.acceptFriendRequest(userId, request_id, user_id)
         }).send(res)
     }
 
@@ -80,7 +81,8 @@ class FriendshipController {
     cancelFriendRequest = async(req, res, next) => {
 
         const friendValidate = Joi.object({
-            request_id: Joi.string().required()
+            request_id: Joi.string().optional(),
+            user_id: Joi.string().optional()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -90,11 +92,11 @@ class FriendshipController {
             });
         }
 
-        const user_id = req.user.userId
-        const { request_id } = req.body
+        const userId = req.user.userId
+        const { request_id, user_id } = req.body
         new SuccessResponse({
             message: "Friend request canceled",
-            metadata: await FriendShip.cancelFriendRequest(user_id, request_id)
+            metadata: await FriendShip.cancelFriendRequest(userId, request_id, user_id)
         }).send(res)
 
     }
@@ -143,7 +145,8 @@ class FriendshipController {
     }
     async denyFriendRequest(req, res) {
         const friendValidate = Joi.object({
-            request_id: Joi.string().required()
+            request_id: Joi.string().optional(),
+            user_id: Joi.string().optional()
         });
 
         const { error } = friendValidate.validate(req.body);
@@ -153,11 +156,11 @@ class FriendshipController {
             });
         }
 
-        const user_id = req.user.userId
-        const { request_id } = req.body
+        const userId = req.user.userId
+        const { request_id, user_id } = req.body
         new SuccessResponse({
             message: "Friend request denied",
-            metadata: await FriendShip.denyFriendRequest(user_id, request_id)
+            metadata: await FriendShip.denyFriendRequest(userId, request_id, user_id)
         }).send(res)
     }
 

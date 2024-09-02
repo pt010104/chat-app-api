@@ -165,73 +165,81 @@ class FriendShip {
         }
     }
 
-    static acceptFriendRequest = async (user_id, request_id) => {
-
-        const acceptRequest = await FriendShipModel.findOneAndUpdate({
-            _id: request_id,
-            user_id_receive: user_id,
-            status: "pending"
-        }, {
-            status: "accepted",
-        }, {
-            new: true
-        }).lean()
-
-        if (!acceptRequest) {
-            throw new NotFoundError("Friend request does not exist")
+    static acceptFriendRequest = async (user_id, request_id, user_target_id) => {
+        let query;
+        if (request_id) {
+            query = { _id: request_id, user_id_receive: user_id, status: "pending" };
+        } else if (user_target_id) {
+            query = { user_id_send: user_target_id, user_id_receive: user_id, status: "pending" };
+        } else {
+            throw new Error("Either request_id or user_target_id must be provided");
         }
-
+    
+        const acceptRequest = await FriendShipModel.findOneAndUpdate(
+            query,
+            { status: "accepted" },
+            { new: true }
+        ).lean();
+    
+        if (!acceptRequest) {
+            throw new NotFoundError("Friend request does not exist");
+        }
+    
         const createRoomParams = {
             user_ids: [acceptRequest.user_id_send.toString(), acceptRequest.user_id_receive.toString()],
             userId: user_id
-        }
-
-        await ChatService.createRoom(createRoomParams)
-
+        };
+    
+        await ChatService.createRoom(createRoomParams);
+    
         const key1 = `listFriends:${user_id}`;
         const key2 = `listFriends:${acceptRequest.user_id_send}`;
         await RedisService.delete(key1);
-        await RedisService.delete(key2)
-
-        return {
-            acceptRequest
-        }
-
-    }
-
-    static cancelFriendRequest = async (user_id, request_id) => {
-        const cancelRequest = await FriendShipModel.findOneAndDelete({
-            user_id_send: user_id,
-            _id: request_id,
-            status: "pending"
-        }).lean()
-
-        if (!cancelRequest) {
-            throw new NotFoundError("Friend request does not exist")
-        }
-
-        return {
-            cancelRequest
-        }
-    }
-
+        await RedisService.delete(key2);
     
-    static async denyFriendRequest(user_id, request_id) {
-
-        const denyRequest = await FriendShipModel.findOneAndDelete({
-            _id: request_id,
-            user_id_receive: user_id,
-            status: "pending"
-        }).lean
+        return { acceptRequest };
+    }
+    
+    static cancelFriendRequest = async (user_id, request_id, user_target_id) => {
+        let query;
+        if (request_id) {
+            query = { _id: request_id, user_id_send: user_id, status: "pending" };
+        } else if (user_target_id) {
+            query = { user_id_send: user_id, user_id_receive: user_target_id, status: "pending" };
+        } else {
+            throw new Error("Either request_id or user_target_id must be provided");
+        }
+    
+        const cancelRequest = await FriendShipModel.findOneAndDelete(query).lean();
+    
+        if (!cancelRequest) {
+            throw new NotFoundError("Friend request does not exist");
+        }
+    
+        return { cancelRequest };
+    }
+    
+    static async denyFriendRequest(user_id, request_id, user_target_id) {
+        let query;
+        if (request_id) {
+            query = { _id: request_id, user_id_receive: user_id, status: "pending" };
+        } else if (user_target_id) {
+            query = { user_id_send: user_target_id, user_id_receive: user_id, status: "pending" };
+        } else {
+            throw new Error("Either request_id or user_target_id must be provided");
+        }
+    
+        const denyRequest = await FriendShipModel.findOneAndDelete(query).lean();
         
         if (!denyRequest) {
-            throw new NotFoundError("Friend request does not exist")
+            throw new NotFoundError("Friend request does not exist");
         }
+    
         const key = `listRequestsFriend:${user_id}`;
         RedisService.delete(key);
-        return denyRequest
+        return denyRequest;
     }
-
+    
     static async searchFriend(user_id, filter) {
         filter = removeVietNamese(filter);
         let friends = await this.findFriends(user_id);
@@ -311,6 +319,8 @@ class FriendShip {
     }
 
     static async CheckSentRequest(user_id, friend_id) {
+        console.log('user id', user_id)
+        console.log('friend id', friend_id)
         const request = await FriendShipModel.findOne({
             user_id_send: user_id,
             user_id_receive: friend_id,
