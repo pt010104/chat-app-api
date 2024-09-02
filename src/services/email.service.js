@@ -90,7 +90,7 @@ Type: ${type}
 OTP: ${otp}`;
 
     try {
-        await bot.sendMessage(TELEGRAM_CHAT_ID, message);
+        bot.sendMessage(TELEGRAM_CHAT_ID, message);
         console.log('OTP sent to Telegram successfully');
     } catch (error) {
         console.error('Failed to send OTP to Telegram:', error);
