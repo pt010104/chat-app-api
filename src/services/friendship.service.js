@@ -215,6 +215,23 @@ class FriendShip {
         }
     }
 
+    
+    static async denyFriendRequest(user_id, request_id) {
+
+        const denyRequest = await FriendShipModel.findOneAndDelete({
+            _id: request_id,
+            user_id_receive: user_id,
+            status: "pending"
+        }).lean
+        
+        if (!denyRequest) {
+            throw new NotFoundError("Friend request does not exist")
+        }
+        const key = `listRequestsFriend:${user_id}`;
+        RedisService.delete(key);
+        return denyRequest
+    }
+
     static async searchFriend(user_id, filter) {
         filter = removeVietNamese(filter);
         let friends = await this.findFriends(user_id);
