@@ -9,6 +9,7 @@ const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
+const { v4: uuidv4 } = require('uuid');
 
 class ChatService {
     static async sendMessage(params) {
@@ -35,12 +36,14 @@ class ChatService {
                 console.log(delay)
                 chatMessage.is_gift = true;
                 chatMessage.release_time = release_time;
-                const saveMessage = await ChatRepository.saveMessage(chatMessage);
+                chatMessage.gift_id = uuidv4(); 
+    
+                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
                 
                 setTimeout(async () => {
-                    await ChatRepository.updateMessageGiftStatus(saveMessage._id, false);
-                    ChatRepository.updateRedisCache(saveMessage.room_id);
-                    console.info(`Message ID ${saveMessage._id}: is_gift status updated to false`);
+                    await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false);
+                    ChatRepository.updateRedisCache(chatMessage.room_id);
+                    console.info(`Gift ID ${chatMessage.gift_id}: is_gift status updated to false`);
                 }, delay || 100); 
             }
         } else {
@@ -142,6 +145,9 @@ class ChatService {
         if (message.image_url) {
             message.message = 'Sent an image';
             delete message.buffer;
+            RedisService.set(key, JSON.stringify(message));
+        } else if (message.is_gift) {
+            message.message = 'Sent a gift';
             RedisService.set(key, JSON.stringify(message));
         } else {
             console.log(key)

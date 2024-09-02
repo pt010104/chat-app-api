@@ -80,7 +80,7 @@ class ChatRepository {
         return Promise.resolve(); 
     }
 
-    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time}) => {
+    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id}) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
@@ -90,7 +90,8 @@ class ChatRepository {
                 is_gift,
                 createdAt: created_at,
                 updatedAt: updated_at,
-                release_time: release_time || null
+                release_time: release_time || null,
+                gift_id: gift_id || null
             });
     
             const [savedMessage] = await Promise.all([

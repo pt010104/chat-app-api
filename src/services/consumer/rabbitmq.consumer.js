@@ -102,7 +102,10 @@ class RabbitMQConsumer {
                     message: message.message,
                     image_url: message.image_url || null,
                     created_at: message.createdAt,
-                    updated_at: message.updatedAt
+                    updated_at: message.updatedAt,
+                    is_gift: message.is_gift || false,
+                    release_time: message.release_time || null,
+                    gift_id: message.gift_id || null
                     
                 }),
                 ChatService.updateNewMessagesInRoom(roomId, message)
