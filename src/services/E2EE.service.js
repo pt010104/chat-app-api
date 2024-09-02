@@ -18,7 +18,7 @@ class E2EE {
             },
         });
         // Store the key pair in the purse array with the associated room_id
-        purse.push({ room_id, publicKey, privateKey });
+        purse.push({ room_id, privateKey });
         return publicKey;
     }
     
@@ -64,7 +64,7 @@ class E2EE {
     static async setUserInRoom(room_id){
         const publicKey= null;
         const privateKey= null;
-        purse.push({room_id, publicKey, privateKey});
+        purse.push({room_id, privateKey});
     }
 
     static async checkPurseHasRoom(room_id){
@@ -75,8 +75,7 @@ class E2EE {
         return true;
     }
     
-    static encryptMessage = async (room_id,message) => {
-        const publicKey = await this.getPublicKeyByRoom(room_id);
+    static encryptMessage = async (publicKey,message) => {
         return crypto.publicEncrypt(publicKey, Buffer.from(message)).toString('base64');
     }
 
@@ -89,6 +88,7 @@ class E2EE {
     static async clearKeys(room_id) {
         // Remove the key pair for the specified room_id
         purse = purse.filter(pair => pair.room_id !== room_id);
+        await this.saveKeys();
     }
 
     static async saveKeys() {
@@ -132,6 +132,7 @@ class E2EE {
                         console.error('Error clearing stale purse data file:', clearErr);
                     } else {
                         console.log('Stale purse data file cleared.');
+                        
                         purse.length = 0;
                     }
                 });

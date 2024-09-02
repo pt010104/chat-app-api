@@ -37,10 +37,12 @@ const roomSchema = new Schema({
         default: '',
     },
     public_Key_1: {
-        type: String
+        type: String,
+        default: ''
     },
     public_Key_2: {
-        type: String
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true,
