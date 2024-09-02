@@ -1,6 +1,5 @@
 const RabbitMQService = require('../rabbitmq.service');
 const RoomRepository = require('../../models/repository/room.repository');
-const RoomE2EERepository = require('../../models/repository/roomE2EE.repository');
 const RedisService = require('../redis.service');
 const ChatRepository = require('../../models/repository/chat.repository');
 const ChatService = require('../chat.service');
@@ -130,7 +129,6 @@ class RabbitMQConsumer {
                     user_id: message.user_id,
                     room_id: roomId,
                     message: message.message,
-                    image_url: message.image_url || null,
                     created_at: message.createdAt,
                     updated_at: message.updatedAt
                     
