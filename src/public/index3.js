@@ -15,7 +15,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
     const roomId = roomIdInput.value.trim();
 
     if (userId && roomId) {
-        socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
+        socket = io('localhost:5050', {
             query: {
                 user_id: userId
             }
@@ -23,8 +23,12 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
         socket.on('connect', () => {
             log(`Connected to server with user ID: ${userId}`);
-            socket.emit('join room', roomId);
             document.getElementById('sendMessageButton').disabled = false; // Enable the send button after connection
+        });
+
+        socket.on('ready', () => {
+            socket.emit('join user', userId);
+            socket.emit('join room', roomId);
         });
 
         socket.on('joined room', (roomId) => {
