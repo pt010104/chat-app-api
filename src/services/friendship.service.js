@@ -145,8 +145,8 @@ class FriendShip {
 
         const check_request = await FriendShipModel.findOne({
             $or: [
-                { user_id_send: user_id, user_id_receive: user_id_receive },
-                { user_id_send: user_id_receive, user_id_receive: user_id }
+                { user_id_send: user_id, user_id_receive: user_id_receive, status: 'pending' },
+                { user_id_send: user_id_receive, user_id_receive: user_id, status: 'pending' }
             ]
         }).lean();
         if (check_request) {

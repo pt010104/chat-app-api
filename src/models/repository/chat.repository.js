@@ -147,8 +147,13 @@ class ChatRepository {
 
     async updateMessageGiftStatus(gift_id, is_gift) {
         const updated_at = new Date();
-        await ChatModel.findOneAndUpdate({ gift_id }, { is_gift, updated_at });
-    }    
+        const updatedRecord = await ChatModel.findOneAndUpdate(
+            { gift_id },
+            { is_gift, updated_at },
+            { new: true } 
+        );
+        return updatedRecord;
+    }
 }
 
 module.exports = new ChatRepository();
