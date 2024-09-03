@@ -398,6 +398,7 @@ class RoomRepository {
         }
         return room.public_Key_2;//user create so publicKey2
     }
+    
     checkYourPublicKey = async (room,userId) => {
         
         if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1

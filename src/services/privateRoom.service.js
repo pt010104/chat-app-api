@@ -16,7 +16,8 @@ class PrivateChatService {
 
     static sendMessagePrivate = async (user_id, room_id, message) => {
 
-        const findRoom = await RoomModel.findById(room_id);
+        const findRoom = await RoomRepository.getRoomByID(room_id);
+
         if (!findRoom) {// vi friend end session
             await E2EEService.clearKeys(room_id);
             throw new BadRequestError("Room not found")
@@ -24,9 +25,10 @@ class PrivateChatService {
         else if (findRoom.type_group !== 'private') {
             throw new BadRequestError("Invalid Request")
         }
+        //neu room du key pair, thi lay public key luu o client de encrypt message        
+        const publicKey = await RoomRepository.getPublicKeyRoom(findRoom, user_id);
 
-        //neu room du key pair, thi lay public key luu o client de encrypt message
-        const publicKey = await RoomRepository.getPublicKeyRoom(room, user_id);
+        console.log('publicKey', publicKey)
         // case ta set public key cho room,sau đó set public key client là null, nhung friend chua accept E2EE, chua set public key cho room,
         //nên ta chưa get key, chua gui message dc, bay gio ta get key
         if (!publicKey) {
@@ -38,6 +40,7 @@ class PrivateChatService {
             message: messageEncrypt,
             room_id,
         }
+        console.log('chatMessage', chatMessage)
         await RabbitMQService.sendMessage(QueueNames.PRIVATE_CHAT_MESSAGES, chatMessage);
 
         return chatMessage
@@ -84,26 +87,26 @@ class PrivateChatService {
     static lastUpdate = async (room) => {
         const fileTimestamp = new Date(room.updatedAt);
         const currentTime = new Date();
-    
+
         // Compare year, month, and day only
-        if(fileTimestamp.getUTCFullYear().toString() !== currentTime.getUTCFullYear().toString() ){
+        if (fileTimestamp.getUTCFullYear().toString() !== currentTime.getUTCFullYear().toString()) {
             console.log('year')
             return true;
         }
-        if(fileTimestamp.getUTCMonth().toString() !== currentTime.getUTCMonth().toString() ){
+        if (fileTimestamp.getUTCMonth().toString() !== currentTime.getUTCMonth().toString()) {
             console.log('month')
             return true;
         }
-        if(fileTimestamp.getUTCDate().toString() !== currentTime.getUTCDate().toString() ){
+        if (fileTimestamp.getUTCDate().toString() !== currentTime.getUTCDate().toString()) {
             console.log('date')
             return true;
         }
         console.log('false')
-        return false; 
+        return false;
 
     }
-    
-    
+
+
 
     static createRoom = async (params) => {
         if (params.user_ids.length !== 1) {
