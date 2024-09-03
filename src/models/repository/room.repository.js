@@ -241,6 +241,15 @@ class RoomRepository {
         });
     }
     
+    getRoomByUserIDsPrivate = async (user_ids) => {
+        const sortedUserIDs = [...user_ids].sort();
+    
+        return await RoomModel.findOne({
+            user_ids: { $all: sortedUserIDs, $size: sortedUserIDs.length },
+            type_group: 'private'
+        });
+    }
+    
 
     getRoomsByUserID = async (user_id) => {
         const type = 'room';

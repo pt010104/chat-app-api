@@ -118,9 +118,9 @@ class PrivateChatService {
             params.user_ids.push(params.userId);
         }
 
-        //Chỉ có trường hợp one-to-one chat mới check exist room
+        //Chỉ có trường hợp one-to-one chat mới check exist room, check xem đã có room private chua
         if (params.user_ids.length == 2) {
-            const checkExistRoom = await RoomRepository.getRoomByUserIDs(params.user_ids)
+            const checkExistRoom = await RoomRepository.getRoomByUserIDsPrivate(params.user_ids)
             if (checkExistRoom) {
                 return RoomRepository.transformForClient(checkExistRoom, params.userId)
             }
