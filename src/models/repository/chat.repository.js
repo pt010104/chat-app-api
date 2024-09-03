@@ -99,12 +99,15 @@ class ChatRepository {
 
     getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
         const key = `room:messages:${room_id}:${skip}:${limit}`;
-        const type_group = RoomRepository.getRoomByID(room_id).type_group;
+        const room = await RoomRepository.getRoomByID(room_id);
+        console.log('Room from Repository:', room);
+        const type_group = room?.type_group || 'default_value';
+        console.log('Type Group:', type_group);
         let cachedMessages = await RedisService.get(key);
-
         if (cachedMessages) {
             const messages = JSON.parse(cachedMessages);
             if (type_group === 'private') {
+                console.log('Decrypting messages cache');
                 console.log(`Decrypting ${messages.length} messages for room ${room_id}`);
                 const decryptedMessages = await Promise.all(
                     messages.map(async (message) => {
@@ -115,7 +118,7 @@ class ChatRepository {
                         };
                     })  
                 );
-                
+                return decryptedMessages;
             }
             return messages;
         }
@@ -141,6 +144,7 @@ class ChatRepository {
                     };
                 })
             );
+            return decryptedMessages;
         }
 
         return messages;

@@ -322,6 +322,7 @@ class RoomRepository {
         }
         
         const roomFromDB = await RoomModel.findById(room_id).lean();
+        console.log("roomFromDB",roomFromDB.type_group);
         if (roomFromDB) {
             RedisService.set(key, JSON.stringify(roomFromDB), 3600);
         }
@@ -398,7 +399,7 @@ class RoomRepository {
         }
         return room.public_Key_2;//user create so publicKey2
     }
-    
+
     checkYourPublicKey = async (room,userId) => {
         
         if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
