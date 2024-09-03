@@ -216,33 +216,29 @@ class PrivateChatService {
         return RoomRepository.transformForClient(updatedRoom, params);
     }
 
-    static async searchRoom(userId, filter) {
-        const rooms = await RoomRepository.getRoomsByUserID(userId);
 
-        console.log(rooms)
-
-        filter = removeVietNamese(filter);
-        const regex = new RegExp(filter, 'i');
-
-        const filteredRooms = rooms.filter(room => {
-            const roomName = room.name_remove_sign;
-            return regex.test(roomName);
-        });
-
-        const transformedRooms = await Promise.all(filteredRooms.map(room => RoomRepository.transformForClient(room, userId)));
-
-        return transformedRooms;
-    }
-
-    static endE2EE = async (room_id) => {
-        await E2EEService.clearKeys(room_id);
-        const message = await ChatRepository.clearMessages(room_id);
-        await RoomModel.findByIdAndUpdate(room_id, {
-            public_Key_1: '',
-            public_Key_2: ''
-        });
-        return message;
-    }
+    static endSession = async (room_id, userId) => {
+        
+        try {
+            await E2EEService.clearKeys(room_id);
+            console.log('endSession');
+            
+            const message = await ChatRepository.clearMessages(room_id);
+            console.log('message', message);
+    
+            const room = await RoomRepository.resetPrivateRoom(room_id);
+            await ChatRepository.updateRedisCache(room_id);
+            const keyRoom = 'room:' + room_id;
+            await RedisService.set(keyRoom, JSON.stringify(room));
+            const key = 'newMessage:' + room_id;
+            await RedisService.delete(key);
+    
+            return message;
+        } catch (error) {
+            console.error('Error during endSession:', error);
+            throw error;
+        }
+    };
 
 
     static deleteRoom = async (room_id) => {

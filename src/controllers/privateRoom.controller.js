@@ -113,26 +113,6 @@ class roomE2EEController {
             metadata: await privateRoomService.updateRoom(params)
         }).send(res)
     }
-
-    searchRoom = async (req, res, next) => {
-        const searchRoomValidate = Joi.object({
-            filter: Joi.string().required()
-        });
-        const { error } = searchRoomValidate.validate(req.query);
-        if (error) {
-            return res.status(400).json({
-              message: error.details[0].message,
-            });
-        }
-
-        const userId = req.user.userId;
-        const { filter } = req.query;
-
-        new SuccessResponse({
-            message: "Room searched successfully",
-            metadata: await privateRoomService.searchRoom(userId, filter)
-        }).send(res)
-    }
     
     getAndSetKey = async (req, res, next) => {
         const room_id = req.body.room_id;
@@ -154,40 +134,25 @@ class roomE2EEController {
         }).send(res)
     }
 
-    createE2EE = async (req, res, next) => {
-        const user_id = req.body.user_id;
-        const createE2EEValidate = Joi.object({
-            user_id: Joi.string().required(),
-        });
-
-        const { error } = createE2EEValidate.validate(req.body);
-        if (error) {
-            return res.status(400).json({
-              message: error.details[0].message,
-            });
-        }
-
-        const userId = req.user.userId;
-
-        new SuccessResponse({
-            message: "E2EE create successfully",
-            metadata: await privateRoomService.createE2EE(user_id, userId)
-        }).send(res)
-    }
-
-    endE2EE = async (req, res, next) => {
+    endSession = async (req, res, next) => {
         const room_id = req.params.room_id;
 
         const endE2EEValidate = Joi.object({
             room_id: Joi.string().required(),
         });
 
+        const { error } = endE2EEValidate.validate(req.params);
 
+        if (error) {
+            return res.status(400).json({
+              message: error.details[0].message,
+            });
+        }
         const userId = req.user.userId;
 
         new SuccessResponse({
             message: "E2EE end successfully",
-            metadata: await privateRoomService.endE2EE(room_id, userId)
+            metadata: await privateRoomService.endSession(room_id, userId)
         }).send(res)
     }
 

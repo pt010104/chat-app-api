@@ -88,7 +88,11 @@ class E2EE {
     
     static async clearKeys(room_id) {
         // Remove the key pair for the specified room_id
-        purse = purse.filter(pair => pair.room_id !== room_id);
+        const indexToRemove = purse.findIndex(pair => pair.room_id.toString() === room_id.toString());
+        if (indexToRemove !== -1) {
+            purse.splice(indexToRemove, 1);  // This will remove the item at the found index
+        }
+    
         await this.saveKeys();
     }
 

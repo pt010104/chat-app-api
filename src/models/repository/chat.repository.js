@@ -164,6 +164,7 @@ class ChatRepository {
     }
 
     clearMessages = async (room_id) => {
+        console.log('Clearing messages for room:'+room_id);
         const messages = await ChatModel.deleteMany({ room_id });
         return messages;
     }

@@ -271,6 +271,7 @@ class RoomRepository {
         return rooms;
     }
 
+
     getUserIDsByRoom = async (room_id) => {
         const key = `room:${room_id}`;
         let room = await RedisService.get(key);
