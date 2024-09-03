@@ -369,7 +369,7 @@ class RoomRepository {
         if (room) {
             RedisService.set(key, JSON.stringify(room), 3600);
         }
-        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey1, 
+        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1, 
             return room.public_Key_1;
         }
         return room.public_Key_2;//user create so publicKey2
@@ -381,20 +381,41 @@ class RoomRepository {
         if (!room) {
             throw new Error('Pri Room not found');
         }
-        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey2
+        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey2
             room.public_Key_2 = publicKey;
         } else {//user create so publicKey1
             room.public_Key_1 = publicKey;
         }
         await room.save();
+        const key = 'room:' + room_id;
+        await RedisService.set(key, JSON.stringify(room), 3600);
         return room;
     }
 
     getPublicKeyRoom = async (room,userId) => {
-        if(room.user_ids[0].toString() == userId.toString()) {//user was added so publicKey1
+        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
             return room.public_Key_1;
         }
         return room.public_Key_2;//user create so publicKey2
+    }
+    checkYourPublicKey = async (room,userId) => {
+        
+        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
+            console.log("room.public_Key_2",room.public_Key_2);
+            return room.public_Key_2;
+        }
+        console.log("room.public_Key_1",room.public_Key_1);
+        return room.public_Key_1;//user create so publicKey2
+    }
+
+    resetPrivateRoom = async (room_id) => {
+        console.log("resetPrivateRoom",room_id);
+        const room = await RoomModel.findByIdAndUpdate(room_id, {
+            public_Key_1: null,
+            public_Key_2: null
+        }, { new: true });
+        
+        return room;
     }
 }
 

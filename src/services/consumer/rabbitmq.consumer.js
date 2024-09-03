@@ -3,7 +3,6 @@ const RoomRepository = require('../../models/repository/room.repository');
 const RedisService = require('../redis.service');
 const ChatRepository = require('../../models/repository/chat.repository');
 const ChatService = require('../chat.service');
-const E2EEService = require('../E2EE.service');
 const UploadService = require('../upload.service');
 const QueueNames = require('../../utils/queueNames');
 
@@ -15,6 +14,7 @@ class RabbitMQConsumer {
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.PRIVATE_CHAT_MESSAGES, { durable: true });
+    
         await channel.prefetch(10);
 
         channel.consume(QueueNames.CHAT_MESSAGES, async (msg) => {
@@ -26,7 +26,7 @@ class RabbitMQConsumer {
                     channel.ack(msg);
                 } catch (error) {
                     console.error(`Error processing message:`, error);
-                    channel.nack(msg, false, false); 
+                    channel.nack(msg, false, false);
                 }
             }
         });
@@ -93,7 +93,6 @@ class RabbitMQConsumer {
                     image_url: message.image_url || null,
                     created_at: message.createdAt,
                     updated_at: message.updatedAt
-                    
                 }),
                 ChatService.updateNewMessagesInRoom(roomId, message)
             ]);
@@ -107,7 +106,7 @@ class RabbitMQConsumer {
         }
     }
 
-    static async processMessagePrivate(message,roomId) {
+    static async processMessagePrivate(message, roomId) {
         try {
             const now = new Date();
             message.createdAt = now;
@@ -132,7 +131,6 @@ class RabbitMQConsumer {
                     image_url: message.image_url || null,
                     created_at: message.createdAt,
                     updated_at: message.updatedAt
-                    
                 }),
                 ChatService.updateNewMessagesInRoom(roomId, message)
             ]);
@@ -141,23 +139,25 @@ class RabbitMQConsumer {
             await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
 
         } catch (error) {
-            console.error(`Error processing message for room ${roomId}:`, error);
+            console.error(`Error processing private message for room ${roomId}:`, error);
             throw error;
         }
     }
+
+
     static async notifyAndBroadcast(roomId, userIDs, message) {
-        const io = global._io;
-        io.to(roomId).emit("new message", { "data": message });
+    const io = global._io;
+    io.to(roomId).emit("new message", { "data": message });
 
-        const onlineUserPromises = userIDs.map(async (userId) => {
-            const userStatus = await RedisService.getUserStatus(userId);
-            if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("chat message", { "data": message });
-            }
-        });
+    const onlineUserPromises = userIDs.map(async (userId) => {
+        const userStatus = await RedisService.getUserStatus(userId);
+        if (userStatus === 'online') {
+            io.to(`user_${userId}`).emit("chat message", { "data": message });
+        }
+    });
 
-        await Promise.all(onlineUserPromises);
-    }
+    await Promise.all(onlineUserPromises);
+}
 }
 
 module.exports = RabbitMQConsumer;
