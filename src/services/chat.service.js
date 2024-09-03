@@ -19,10 +19,7 @@ class ChatService {
             room_id: params.room_id,
         };
     
-        if (params.buffer) {
-            chatMessage.buffer = params.buffer;
-            await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
-        } else if (params.is_gift) {
+        if (params.is_gift) {
             const release_time = params.release_time;
             const now = new Date();
             const releaseTime = new Date(release_time);
@@ -31,21 +28,34 @@ class ChatService {
             if (delay < 0) {
                 console.warn('Release time is in the past. Sending message immediately.');
                 chatMessage.is_gift = false;
-                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                if (params.buffer) {
+                    chatMessage.buffer = params.buffer;
+                    await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+                } else {
+                    await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                }
             } else {
                 console.log(delay)
                 chatMessage.is_gift = true;
                 chatMessage.release_time = release_time;
                 chatMessage.gift_id = uuidv4(); 
     
-                await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
-                
+                if (params.buffer) {
+                    chatMessage.buffer = params.buffer;
+                    await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+                } else {
+                    await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                }
+                                
                 setTimeout(async () => {
                     await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false);
                     ChatRepository.updateRedisCache(chatMessage.room_id);
                     console.info(`Gift ID ${chatMessage.gift_id}: is_gift status updated to false`);
                 }, delay || 100); 
             }
+        } else if (params.buffer) {
+            chatMessage.buffer = params.buffer;
+            await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
         } else {
             await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
         }
