@@ -14,7 +14,7 @@ class RabbitMQConsumer {
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.PRIVATE_CHAT_MESSAGES, { durable: true });
-        await channel.assertQueue(QueueNames.RESET_ROOM, { durable: true });
+    
         await channel.prefetch(10);
 
         channel.consume(QueueNames.CHAT_MESSAGES, async (msg) => {
@@ -62,20 +62,6 @@ class RabbitMQConsumer {
                     channel.ack(msg);
                 } catch (error) {
                     console.error(`Error processing image message:`, error);
-                    channel.nack(msg, false, false);
-                }
-            }
-        });
-
-        channel.consume(QueueNames.RESET_ROOM, async (msg) => {
-            if (msg) {
-                try {
-                    const message = JSON.parse(msg.content.toString());
-                    const roomId = message.room_id;
-                    await this.processResetRoom(roomId);
-                    channel.ack(msg);
-                } catch (error) {
-                    console.error(`Error processing reset room:`, error);
                     channel.nack(msg, false, false);
                 }
             }
@@ -154,21 +140,6 @@ class RabbitMQConsumer {
 
         } catch (error) {
             console.error(`Error processing private message for room ${roomId}:`, error);
-            throw error;
-        }
-    }
-
-    static async processResetRoom(roomId){
-        try {
-            const checkRoom = await RoomRepository.getRoomByID(roomId);
-
-            if (!checkRoom) {
-                throw new Error(`Room not found: ${roomId}`);
-            }
-            await RoomRepository.resetPrivateRoom(checkRoom._id);
-
-        } catch (error) {
-            console.error(`Error processing reset for room ${roomId}:`, error);
             throw error;
         }
     }

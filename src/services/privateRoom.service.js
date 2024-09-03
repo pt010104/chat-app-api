@@ -53,10 +53,16 @@ class PrivateChatService {
         if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
             throw new BadRequestError("You are not in this room")
         }
+        if (this.lastUpdate(room)){
+            console.log('room updated not today')
+            await RoomRepository.resetPrivateRoom(room_id);
+        } 
         const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
         if (!hasRoom) {//not accept E2EE before or your session end(new Date),(or you sign out and now signup again), now accept E2EE and create key pair, or session already end and need create key for new session
+
             const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
             await RoomRepository.setPublicKey(room_id, publicKey, userId);
+
             return publicKey;
         }
         let { privateKey } = await E2EEService.getPairKeyByRoom(room_id);
@@ -64,8 +70,8 @@ class PrivateChatService {
             return;
         }
         //case your friend or you end session, you create new key, you set public key for room, but you don't set public key for your device
-        if (privateKey) {
-            const publicKey = await RoomRepository.getPublicKeyRoom(room_id, userId);
+        else if (privateKey) {
+            const publicKey = await RoomRepository.checkYourPublicKey(room, userId);
             if (!publicKey) {
                 await E2EEService.clearKeys(room_id);
                 const publicKey = await E2EEService.generateKeyPairForRoom(room_id);
@@ -73,7 +79,16 @@ class PrivateChatService {
                 return publicKey;
             }
         }
+    }
 
+    static lastUpdate = async (room) => {
+        const fileTimestamp = new Date(room.updatedAt);
+        const currentTime = new Date();
+        const isStale = currentTime.getDate() !== fileTimestamp.getDate() ||
+            currentTime.getMonth() !== fileTimestamp.getMonth() ||
+            currentTime.getFullYear() !== fileTimestamp.getFullYear();
+        if (isStale) return true;
+        return false;
     }
 
     static createRoom = async (params) => {
@@ -111,17 +126,17 @@ class PrivateChatService {
         params.name_remove_sign = removeVietNamese(params.name);
 
         let newRoom = await RoomRepository.createRoomPrivate(params);
-        
+
         let publicKey = await E2EEService.generateKeyPairForRoom(newRoom._id);
         newRoom = await RoomModel.findByIdAndUpdate({
             _id: newRoom._id,
         }, {
             public_Key_1: publicKey
         });
-        
+
         newRoom = await RoomRepository.transformForClient(newRoom, params.userId);
         console.log(newRoom.room_id)
-        await this.resetPrivateRoom(newRoom.room_id);
+
         return newRoom
     }
 
@@ -130,7 +145,6 @@ class PrivateChatService {
         if (!room) {
             throw new NotFoundError("Room not found")
         }
-
         return RoomRepository.transformForDetailRoom(room, userId)
     }
 
@@ -213,23 +227,6 @@ class PrivateChatService {
         return message;
     }
 
-    static resetPrivateRoom = async (room_id) => {
-        //delete public key and delete all chat releated to this room
-        try {
-            const deletionTime = new Date();
-            deletionTime.setHours(24, 0, 0, 0);  // Set to 12 AM next day
-            // Calculate delay in milliseconds
-            const delay = deletionTime - new Date();
-            // Send task to RabbitMQ with delay
-            console.log(`Room ${room_id} will be deleted at ${deletionTime} in next ${delay} milliseconds`);
-            await RabbitMQService.sendMessageWithDelay(QueueNames.RESET_ROOM, {room_id} , delay);
-            
-            return { room_id, deletionTime };
-        }
-        catch (error) {
-            throw new BadRequestError("Failed to schedule room deletion: " + error.message)
-        }
-    }
 
     static deleteRoom = async (room_id) => {
         const room = await RoomRepository.getRoomByID(room_id);
@@ -240,9 +237,6 @@ class PrivateChatService {
         await RoomRepository.deleteRoom(room_id);
         return message;
     }
-
-
-
 }
 
 module.exports = PrivateChatService;
