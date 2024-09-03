@@ -145,9 +145,9 @@ class ChatRepository {
         return count;
     }
 
-    async updateMessageGiftStatus(message_id, is_gift) {
+    async updateMessageGiftStatus(gift_id, is_gift) {
         const updated_at = new Date();
-        await ChatModel.findByIdAndUpdate(message_id, { is_gift, updated_at });
+        await ChatModel.findOneAndUpdate({ gift_id }, { is_gift, updated_at });
     }    
 }
 
