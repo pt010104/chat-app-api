@@ -229,19 +229,20 @@ class ChatController {
     sendMessage = async (req, res, next) => {
         //
         const userId = req.user.userId;
-        let { message, room_id, buffer } = req.body;
-        if (!message) {
-            if (!buffer) {
+        let params = req.body;
+        params.user_id = userId;
+        if (!params.message) {
+            if (!params.buffer) {
                 return res.status(400).json({
                     message: "Message or buffer is required",
                 });
             }
-            message = " ";
+            params.message = " ";
         }
 
         new SuccessResponse({
             message: "Message sent successfully",
-            metadata: await ChatService.sendMessage(userId, room_id, message, buffer)
+            metadata: await ChatService.sendMessage(params)
         }).send(res)
     }
 }

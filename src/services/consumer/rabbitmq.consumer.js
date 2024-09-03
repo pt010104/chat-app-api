@@ -13,6 +13,7 @@ class RabbitMQConsumer {
 
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
+        await channel.assertQueue(QueueNames.Gift_MESSAGES, { durable: true });
 
         await channel.prefetch(10);
 
@@ -51,6 +52,30 @@ class RabbitMQConsumer {
                 }
             }
         });
+
+        channel.consume(QueueNames.Gift_MESSAGES, async (msg) => {
+            if (msg) {
+                try {
+                    const message = JSON.parse(msg.content.toString());
+                    await this.processGiftMessage(message);
+                    channel.ack(msg);
+                } catch (error) {
+                    console.error(`Error processing gift message:`, error);
+                    channel.nack(msg, false, false);
+                }
+            }
+        });
+    }
+
+    static async processGiftMessage(message) {
+        try {
+            await ChatRepository.updateMessageGiftStatus(message.id, false);
+    
+            console.info(`Message ID ${message.id}: is_gift status updated to false`);
+        } catch (error) {
+            console.error(`Error updating gift status for message ID ${message.id}:`, error);
+            throw error;
+        }
     }
 
     static async processMessage(message, roomId) {
@@ -77,7 +102,10 @@ class RabbitMQConsumer {
                     message: message.message,
                     image_url: message.image_url || null,
                     created_at: message.createdAt,
-                    updated_at: message.updatedAt
+                    updated_at: message.updatedAt,
+                    is_gift: message.is_gift || false,
+                    release_time: message.release_time || null,
+                    gift_id: message.gift_id || null
                     
                 }),
                 ChatService.updateNewMessagesInRoom(roomId, message)

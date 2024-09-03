@@ -48,6 +48,15 @@ class ChatRepository {
             if (chatData.image_url) {
                 transformedData.image_url = chatData.image_url;
             }
+            if (chatData.is_gift) {
+                transformedData.is_gift = chatData.is_gift;
+            }
+            if (chatData.release_time) {
+                transformedData.release_time = chatData.release_time;   
+            }
+            if(chatData._id) {
+                transformedData.id = chatData._id;
+            }
 
             return transformedData;
         } catch (error) {
@@ -74,15 +83,18 @@ class ChatRepository {
         return Promise.resolve(); 
     }
 
-    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at}) => {
+    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id}) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
                 message,
                 image_url,
+                is_gift,
                 createdAt: created_at,
-                updatedAt: updated_at
+                updatedAt: updated_at,
+                release_time: release_time || null,
+                gift_id: gift_id || null
             });
     
             const [savedMessage] = await Promise.all([
@@ -132,7 +144,16 @@ class ChatRepository {
         await RedisService.set(cacheKey, count.toString(), 3600);
         return count;
     }
-    
+
+    async updateMessageGiftStatus(gift_id, is_gift) {
+        const updated_at = new Date();
+        const updatedRecord = await ChatModel.findOneAndUpdate(
+            { gift_id },
+            { is_gift, updated_at },
+            { new: true } 
+        );
+        return updatedRecord;
+    }
     editMessageInRoom = async (chatMessage,message_id) => {
         const updatedMessage = await ChatModel.findByIdAndUpdate({
             _id : message_id

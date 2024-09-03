@@ -85,6 +85,23 @@ class RabbitMQService {
         }
     }
 
+    async scheduleMessage(queue, message, delay) {
+        try {
+            const channel = await this.getChannel();
+            await channel.assertQueue(queue, { durable: true });
+    
+            await channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+                persistent: true,
+                expiration: delay.toString() 
+            });
+    
+            console.info(`Scheduled message to queue ${queue} with delay ${delay}ms`);
+        } catch (error) {
+            console.error('Error scheduling message', error);
+            throw error;
+        }
+    }
+
     async receiveMessage(queue, callback) {
         try {
             const channel = await this.getChannel();

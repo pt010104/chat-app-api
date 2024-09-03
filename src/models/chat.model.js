@@ -25,6 +25,19 @@ const chatSchema = new Schema({
     image_url: {
         type: String,
         default: null
+    },
+    is_gift: {
+        type: Boolean,
+        default: false
+    },
+    release_time: {
+        type: Date,
+        default: null
+    },
+    gift_id: {
+        type: String,
+        default: null,
+        ref: 'Gift'
     }
 }, {
     timestamps: true,
