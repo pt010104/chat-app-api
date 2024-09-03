@@ -32,6 +32,11 @@ const chatSchema = new Schema({
         type: Date,
         default: null
     },
+    gift_id: {
+        type: String,
+        default: null,
+        ref: 'Gift'
+    }
 }, {
     timestamps: true,
     collection: COLLECTION_NAME
