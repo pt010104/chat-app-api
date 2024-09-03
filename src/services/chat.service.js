@@ -48,10 +48,18 @@ class ChatService {
                 }
                                 
                 setTimeout(async () => {
-                    await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false);
-                    ChatRepository.updateRedisCache(chatMessage.room_id);
-                    console.info(`Gift ID ${chatMessage.gift_id}: is_gift status updated to false`);
-                }, delay || 100); 
+                    chatMessage.is_gift = false;
+                
+                    await Promise.all([
+                        ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false),
+                        ChatRepository.updateRedisCache(chatMessage.room_id)
+                    ]);
+                
+                    const transformedMessage = await ChatRepository.transformForClient(chatMessage);
+                
+                    const io = global._io;
+                    io.to(roomId).emit("opend gift", { "data": transformedMessage });
+                }, delay || 100);
             }
         } else if (params.buffer) {
             chatMessage.buffer = params.buffer;
