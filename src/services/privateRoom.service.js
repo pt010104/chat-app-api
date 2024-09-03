@@ -53,10 +53,10 @@ class PrivateChatService {
         if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
             throw new BadRequestError("You are not in this room")
         }
-        if (this.lastUpdate(room)){
+        if (await this.lastUpdate(room) === true) {
             console.log('room updated not today')
             await RoomRepository.resetPrivateRoom(room_id);
-        } 
+        }
         const hasRoom = await E2EEService.checkPurseHasRoom(room_id);
         if (!hasRoom) {//not accept E2EE before or your session end(new Date),(or you sign out and now signup again), now accept E2EE and create key pair, or session already end and need create key for new session
 
@@ -84,12 +84,26 @@ class PrivateChatService {
     static lastUpdate = async (room) => {
         const fileTimestamp = new Date(room.updatedAt);
         const currentTime = new Date();
-        const isStale = currentTime.getDate() !== fileTimestamp.getDate() ||
-            currentTime.getMonth() !== fileTimestamp.getMonth() ||
-            currentTime.getFullYear() !== fileTimestamp.getFullYear();
-        if (isStale) return true;
-        return false;
+    
+        // Compare year, month, and day only
+        if(fileTimestamp.getUTCFullYear().toString() !== currentTime.getUTCFullYear().toString() ){
+            console.log('year')
+            return true;
+        }
+        if(fileTimestamp.getUTCMonth().toString() !== currentTime.getUTCMonth().toString() ){
+            console.log('month')
+            return true;
+        }
+        if(fileTimestamp.getUTCDate().toString() !== currentTime.getUTCDate().toString() ){
+            console.log('date')
+            return true;
+        }
+        console.log('false')
+        return false; 
+
     }
+    
+    
 
     static createRoom = async (params) => {
         if (params.user_ids.length !== 1) {
