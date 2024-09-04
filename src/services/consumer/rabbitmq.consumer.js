@@ -93,7 +93,16 @@ class RabbitMQConsumer {
                 throw new Error(`Room not found: ${roomId}`);
             }
 
-            const filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+            let type_room = 'normal';
+ 
+            let filteredUserIDs;
+
+            if (checkRoom.user_ids)
+            {
+                filteredUserIDs = userIDsInRoom.filter(userId => userId.toString() !== message.user_id.toString());
+            } else {
+                type_room = 'media';
+            }
 
             const [saveMessage] = await Promise.all([
                 ChatRepository.saveMessage({
@@ -112,8 +121,10 @@ class RabbitMQConsumer {
             ]);
 
             const transformedMessage = await ChatRepository.transformForClient(saveMessage);
-            await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
 
+            if (type_room === 'normal') {
+                await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
+            }
         } catch (error) {
             console.error(`Error processing message for room ${roomId}:`, error);
             throw error;

@@ -208,6 +208,16 @@ class ChatService {
     }
 
     static async addUsersToRoom(room_id, newUserIds, userId) {    
+        const checkRoom = await RoomRepository.getRoomByID(room_id);
+
+        if (checkRoom) {
+            if (!checkRoom.is_group) {
+                throw new BadRequestError("Can't add user to one-to-one chat");
+            }
+        } else {
+            throw new NotFoundError("Room not found");
+        }
+
         let updatedRoom = await RoomRepository.addUsersToRoom(room_id, newUserIds);
     
         if (updatedRoom.user_ids.length > 2) {
