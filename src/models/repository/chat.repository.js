@@ -177,6 +177,7 @@ class ChatRepository {
             _id : deleteMessage.message_id,
             delete_at : null
         }, {
+            updatedAt: new Date(),
             delete_at : new Date()
         }
     ).lean()
