@@ -122,25 +122,26 @@ class RabbitMQConsumer {
 
             const transformedMessage = await ChatRepository.transformForClient(saveMessage);
 
-            if (type_room === 'normal') {
-                await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage);
-            }
+            await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage, type_room);
         } catch (error) {
             console.error(`Error processing message for room ${roomId}:`, error);
             throw error;
         }
     }
 
-    static async notifyAndBroadcast(roomId, userIDs, message) {
+    static async notifyAndBroadcast(roomId, userIDs, message, type_room) {
         const io = global._io;
-        io.to(roomId).emit("new message", { "data": message });
-
-        const onlineUserPromises = userIDs.map(async (userId) => {
-            const userStatus = await RedisService.getUserStatus(userId);
-            if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("chat message", { "data": message });
-            }
-        });
+        if (type_room === 'normal') {
+            io.to(roomId).emit("new message", { "data": message });
+            const onlineUserPromises = userIDs.map(async (userId) => {
+                const userStatus = await RedisService.getUserStatus(userId);
+                if (userStatus === 'online') {
+                    io.to(`user_${userId}`).emit("chat message", { "data": message });
+                }
+            });
+        } else if (type_room === 'media') {
+            io.to(roomId).emit("new media", { "data": message });
+        }
 
         await Promise.all(onlineUserPromises);
     }
