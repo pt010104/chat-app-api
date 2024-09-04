@@ -139,11 +139,11 @@ class RabbitMQConsumer {
                     io.to(`user_${userId}`).emit("chat message", { "data": message });
                 }
             });
+            await Promise.all(onlineUserPromises);
         } else if (type_room === 'media') {
             io.to(roomId).emit("new media", { "data": message });
         }
 
-        await Promise.all(onlineUserPromises);
     }
 }
 
