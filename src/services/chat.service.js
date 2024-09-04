@@ -50,14 +50,13 @@ class ChatService {
                 setTimeout(async () => {
                     chatMessage.is_gift = false;
                     const updatedMsg = await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false)
-                    console.log('updatedMsg: ', updatedMsg)
                     const transformedMessage = await ChatRepository.transformForClient(updatedMsg);
                 
                     const io = global._io;
                     io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
                     console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
-                    
-                    await ChatRepository.updateRedisCache(chatMessage.room_id);
+
+                    ChatRepository.updateRedisCache(chatMessage.room_id);
 
                 }, delay || 100);
             }
