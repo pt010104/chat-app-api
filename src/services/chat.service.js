@@ -261,15 +261,13 @@ class ChatService {
             throw new NotFoundError("Room not found");
         }
 
-        const messages = await ChatRepository.getMessagesByIds(message_ids);
-
-        if (messages.user_id !== userId) {
-            throw new BadRequestError("You are not the author of this message");
+        const deleteMessages = {
+            user_id: userId,
+            message_id : message_ids,
+            room_id: room_id
         }
-
-        const deletedMessage=await ChatRepository.deleteMessagesInRoom(message_ids);
-        await ChatRepository.updateRedisCache(room_id);
-        return ChatRepository.transformForClient(deletedMessage);
+        RabbitMQService.deleteMessage(QueueNames.DELETE_MESSAGES, deleteMessages);
+        return deleteMessages;
     }
 
     static async editMessageInRoom(user_id, room_id, message_id, message) {
@@ -278,25 +276,14 @@ class ChatService {
         if (!room) {
             throw new NotFoundError("Room not found");
         }
-
-        const infoMessage = await ChatRepository.getMessageById(message_id);
-        if (!infoMessage) {
-            throw new NotFoundError("Message not found");
-        }
-
-        if (infoMessage.user_id.toString() !== user_id.toString()) {
-            throw new BadRequestError("You are not the author of this message");
-        }
-
-        const chatMessage = {
+        const editMessage = {
             user_id,
             message,
             room_id,
+            message_id
         }
-
-        const updatedMessage = await ChatRepository.editMessageInRoom(chatMessage, message_id);
-        await ChatRepository.updateRedisCache(room_id);
-        return ChatRepository.transformForClient(updatedMessage);
+        await RabbitMQService.editMessage(QueueNames.EDIT_MESSAGES, editMessage);
+        return message;
     }
 
     static async pinMessageInRoom(room_id, message_id) {

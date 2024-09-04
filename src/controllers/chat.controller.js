@@ -119,7 +119,7 @@ class ChatController {
         const message_id = req.body.message_id;
         const userId = req.user.userId;
         const deleteMessagesInRoomValidate = Joi.object({
-            message_id: Joi.array().required()
+            message_id: Joi.string().required()
         });
 
         const { error } = deleteMessagesInRoomValidate.validate(req.body);

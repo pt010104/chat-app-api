@@ -84,13 +84,35 @@ class RabbitMQService {
             throw error;
         }
     }
+    
+    async editMessage(queue, message) {
+        try {
+            const channel = await this.getChannel();
+            await channel.assertQueue(queue, { durable: true });
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { persistent: true });
+        } catch (error) {
+            console.error('Error editing message', error);
+            throw error;
+        }
+    }
 
+    async deleteMessage(queue, message) {
+        try {
+            const channel = await this.getChannel();
+            await channel.assertQueue(queue, { durable: true });
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { persistent: true });
+        }
+        catch (error) {
+            console.error('Error deleting message', error);
+            throw error;
+        }
+    }
     async scheduleMessage(queue, message, delay) {
         try {
             const channel = await this.getChannel();
             await channel.assertQueue(queue, { durable: true });
     
-            await channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
                 persistent: true,
                 expiration: delay.toString() 
             });

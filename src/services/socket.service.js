@@ -56,8 +56,7 @@ class SocketServices {
 
     async handleEditMessage(socket, user_id, msg) {
         try {
-            const { room_id, message_id, message } = msg;
-            await ChatService.editMessageInRoom(user_id,room_id, message_id, message)
+            
         } catch (error) {
             this.log(`Error handling edit message for ${user_id}: ${error}`, true);
         }
@@ -65,8 +64,6 @@ class SocketServices {
 
     async handleDeleteMessage(socket, user_id, msg) {
         try {
-            const { room_id, message_id } = msg;
-            await ChatService.deleteMessagesInRoom(user_id,room_id, message_id)
         } catch (error) {
             this.log(`Error handling delete message for ${user_id}: ${error}`, true);
         }

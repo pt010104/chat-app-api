@@ -34,6 +34,7 @@ class ChatRepository {
                 updated_at: chatData.updatedAt,
                 created_at: chatData.createdAt,
                 status: chatData.status,
+                deleted_at: chatData.deleted_at,
             };
 
             if (user_name) {
@@ -154,27 +155,37 @@ class ChatRepository {
         );
         return updatedRecord;
     }
-    editMessageInRoom = async (chatMessage,message_id) => {
+    editMessageInRoom = async (editMessage) => {
         const updatedMessage = await ChatModel.findByIdAndUpdate({
-            _id : message_id
+            _id : editMessage.message_id,
+            delete_at : null
         }, {
-            message : chatMessage.message,
+            message : editMessage.message,
             isEdited : true,
             updatedAt : new Date()
         }, {new : true}
     ).lean()
-
+    if (!updatedMessage) {
+        throw new BadRequestError('Message not allowed to edit');
+    }
+        await this.updateRedisCache(editMessage.room_id);
         return updatedMessage;
     }
 
-    deleteMessagesInRoom = async (message_ids)  => {
+    deleteMessagesInRoom = async (deleteMessage)  => {
         const deletedMessage = await ChatModel.findByIdAndUpdate({
-            _id : message_ids
+            _id : deleteMessage.message_id,
+            delete_at : null
         }, {
             delete_at : new Date()
         }
     ).lean()
     
+    if (!deletedMessage) {
+        throw new BadRequestError('Message not allowed to delete');
+    }
+
+        await this.updateRedisCache(deleteMessage.room_id);
         return deletedMessage;
     }
 
