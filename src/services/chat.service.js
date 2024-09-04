@@ -55,7 +55,7 @@ class ChatService {
                 
                     const io = global._io;
                     ChatRepository.updateRedisCache(chatMessage.room_id)                
-                    console.log('Emitting open gift event');
+                    console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
                     io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
                 }, delay || 100);
             }
