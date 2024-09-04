@@ -54,9 +54,11 @@ class ChatService {
                     const transformedMessage = await ChatRepository.transformForClient(updatedMsg);
                 
                     const io = global._io;
-                    ChatRepository.updateRedisCache(chatMessage.room_id)                
-                    console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
                     io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
+                    console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
+                    
+                    await ChatRepository.updateRedisCache(chatMessage.room_id);
+
                 }, delay || 100);
             }
         } else if (params.buffer) {
