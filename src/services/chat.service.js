@@ -69,6 +69,37 @@ class ChatService {
     
         return chatMessage;
     }
+
+    static async updateLikeMessage(messageId, roomId, userId) {
+        const message = await ChatRepository.getMessageById(messageId);
+        if (!message) {
+            throw new NotFoundError("Message not found");
+        }
+
+        if (message.room_id != roomId) {
+            throw new BadRequestError("Invalid Request");
+        }
+
+        let type = 'like';
+
+        console.log(message.liked_by)
+
+        if (message.liked_by) {
+            if (message.liked_by.includes(userId)) {
+                type = 'unlike';
+                console.log('unlike')
+            }
+        }
+    
+        const updatedMessage = await ChatRepository.updateLikeMessage(messageId, roomId, userId, type);
+    
+        const transformedMessage = await ChatRepository.transformForClient(updatedMessage);
+    
+        const io = global._io;
+        io.to(roomId).emit("like message", { "data": transformedMessage });
+    
+        return;
+    }
     
 
     static createRoom = async (params) => {
