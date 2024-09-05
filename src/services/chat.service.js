@@ -50,7 +50,7 @@ class ChatService {
                 setTimeout(async () => {
                     chatMessage.is_gift = false;
                     const updatedMsg = await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false)
-                    const transformedMessage = await ChatRepository.transformForClient(updatedMsg);
+                    const transformedMessage = await ChatRepository.transformForClient(updatedMsg, params.user_id);
                 
                     const io = global._io;
                     io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
@@ -93,7 +93,7 @@ class ChatService {
     
         const updatedMessage = await ChatRepository.updateLikeMessage(messageId, roomId, userId, type);
     
-        const transformedMessage = await ChatRepository.transformForClient(updatedMessage);
+        const transformedMessage = await ChatRepository.transformForClient(updatedMessage, userId);
     
         const io = global._io;
         io.to(roomId).emit("like message", { "data": transformedMessage });
@@ -178,7 +178,7 @@ class ChatService {
         const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
-                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
+                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message), userId);
                     return { message: transformedData };
                 }
                 return null;
@@ -208,7 +208,7 @@ class ChatService {
         }
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
+    static async getMessagesInRoom(room_id, page = 1, limit = 12, userId) {
         const skip = (page - 1) * limit;
     
         const [room, messages, totalMessages] = await Promise.all([
@@ -222,7 +222,7 @@ class ChatService {
         }
     
         const transformedMessages = await Promise.all(
-            messages.map(message => ChatRepository.transformForClient(message))
+            messages.map(message => ChatRepository.transformForClient(message, userId))
         );
     
         const totalPages = Math.ceil(totalMessages / limit);

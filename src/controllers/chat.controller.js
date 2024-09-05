@@ -53,10 +53,11 @@ class ChatController {
         const room_id = req.params.room_id;
         const page = req.query.page;
         const limit = req.query.limit;
+        const userId = req.user.userId;
 
         new SuccessResponse({
             message: "Messages retrieved successfully",
-            metadata: await ChatService.getMessagesInRoom(room_id, page, limit)
+            metadata: await ChatService.getMessagesInRoom(room_id, page, limit, userId)
         }).send(res)
     }
 
