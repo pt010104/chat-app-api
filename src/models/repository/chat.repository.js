@@ -63,11 +63,9 @@ class ChatRepository {
             if (chatData.liked_by) {
                 transformedData.liked_by = chatData.liked_by;
             }
-
-            if (chatData.liked_by.includes(chatData.user_id)) {
+            if (chatData.liked_by.map((id) => id.toString()).includes(chatData.user_id.toString())) {
                 transformedData.is_liked = true;
             }
-
             return transformedData;
         } catch (error) {
             return 
