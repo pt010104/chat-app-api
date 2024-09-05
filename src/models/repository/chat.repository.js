@@ -60,6 +60,9 @@ class ChatRepository {
             if (chatData.likes) {
                 transformedData.likes = chatData.likes;
             }
+            if (chatData.liked_by) {
+                transformedData.liked_by = chatData.liked_by;
+            }
 
             if (chatData.liked_by.includes(chatData.user_id)) {
                 transformedData.is_liked = true;
