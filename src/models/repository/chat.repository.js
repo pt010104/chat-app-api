@@ -21,7 +21,8 @@ class ChatRepository {
         };
     }
 
-    transformForClient = async(chatData) => {
+    transformForClient = async(chatData, userId) => {
+        console.log(userId);
         try {
             const user = await findUserById(chatData.user_id);
             const user_name = user.name;
@@ -60,10 +61,10 @@ class ChatRepository {
             if (chatData.likes) {
                 transformedData.likes = chatData.likes;
             }
-            if (chatData.liked_by) {
+            if (chatData.liked_by && chatData.liked_by.length > 0) {
                 transformedData.liked_by = chatData.liked_by;
             }
-            if (chatData.liked_by.map((id) => id.toString()).includes(chatData.user_id.toString())) {
+            if (chatData.liked_by.includes(userId)) {
                 transformedData.is_liked = true;
             }
             return transformedData;
@@ -135,7 +136,6 @@ class ChatRepository {
         
         if (messages.length > 0) {
             await RedisService.set(key, JSON.stringify(messages)); 
-            console.log(`Cached ${messages.length} messages for room ${room_id} with key ${key}`);
         }
     
         return messages;

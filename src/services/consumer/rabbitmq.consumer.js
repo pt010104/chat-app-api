@@ -120,7 +120,7 @@ class RabbitMQConsumer {
                 ChatService.updateNewMessagesInRoom(roomId, message)
             ]);
 
-            const transformedMessage = await ChatRepository.transformForClient(saveMessage);
+            const transformedMessage = await ChatRepository.transformForClient(saveMessage, message.user_id);
 
             await this.notifyAndBroadcast(roomId, filteredUserIDs, transformedMessage, type_room);
         } catch (error) {
