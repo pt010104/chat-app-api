@@ -22,7 +22,6 @@ class ChatRepository {
     }
 
     transformForClient = async(chatData, userId) => {
-        console.log(userId);
         try {
             const user = await findUserById(chatData.user_id);
             const user_name = user.name;
@@ -64,9 +63,10 @@ class ChatRepository {
             if (chatData.liked_by && chatData.liked_by.length > 0) {
                 transformedData.liked_by = chatData.liked_by;
             }
-            if (chatData.liked_by.includes(userId)) {
+            if (chatData.liked_by && chatData.liked_by.includes(userId)) {
                 transformedData.is_liked = true;
             }
+            
             return transformedData;
         } catch (error) {
             return 
