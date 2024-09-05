@@ -36,6 +36,14 @@ const chatSchema = new Schema({
         type: String,
         default: null,
         ref: 'Gift'
+    },
+    likes: {
+        type: Number,
+        default: 0
+    },
+    liked_by: {
+        type: [Types.ObjectId],
+        default: []
     }
 }, {
     timestamps: true,
