@@ -21,6 +21,25 @@
             </ul>
         </div>
         <div class="content">
+            <h3>POST /v1/api/friends/deny-request</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Deny a request.</p>
+                <p><strong>URL:</strong> <code>/v1/api/friends/deny-request</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "request_id": "string (optional)",
+    "user_id": "string (optional)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+"message": "Friend request denied",
+"metadata": { ...requestDetails }
+}</code></pre>
             <h1>Friendship Routes</h1>
                 <h3>POST /v1/api/friends/remove-friend</h3>
                 <div class="indent">
@@ -148,7 +167,8 @@ x-client-id: &lt;client_id&gt;</code></pre>
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
-    "request_id": "string (required)"
+    "request_id": "string (optional)",
+    "user_id": "string (optional)"
 }</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:
@@ -168,7 +188,8 @@ x-client-id: &lt;client_id&gt;</code></pre>
 x-client-id: &lt;client_id&gt;</code></pre>
                 <p><strong>Request Body:</strong></p>
                 <pre><code>{
-    "request_id": "string (required)"
+    "request_id": "string (optional)",
+    "user_id": "string (optional)"
 }</code></pre>
                 <p><strong>Responses:</strong></p>
                 <pre><code>200 OK:

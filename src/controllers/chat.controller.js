@@ -54,10 +54,11 @@ class ChatController {
         const room_id = req.params.room_id;
         const page = req.query.page;
         const limit = req.query.limit;
+        const userId = req.user.userId;
 
         new SuccessResponse({
             message: "Messages retrieved successfully",
-            metadata: await ChatService.getMessagesInRoom(room_id, page, limit)
+            metadata: await ChatService.getMessagesInRoom(room_id, page, limit, userId)
         }).send(res)
     }
 
@@ -138,21 +139,44 @@ class ChatController {
     sendMessage = async (req, res, next) => {
         //
         const userId = req.user.userId;
-        let { message, room_id, buffer } = req.body;
-        if (!message) {
-            if (!buffer) {
+        let params = req.body;
+        params.user_id = userId;
+        if (!params.message) {
+            if (!params.buffer) {
                 return res.status(400).json({
                     message: "Message or buffer is required",
                 });
             }
-            message = " ";
+            params.message = " ";
         }
 
         new SuccessResponse({
             message: "Message sent successfully",
-            metadata: await ChatService.sendMessage(userId, room_id, message, buffer)
+            metadata: await ChatService.sendMessage(params)
         }).send(res)
     }
-}
+
+    updateLikeMessage = async (req, res, next) => {
+        const updateLikeMessageValidate = Joi.object({
+            room_id: Joi.string().required(),
+            message_id: Joi.string().required(),                                                                                                                        
+        });
+        const { error } = updateLikeMessageValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({                                                                                                   
+              message: error.details[0].message,                                                                                                            
+            });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+        }
+
+        const messageId = req.body.message_id;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+        const roomId = req.body.room_id;
+        const userId = req.user.userId;                                                                                                                                                                                                                                                                                                                             
+
+        new SuccessResponse({                                                                                                                                                                                                                                                                                                                                                                                                               
+            message: "Message liked successfully",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+            metadata: await ChatService.updateLikeMessage(messageId, roomId, userId)
+        }).send(res)                                                                                                                                                                            
+    }
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
 module.exports = new ChatController()

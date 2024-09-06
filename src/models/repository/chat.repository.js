@@ -21,7 +21,7 @@ class ChatRepository {
         };
     }
 
-    transformForClient = async (chatData) => {
+    transformForClient = async(chatData, userId) => {
         try {
             const user = await findUserById(chatData.user_id);
             const user_name = user.name;
@@ -48,7 +48,25 @@ class ChatRepository {
             if (chatData.image_url) {
                 transformedData.image_url = chatData.image_url;
             }
-
+            if (chatData.is_gift) {
+                transformedData.is_gift = chatData.is_gift;
+            }
+            if (chatData.release_time) {
+                transformedData.release_time = chatData.release_time;   
+            }
+            if (chatData._id) {
+                transformedData.id = chatData._id;
+            }
+            if (chatData.likes) {
+                transformedData.likes = chatData.likes;
+            }
+            if (chatData.liked_by && chatData.liked_by.length > 0) {
+                transformedData.liked_by = chatData.liked_by;
+            }
+            if (chatData.liked_by && chatData.liked_by.includes(userId)) {
+                transformedData.is_liked = true;
+            }
+            
             return transformedData;
         } catch (error) {
             return
@@ -74,15 +92,19 @@ class ChatRepository {
         return Promise.resolve();
     }
 
-    saveMessage = async ({ user_id, room_id, message, image_url = null, created_at, updated_at }) => {
+    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id}) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
                 room_id,
                 message,
                 image_url,
+                is_gift,
                 createdAt: created_at,
-                updatedAt: updated_at
+                updatedAt: updated_at,
+                release_time: release_time || null,
+                gift_id: gift_id || null,
+                likes: 0
             });
 
             const [savedMessage] = await Promise.all([
@@ -129,8 +151,7 @@ class ChatRepository {
             .lean();
 
         if (messages.length > 0) {
-            await RedisService.set(key, JSON.stringify(messages));
-            console.log(`Cached ${messages.length} messages for room ${room_id} with key ${key}`);
+            await RedisService.set(key, JSON.stringify(messages)); 
         }
 
         if (type_group === 'private') {
@@ -169,6 +190,45 @@ class ChatRepository {
         return messages;
     }
 
+    async updateMessageGiftStatus(gift_id, is_gift) {
+        const updatedAt = new Date();
+        const updatedRecord = await ChatModel.findOneAndUpdate(
+            { gift_id },
+            { is_gift, updatedAt },
+            { new: true } 
+        );
+        return updatedRecord;
+    }
+    async updateLikeMessage(messageId, roomId, userId, type = 'like') {
+        const updatedAt = new Date();
+        let updatedRecord;
+    
+        if (type === 'like') {
+            updatedRecord = await ChatModel.findOneAndUpdate(
+                { _id: messageId },
+                {
+                    $inc: { likes: 1 },
+                    $addToSet: { liked_by: userId },
+                    updatedAt
+                },
+                { new: true, upsert: true }
+            );
+        } else {
+            updatedRecord = await ChatModel.findOneAndUpdate(
+                { _id: messageId },
+                {
+                    $inc: { likes: -1 },
+                    $pull: { liked_by: userId },
+                    updatedAt
+                },
+                { new: true }
+            );
+        }
+    
+        this.updateRedisCache(roomId);
+    
+        return updatedRecord;
+    }
 }
 
 module.exports = new ChatRepository();

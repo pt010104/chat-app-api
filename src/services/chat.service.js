@@ -9,24 +9,98 @@ const ChatRepository = require("../models/repository/chat.repository")
 const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
+const { v4: uuidv4 } = require('uuid');
 const E2EE = require("../services/E2EE.service")
 class ChatService {
-    static async sendMessage(user_id, room_id, message, buffer) {
+    static async sendMessage(params) {
         const chatMessage = {
-            user_id,
-            message,
-            room_id,
+            user_id: params.user_id,
+            message: params.message,
+            room_id: params.room_id,
         };
+    
+        if (params.is_gift) {
+            const release_time = params.release_time;
+            const now = new Date();
+            const releaseTime = new Date(release_time);
+            console.log(now)
+            const delay = releaseTime - now;
+            if (delay < 0) {
+                console.warn('Release time is in the past. Sending message immediately.');
+                chatMessage.is_gift = false;
+                if (params.buffer) {
+                    chatMessage.buffer = params.buffer;
+                    await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+                } else {
+                    await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                }
+            } else {
+                console.log(delay)
+                chatMessage.is_gift = true;
+                chatMessage.release_time = release_time;
+                chatMessage.gift_id = uuidv4(); 
+    
+                if (params.buffer) {
+                    chatMessage.buffer = params.buffer;
+                    await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
+                } else {
+                    await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
+                }
+                                
+                setTimeout(async () => {
+                    chatMessage.is_gift = false;
+                    const updatedMsg = await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false)
+                    const transformedMessage = await ChatRepository.transformForClient(updatedMsg, params.user_id);
+                
+                    const io = global._io;
+                    io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
+                    console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
 
-        if (buffer) {
-            chatMessage.buffer = buffer
+                    ChatRepository.updateRedisCache(chatMessage.room_id);
+
+                }, delay || 100);
+            }
+        } else if (params.buffer) {
+            chatMessage.buffer = params.buffer;
             await RabbitMQService.sendMedia(QueueNames.IMAGE_MESSAGES, chatMessage);
         } else {
             await RabbitMQService.sendMessage(QueueNames.CHAT_MESSAGES, chatMessage);
         }
-
+    
         return chatMessage;
-    }   
+    }
+
+    static async updateLikeMessage(messageId, roomId, userId) {
+        const message = await ChatRepository.getMessageById(messageId);
+        if (!message) {
+            throw new NotFoundError("Message not found");
+        }
+
+        if (message.room_id != roomId) {
+            throw new BadRequestError("Invalid Request");
+        }
+
+        let type = 'like';
+
+        console.log(message.liked_by)
+
+        if (message.liked_by) {
+            if (message.liked_by.includes(userId)) {
+                type = 'unlike';
+                console.log('unlike')
+            }
+        }
+    
+        const updatedMessage = await ChatRepository.updateLikeMessage(messageId, roomId, userId, type);
+    
+        const transformedMessage = await ChatRepository.transformForClient(updatedMessage, userId);
+    
+        const io = global._io;
+        io.to(roomId).emit("like message", { "data": transformedMessage });
+    
+        return;
+    }
+    
 
     static createRoom = async (params) => {
         if (params.user_ids.length < 1) {
@@ -56,8 +130,13 @@ class ChatService {
         //Tên group:
         //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
         if (params.user_ids.length == 2) {
-            const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
-            params.auto_name = true
+            const userNames = [];
+            for (let i = 0; i < params.user_ids.length; i++) {
+                const user = await findUserById(params.user_ids[i]);
+                userNames.push(user.name);
+            }
+            params.name = userNames.join(', ');
+            params.auto_name = true;            
         }
 
         //Trường hợp user_ids.length > 2 thì tên group là param name hoặc tên của tất cả user
@@ -71,7 +150,7 @@ class ChatService {
                 params.name = userNames.join(', ');
                 params.auto_name = true;
             }
-        }
+        } 
 
         params.created_by = params.userId
         params.name_remove_sign = removeVietNamese(params.name);
@@ -127,12 +206,16 @@ class ChatService {
             message.message = 'Sent an image';
             delete message.buffer;
             RedisService.set(key, JSON.stringify(message));
+        } else if (message.is_gift) {
+            message.message = 'Sent a gift';
+            RedisService.set(key, JSON.stringify(message));
         } else {
+            console.log(key)
             RedisService.set(key, JSON.stringify(message));  
         }
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
+    static async getMessagesInRoom(room_id, page = 1, limit = 12, userId) {
         const skip = (page - 1) * limit;
     
         const [room, messages, totalMessages] = await Promise.all([
@@ -146,7 +229,7 @@ class ChatService {
         }
     
         const transformedMessages = await Promise.all(
-            messages.map(message => ChatRepository.transformForClient(message))
+            messages.map(message => ChatRepository.transformForClient(message, userId))
         );
     
         const totalPages = Math.ceil(totalMessages / limit);
@@ -163,6 +246,16 @@ class ChatService {
     }
 
     static async addUsersToRoom(room_id, newUserIds, userId) {    
+        const checkRoom = await RoomRepository.getRoomByID(room_id);
+
+        if (checkRoom) {
+            if (!checkRoom.is_group) {
+                throw new BadRequestError("Can't add user to one-to-one chat");
+            }
+        } else {
+            throw new NotFoundError("Room not found");
+        }
+
         let updatedRoom = await RoomRepository.addUsersToRoom(room_id, newUserIds);
     
         if (updatedRoom.user_ids.length > 2) {
@@ -212,20 +305,31 @@ class ChatService {
 
     static async searchRoom(userId, filter) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
-
-        console.log(rooms)
-
-        filter = removeVietNamese(filter);
-        const regex = new RegExp(filter, 'i');
         
-        const filteredRooms = rooms.filter(room => {
-            const roomName = room.name_remove_sign;
-            return regex.test(roomName);
-        });
-
-        const transformedRooms = await Promise.all(filteredRooms.map(room => RoomRepository.transformForClient(room, userId)));
-
-        return transformedRooms;
+        const filterNoAccents = removeVietNamese(filter);
+        const regex = new RegExp(filterNoAccents, 'i');
+    
+        const filteredRooms = await Promise.all(rooms.map(async (room) => {
+            let roomName;
+            if (room.is_group) {
+                roomName = room.name;
+            } else {
+                const otherUserId = room.user_ids.find(id => id != userId);
+                if (otherUserId && room.auto_name) {
+                    const user = await findUserById(otherUserId);
+                    roomName = user ? user.name : room.name;
+                } else {
+                    roomName = room.name;
+                }
+            }
+    
+            const roomNameNoAccents = removeVietNamese(roomName);
+            return regex.test(roomNameNoAccents) ? room : null;
+        }));
+    
+        const result = filteredRooms.filter(room => room !== null);
+    
+        return await RoomRepository.transformForClient(result, userId);
     }
 
 }

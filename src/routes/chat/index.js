@@ -14,6 +14,8 @@ route.get('/:room_id', asyncHandler(chatController.detailRoom));
 route.patch('/:room_id', asyncHandler(chatController.updateRoom));
 route.post('/search', asyncHandler(chatController.searchRoom));
 route.post('/send-message', asyncHandler(chatController.sendMessage));
+route.post('/update-like', asyncHandler(chatController.updateLikeMessage));
+route.post('/like-message', asyncHandler(chatController.updateLikeMessage));
 
 
 module.exports = route;

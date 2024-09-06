@@ -15,7 +15,7 @@ const generateOTPRandom = () => {
 const newOTP = async ({ email, type }) => {
     const otp = generateOTPRandom();
     const key = `otp:${email}:${type}`;   
-    await  RedisService.executeCommand('set', key, otp.toString(), 'EX', 180);
+    await  RedisService.set(key, otp, 60 * 3); 
 
     return { email, otp, type };
 
