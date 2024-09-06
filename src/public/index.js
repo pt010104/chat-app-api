@@ -49,6 +49,20 @@ document.getElementById('connectButton').addEventListener('click', () => {
                 log(JSON.stringify(data.data));
             }
         });
+        
+        socket.on('edited message', (data) => {
+            log(`Received edited message:`);
+            if (data && data.data && data.data.message) {
+                log(JSON.stringify(data.data));
+            }
+        });
+
+        socket.on('deleted message', (data) => {
+            log(`Received deleted message:`);
+            if (data && data.data && data.data.message) {
+                log(JSON.stringify(data.data));
+            }
+        });
 
         socket.on('disconnect', () => {
             log('Disconnected from server');
@@ -85,6 +99,29 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
         }
     } else {
         log('Cannot send an empty message or socket is not connected');
+    }
+});
+
+document.getElementById('editMessageButton').addEventListener('click', () => {
+    const roomId = document.getElementById('roomIdInput').value.trim();
+    const messageId = document.getElementById('editMessageIdInput').value.trim();
+    const newMessage = document.getElementById('newMessageInput').value.trim();
+
+    if (roomId && messageId && newMessage) {
+        editMessage(roomId, messageId, newMessage);
+    } else {
+        log('Room ID, Message ID, and new message content cannot be empty');
+    }
+});
+
+document.getElementById('deleteMessageButton').addEventListener('click', () => {
+    const roomId = document.getElementById('roomIdInput').value.trim();
+    const messageId = document.getElementById('deleteMessageIdInput').value.trim();
+
+    if (roomId && messageId) {
+        deleteMessage(roomId, messageId);
+    } else {
+        log('Room ID and Message ID cannot be empty');
     }
 });
 

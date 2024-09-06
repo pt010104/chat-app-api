@@ -207,7 +207,7 @@ class RabbitMQConsumer {
         }
     }
 
-    static async notifyAndBroadcast(roomId, userIDs, message) {
+    static async notifyAndBroadcast(roomId, userIDs, message,type_room) {
         const io = global._io;
         if (type_room === 'normal') {
             io.to(roomId).emit("new message", { "data": message });
@@ -226,11 +226,11 @@ class RabbitMQConsumer {
 
     static async notifyAndBroadcastEdit(roomId, userIDs, message) {
         const io = global._io;
-        io.to(roomId).emit("edit message", { "data": message });
+        io.to(roomId).emit("edited message", { "data": message });
         const onlineUserPromises = userIDs.map(async (userId) => {
             const userStatus = await RedisService.getUserStatus(userId);
             if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("edit message", { "data": message });
+                io.to(`user_${userId}`).emit("edited message", { "data": message });
             }
         });
         await Promise.all(onlineUserPromises);
@@ -238,11 +238,11 @@ class RabbitMQConsumer {
 
     static async notifyAndBroadcastDelete(roomId, userIDs, messageId) {
         const io = global._io;
-        io.to(roomId).emit("delete message", { "data": { message_id: messageId } });
+        io.to(roomId).emit("deleted message", { "data": { message_id: messageId } });
         const onlineUserPromises = userIDs.map(async (userId) => {
             const userStatus = await RedisService.getUserStatus(userId);
             if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("delete message", { "data": { message_id: messageId } });
+                io.to(`user_${userId}`).emit("deleted message", { "data": { message_id: messageId } });
             }
         });
         await Promise.all(onlineUserPromises);
