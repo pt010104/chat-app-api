@@ -21,7 +21,7 @@ class ChatRepository {
         };
     }
 
-    transformForClient = async(chatData) => {
+    transformForClient = async(chatData, userId) => {
         try {
             const user = await findUserById(chatData.user_id);
             const user_name = user.name;
@@ -55,10 +55,19 @@ class ChatRepository {
             if (chatData.release_time) {
                 transformedData.release_time = chatData.release_time;   
             }
-            if(chatData._id) {
+            if (chatData._id) {
                 transformedData.id = chatData._id;
             }
-
+            if (chatData.likes) {
+                transformedData.likes = chatData.likes;
+            }
+            if (chatData.liked_by && chatData.liked_by.length > 0) {
+                transformedData.liked_by = chatData.liked_by;
+            }
+            if (chatData.liked_by && chatData.liked_by.includes(userId)) {
+                transformedData.is_liked = true;
+            }
+            
             return transformedData;
         } catch (error) {
             return 
@@ -95,7 +104,8 @@ class ChatRepository {
                 createdAt: created_at,
                 updatedAt: updated_at,
                 release_time: release_time || null,
-                gift_id: gift_id || null
+                gift_id: gift_id || null,
+                likes: 0
             });
     
             const [savedMessage] = await Promise.all([
@@ -127,7 +137,6 @@ class ChatRepository {
         
         if (messages.length > 0) {
             await RedisService.set(key, JSON.stringify(messages)); 
-            console.log(`Cached ${messages.length} messages for room ${room_id} with key ${key}`);
         }
     
         return messages;
@@ -147,12 +156,42 @@ class ChatRepository {
     }
 
     async updateMessageGiftStatus(gift_id, is_gift) {
-        const updated_at = new Date();
+        const updatedAt = new Date();
         const updatedRecord = await ChatModel.findOneAndUpdate(
             { gift_id },
-            { is_gift, updated_at },
+            { is_gift, updatedAt },
             { new: true } 
         );
+        return updatedRecord;
+    }
+    async updateLikeMessage(messageId, roomId, userId, type = 'like') {
+        const updatedAt = new Date();
+        let updatedRecord;
+    
+        if (type === 'like') {
+            updatedRecord = await ChatModel.findOneAndUpdate(
+                { _id: messageId },
+                {
+                    $inc: { likes: 1 },
+                    $addToSet: { liked_by: userId },
+                    updatedAt
+                },
+                { new: true, upsert: true }
+            );
+        } else {
+            updatedRecord = await ChatModel.findOneAndUpdate(
+                { _id: messageId },
+                {
+                    $inc: { likes: -1 },
+                    $pull: { liked_by: userId },
+                    updatedAt
+                },
+                { new: true }
+            );
+        }
+    
+        this.updateRedisCache(roomId);
+    
         return updatedRecord;
     }
     editMessageInRoom = async (editMessage) => {

@@ -51,13 +51,14 @@ class ChatService {
                 setTimeout(async () => {
                     chatMessage.is_gift = false;
                     const updatedMsg = await ChatRepository.updateMessageGiftStatus(chatMessage.gift_id, false)
-                    console.log('updatedMsg: ', updatedMsg)
-                    const transformedMessage = await ChatRepository.transformForClient(updatedMsg);
+                    const transformedMessage = await ChatRepository.transformForClient(updatedMsg, params.user_id);
                 
                     const io = global._io;
-                    ChatRepository.updateRedisCache(chatMessage.room_id)                
-                    console.log('Emitting open gift event');
                     io.to(chatMessage.room_id).emit("opened gift", { "data": transformedMessage });
+                    console.log('Emitting opened gift to ', chatMessage.room_id, "\n data: ", transformedMessage);
+
+                    ChatRepository.updateRedisCache(chatMessage.room_id);
+
                 }, delay || 100);
             }
         } else if (params.buffer) {
@@ -68,6 +69,37 @@ class ChatService {
         }
     
         return chatMessage;
+    }
+
+    static async updateLikeMessage(messageId, roomId, userId) {
+        const message = await ChatRepository.getMessageById(messageId);
+        if (!message) {
+            throw new NotFoundError("Message not found");
+        }
+
+        if (message.room_id != roomId) {
+            throw new BadRequestError("Invalid Request");
+        }
+
+        let type = 'like';
+
+        console.log(message.liked_by)
+
+        if (message.liked_by) {
+            if (message.liked_by.includes(userId)) {
+                type = 'unlike';
+                console.log('unlike')
+            }
+        }
+    
+        const updatedMessage = await ChatRepository.updateLikeMessage(messageId, roomId, userId, type);
+    
+        const transformedMessage = await ChatRepository.transformForClient(updatedMessage, userId);
+    
+        const io = global._io;
+        io.to(roomId).emit("like message", { "data": transformedMessage });
+    
+        return;
     }
     
 
@@ -147,7 +179,7 @@ class ChatService {
         const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
-                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
+                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message), userId);
                     return { message: transformedData };
                 }
                 return null;
@@ -177,7 +209,7 @@ class ChatService {
         }
     }
 
-    static async getMessagesInRoom(room_id, page = 1, limit = 12) {
+    static async getMessagesInRoom(room_id, page = 1, limit = 12, userId) {
         const skip = (page - 1) * limit;
 
         const [room, messages, totalMessages] = await Promise.all([
@@ -191,7 +223,7 @@ class ChatService {
         }
 
         const transformedMessages = await Promise.all(
-            messages.map(message => ChatRepository.transformForClient(message))
+            messages.map(message => ChatRepository.transformForClient(message, userId))
         );
 
         const totalPages = Math.ceil(totalMessages / limit);
@@ -207,7 +239,17 @@ class ChatService {
         };
     }
 
-    static async addUsersToRoom(room_id, newUserIds, userId) {
+    static async addUsersToRoom(room_id, newUserIds, userId) {    
+        const checkRoom = await RoomRepository.getRoomByID(room_id);
+
+        if (checkRoom) {
+            if (!checkRoom.is_group) {
+                throw new BadRequestError("Can't add user to one-to-one chat");
+            }
+        } else {
+            throw new NotFoundError("Room not found");
+        }
+
         let updatedRoom = await RoomRepository.addUsersToRoom(room_id, newUserIds);
 
         if (updatedRoom.user_ids.length > 2) {
