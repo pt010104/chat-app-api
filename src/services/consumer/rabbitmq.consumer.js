@@ -13,7 +13,7 @@ class RabbitMQConsumer {
 
         await channel.assertQueue(QueueNames.CHAT_MESSAGES, { durable: true });
         await channel.assertQueue(QueueNames.IMAGE_MESSAGES, { durable: true });
-        await channel.assertQueue(QueueNames.Gift_MESSAGES, { durable: true });
+        await channel.assertQueue(QueueNames.GIFT_MESSAGES, { durable: true });
 
         await channel.prefetch(10);
 
@@ -53,7 +53,7 @@ class RabbitMQConsumer {
             }
         });
 
-        channel.consume(QueueNames.Gift_MESSAGES, async (msg) => {
+        channel.consume(QueueNames.GIFT_MESSAGES, async (msg) => {
             if (msg) {
                 try {
                     const message = JSON.parse(msg.content.toString());
