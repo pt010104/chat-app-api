@@ -221,7 +221,6 @@ class PrivateChatService {
         
         try {
             await E2EEService.clearKeys(room_id);
-            console.log('endSession');
             
             const message = await ChatRepository.clearMessages(room_id);
             console.log('message', message);
@@ -230,10 +229,8 @@ class PrivateChatService {
             await ChatRepository.updateRedisCache(room_id);
             const keyRoom = 'room:' + room_id;
             await RedisService.set(keyRoom, JSON.stringify(room));
-            const key = 'newMessage:' + room_id;
-            await RedisService.delete(key);
-    
-            return message;
+             //const key = 'newMessage:' + room_id;
+             //await RedisService.delete(key);
         } catch (error) {
             console.error('Error during endSession:', error);
             throw error;

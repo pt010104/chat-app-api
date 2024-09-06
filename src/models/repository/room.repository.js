@@ -12,7 +12,7 @@ class RoomRepository {
             for (let i = 0; i < rooms.length; i++) {
                 const room = rooms[i];
                 let dataTransformed = {
-                    room_id: room._id,  
+                    room_id: room._id,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
                     room_created_at: room.createdAt,
@@ -23,17 +23,17 @@ class RoomRepository {
                         dataTransformed.room_name = room.name;
                         const user = await findUserById(room.created_by);
                         if (user && user.avatar) {
-                            dataTransformed.room_avatar = user.avatar; 
+                            dataTransformed.room_avatar = user.avatar;
                         }
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
                         if (user && user.avatar && room.auto_name) {
                             dataTransformed.room_name = user.name;
-                            dataTransformed.room_avatar = user.avatar; 
+                            dataTransformed.room_avatar = user.avatar;
                         } else {
                             dataTransformed.room_name = room.name;
-                            dataTransformed.room_avatar = user.avatar; 
-                        } 
+                            dataTransformed.room_avatar = user.avatar;
+                        }
                     }
                 } else {
                     dataTransformed.room_avatar = room.avt_url
@@ -43,20 +43,20 @@ class RoomRepository {
                 data.push(dataTransformed);
             }
             return data;
-        }  else {
+        } else {
             let room_avatar = null;
             let room_name = "";
             if (!rooms.is_group || rooms.avt_url == "") {
                 if (rooms.is_group) {
                     const user = await findUserById(rooms.created_by);
                     if (user && user.avatar) {
-                        room_avatar  = user.avatar; 
+                        room_avatar = user.avatar;
                         room_name = rooms.name;
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
                     if (user && user.avatar && rooms.auto_name) {
-                        room_avatar  = user.avatar; 
+                        room_avatar = user.avatar;
                         room_name = user.name;
                     } else {
                         room_name = rooms.name;
@@ -85,7 +85,7 @@ class RoomRepository {
             for (let i = 0; i < rooms.length; i++) {
                 const room = rooms[i];
                 let dataTransformed = {
-                    room_id: room._id,  
+                    room_id: room._id,
                     is_group: room.is_group,
                     room_user_ids: room.user_ids,
                     room_created_at: room.createdAt,
@@ -101,7 +101,7 @@ class RoomRepository {
                     } else {
                         const user = await findUserById(room.user_ids.filter(id => id != userID)[0]);
                         if (user && user.avatar && room.auto_name) {
-                            dataTransformed.room_avatar = user.avatar; 
+                            dataTransformed.room_avatar = user.avatar;
                             dataTransformed.room_name = user.name;
                         } else {
                             dataTransformed.room_name = room.name;
@@ -132,20 +132,20 @@ class RoomRepository {
                 data.push(dataTransformed);
             }
             return data;
-        }  else {
+        } else {
             let room_avatar = null;
             let room_name = ""
             if (!rooms.is_group || rooms.avt_url == "") {
                 if (rooms.is_group) {
                     const user = await findUserById(rooms.created_by);
                     if (user && user.avatar) {
-                        room_avatar  = user.avatar; 
+                        room_avatar = user.avatar;
                         room_name = rooms.name;
                     }
                 } else {
                     const user = await findUserById(rooms.user_ids.filter(id => id != userID)[0]);
                     if (user && user.avatar && rooms.auto_name) {
-                        room_avatar  = user.avatar; 
+                        room_avatar = user.avatar;
                         room_name = user.name;
                     } else {
                         room_name = rooms.name;
@@ -171,7 +171,7 @@ class RoomRepository {
                     room_users.push(room_user)
                 }
             }
-            
+
             return {
                 room_id: rooms._id,
                 room_name: room_name,
@@ -182,16 +182,16 @@ class RoomRepository {
                 room_created_at: rooms.createdAt,
                 room_updated_at: rooms.updatedAt
             };
-            }
+        }
     }
 
     // Get all rooms
     // Return: Array of room_id
     getAllRooms = async () => {
         const cacheKey = 'all_rooms';
-        
+
         let rooms = await RedisService.get(cacheKey);
-        
+
         if (rooms) {
             return JSON.parse(rooms);
         }
@@ -209,7 +209,7 @@ class RoomRepository {
 
     createRoom = async (params) => {
         const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign } = params;
-        
+
         const newRoom = await RoomModel.create({
             name: name,
             name_remove_sign: name_remove_sign,
@@ -222,7 +222,7 @@ class RoomRepository {
         if (avt_url && newRoom.is_group) {
             newRoom.avt_url = avt_url;
             await newRoom.save();
-        }   
+        }
 
         const redisOperations = [];
 
@@ -231,7 +231,7 @@ class RoomRepository {
         });
 
         await Promise.all(redisOperations);
-        
+
         return newRoom;
     }
 
@@ -240,16 +240,16 @@ class RoomRepository {
             user_ids: { $all: user_ids, $size: user_ids.length }
         });
     }
-    
+
     getRoomByUserIDsPrivate = async (user_ids) => {
         const sortedUserIDs = [...user_ids].sort();
-    
+
         return await RoomModel.findOne({
             user_ids: { $all: sortedUserIDs, $size: sortedUserIDs.length },
             type_group: 'private'
         });
     }
-    
+
 
     getRoomsByUserID = async (user_id) => {
         const type = 'room';
@@ -267,7 +267,7 @@ class RoomRepository {
             await RedisService.storeOrUpdateMessage(type, user_id, room);
         });
 
-    
+
         return rooms;
     }
 
@@ -278,25 +278,25 @@ class RoomRepository {
         if (room) {
             return JSON.parse(room).user_ids;
         }
-    
+
         room = await RoomModel.findById(room_id).lean();
         await RedisService.set(key, JSON.stringify(room));
         return room.user_ids;
     }
 
     updateRedisCacheForRoom = async (room) => {
-        
+
         const redisOperations = [];
-      
+
         redisOperations.push(RedisService.delete(`room:${room._id}`));
         redisOperations.push(RedisService.set(`room:${room._id}`, JSON.stringify(room), 3600));
-      
+
         room.user_ids.forEach(id => {
-          redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
+            redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
         });
-      
+
         await Promise.all(redisOperations);
-      };
+    };
 
     addUsersToRoom = async (room_id, newUserIds) => {
         const updatedRoom = await RoomModel.findByIdAndUpdate(
@@ -304,18 +304,18 @@ class RoomRepository {
             { $addToSet: { user_ids: { $each: newUserIds } } },
             { new: true, runValidators: true }
         );
-    
+
         if (!updatedRoom) {
             throw new Error('Room not found');
         }
-    
+
         return updatedRoom;
     };
-    
+
     findRoomsByUserId = async (userId) => {
         return RoomModel.find({ user_ids: userId }, null, { lean: true });
     };
-    
+
     updateRoom = async (room) => {
         const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, {
             new: true,
@@ -330,19 +330,19 @@ class RoomRepository {
         if (room) {
             return JSON.parse(room);
         }
-        
+
         const roomFromDB = await RoomModel.findById(room_id).lean();
-        console.log("roomFromDB",roomFromDB.type_group);
+        console.log("roomFromDB", roomFromDB.type_group);
         if (roomFromDB) {
             RedisService.set(key, JSON.stringify(roomFromDB), 3600);
         }
 
         return roomFromDB;
     }
-    
+
     createRoomPrivate = async (params) => {
-        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign,type_group } = params;
-        
+        const { name, avt_url, user_ids, userId, auto_name, created_by, name_remove_sign, type_group } = params;
+
         const newRoom = await RoomModel.create({
             name: name,
             name_remove_sign: name_remove_sign,
@@ -356,7 +356,7 @@ class RoomRepository {
         if (avt_url && newRoom.is_group) {
             newRoom.avt_url = avt_url;
             await newRoom.save();
-        }   
+        }
 
         const redisOperations = [];
 
@@ -365,11 +365,11 @@ class RoomRepository {
         });
 
         await Promise.all(redisOperations);
-        
+
         return newRoom;
     }
 
-    getPublicKey= async (room_id,userId) => {
+    getPublicKey = async (room_id, userId) => {
         const key = `PublicKey room:${room_id}:${userId}`;
         let room = await RedisService.get(key);
         if (room) {
@@ -380,7 +380,7 @@ class RoomRepository {
         if (room) {
             RedisService.set(key, JSON.stringify(room), 3600);
         }
-        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1, 
+        if (room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1, 
             return room.public_Key_1;
         }
         return room.public_Key_2;//user create so publicKey2
@@ -392,7 +392,7 @@ class RoomRepository {
         if (!room) {
             throw new Error('Pri Room not found');
         }
-        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey2
+        if (room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey2
             room.public_Key_2 = publicKey;
         } else {//user create so publicKey1
             room.public_Key_1 = publicKey;
@@ -403,31 +403,58 @@ class RoomRepository {
         return room;
     }
 
-    getPublicKeyRoom = async (room,userId) => {
-        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
+    getPublicKeyRoom = async (room, userId) => {
+        if (room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
             return room.public_Key_1;
         }
         return room.public_Key_2;//user create so publicKey2
     }
 
-    checkYourPublicKey = async (room,userId) => {
-        
-        if(room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
-            console.log("room.public_Key_2",room.public_Key_2);
+    checkYourPublicKey = async (room, userId) => {
+
+        if (room.user_ids[0].toString() === userId.toString()) {//user was added so publicKey1
+            console.log("room.public_Key_2", room.public_Key_2);
             return room.public_Key_2;
         }
-        console.log("room.public_Key_1",room.public_Key_1);
+        console.log("room.public_Key_1", room.public_Key_1);
         return room.public_Key_1;//user create so publicKey2
     }
 
     resetPrivateRoom = async (room_id) => {
-        console.log("resetPrivateRoom",room_id);
-        const room = await RoomModel.findByIdAndUpdate(room_id, {
-            public_Key_1: null,
-            public_Key_2: null
-        }, { new: true });
-        
-        return room;
+        try {
+            console.log("resetPrivateRoom", room_id);
+            const room = await RoomModel.findByIdAndUpdate(room_id, {
+                public_Key_1: null,
+                public_Key_2: null
+            }, { new: true });
+            console.log("resetPrivateRoom success", JSON.stringify(room));
+
+            await Promise.all(room.user_ids.map(async (id) => {
+                const rooms = await RedisService.lRange(`room:${id}`, 0, -1);
+                if(rooms.length > 0) {
+                console.log("meo meo")
+                
+                const filteredRooms = rooms.filter(room => JSON.parse(room)._id.toString() !== room_id.toString());
+                
+                await RedisService.delete(`room:${id}`); // Remove the old list
+                if (filteredRooms.length > 0) {
+                    console.log("filteredRooms", filteredRooms);
+                    await RedisService.rPush(`room:${id}`, ...filteredRooms.map(roomPush => JSON.stringify(roomPush))); // Push updated list
+                }}
+                const roomsKey = 'room:' + id;
+                console.log("roomsKey", roomsKey);
+                await RedisService.rPush(roomsKey, JSON.stringify(room)); // Push updated list       
+                console.log("push success");
+            })); 
+            
+           
+            return room;
+        }
+        catch (error) {
+            console.log("resetPrivateRoom", error);
+
+            throw new Error('Room not found meme');
+        }
     }
 }
 
