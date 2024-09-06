@@ -1,5 +1,6 @@
 const ChatService = require("./chat.service");
 const RedisService = require("./redis.service");
+const PrivateChatService = require("./privateRoom.service");
 const QueueNames = require("../utils/queueNames")
 
 class SocketServices {
@@ -27,6 +28,7 @@ class SocketServices {
 
     registerEventHandlers(socket, user_id) {
         socket.on('chat message', msg => this.handleChatMessage(socket, user_id, msg))
+        socket.on('chat-message-private', msg => this.handleChatMessagePrivate(socket, user_id, msg))
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
@@ -45,6 +47,15 @@ class SocketServices {
         }
     }
 
+    async handleChatMessagePrivate(socket, user_id, msg) {
+        try {
+            const { room_id, message } = msg;
+            const savedMessage = await PrivateChatService.sendMessagePrivate(user_id, room_id, message);
+        } catch (error) {
+            this.log(`Error handling private message for ${user_id}: ${error}`, true);
+        }
+    }
+   
     async handleNewMessage(socket, user_id, msg) {
         try {
         } catch (error) {

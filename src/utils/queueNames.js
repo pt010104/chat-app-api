@@ -4,6 +4,7 @@ const QueueNames = {
     CHAT_MESSAGES: `chat_messages${isDev ? '_test' : ''}`,
     IMAGE_MESSAGES: `image_messages${isDev ? '_test' : ''}`,
     GIFT_MESSAGES: `gift_messages${isDev ? '_test' : ''}`,
+    PRIVATE_CHAT_MESSAGES: 'private_chat_messages'
 };
 
 module.exports = QueueNames;

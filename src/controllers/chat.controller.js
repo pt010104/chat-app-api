@@ -2,6 +2,7 @@
 
 const { CREATED, SuccessResponse } = require("../core/success.response")
 const ChatService = require("../services/chat.service")
+const privateRoomService = require("../services/privateRoom.service")   
 const { OK } = require("../core/success.response")
 const Joi = require("joi");
 

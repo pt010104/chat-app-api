@@ -10,7 +10,7 @@ const { findUserById } = require("../models/repository/user.repository")
 const { removeVietNamese } = require("../utils")
 const QueueNames = require("../utils/queueNames")
 const { v4: uuidv4 } = require('uuid');
-
+const E2EE = require("../services/E2EE.service")
 class ChatService {
     static async sendMessage(params) {
         const chatMessage = {
@@ -193,6 +193,7 @@ class ChatService {
         }));
     }
 
+
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;
         if (message.image_url) {
@@ -324,6 +325,7 @@ class ChatService {
     
         return await RoomRepository.transformForClient(result, userId);
     }
+
 }
 
-module.exports = ChatService
+module.exports = ChatService;

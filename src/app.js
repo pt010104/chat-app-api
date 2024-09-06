@@ -10,7 +10,6 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
 // Global variables
 global.__basedir = __dirname;
 global._io = io;
@@ -25,6 +24,9 @@ app.use(compression());
 
 // Init DB
 require("./dbs/init.mongodb");
+// Load E2EE keys
+const E2EEService = require('./services/E2EE.service');
+E2EEService.loadKeys(); // Call load function when app starts
 
 // Socket.io service
 const SocketServices = require('./services/socket.service');

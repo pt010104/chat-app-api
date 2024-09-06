@@ -6,13 +6,13 @@ const { BadRequestError } = require('../../core/error.response');
 const { findUserById } = require('./user.repository');
 const RedisService = require('../../services/redis.service');
 const { chat } = require('googleapis/build/src/apis/chat');
-
+const E2EEService = require('../../services/E2EE.service');
 const MESSAGES_PER_PAGE = 12;
 
 class ChatRepository {
     transform(chatData) {
         return {
-            user_id: chatData.user_id.toString(), 
+            user_id: chatData.user_id.toString(),
             message: chatData.message,
             updated_at: chatData.updatedAt,
             created_at: chatData.createdAt,
@@ -69,7 +69,7 @@ class ChatRepository {
             
             return transformedData;
         } catch (error) {
-            return 
+            return
         }
     }
 
@@ -81,15 +81,15 @@ class ChatRepository {
     updateRedisCache = async (room_id) => {
         const messageKeyPattern = `room:messages:${room_id}:*`;
         const countKey = `room:messages:count:${room_id}`;
-        
+
         const messageKeys = await RedisService.keys(messageKeyPattern);
         const keysToDelete = [...messageKeys, countKey];
-        
+
         if (keysToDelete.length > 0) {
             return RedisService.delete(keysToDelete);
         }
 
-        return Promise.resolve(); 
+        return Promise.resolve();
     }
 
     saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id}) => {
@@ -106,41 +106,71 @@ class ChatRepository {
                 gift_id: gift_id || null,
                 likes: 0
             });
-    
+
             const [savedMessage] = await Promise.all([
                 newMessage.save(),
                 this.updateRedisCache(room_id)
             ]);
-    
+
             return savedMessage;
         } catch (error) {
             throw new BadRequestError(error.message || error);
         }
     }
-    
+
 
     getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
         const key = `room:messages:${room_id}:${skip}:${limit}`;
-    
+        const room = await RoomRepository.getRoomByID(room_id);
+        console.log('Room from Repository:', room);
+        const type_group = room?.type_group || 'default_value';
+        console.log('Type Group:', type_group);
         let cachedMessages = await RedisService.get(key);
-    
         if (cachedMessages) {
-            return JSON.parse(cachedMessages);
+            const messages = JSON.parse(cachedMessages);
+            if (type_group === 'private') {
+                console.log('Decrypting messages cache');
+                console.log(`Decrypting ${messages.length} messages for room ${room_id}`);
+                const decryptedMessages = await Promise.all(
+                    messages.map(async (message) => {
+                        const decryptedMessage = await E2EEService.decryptMessage(room_id, message.message);
+                        return {
+                            ...message,
+                            message: decryptedMessage
+                        };
+                    })  
+                );
+                return decryptedMessages;
+            }
+            return messages;
         }
-    
         const messages = await ChatModel.find({ room_id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
-        
+
         if (messages.length > 0) {
             await RedisService.set(key, JSON.stringify(messages)); 
         }
-    
+
+        if (type_group === 'private') {
+            console.log(`Decrypting ${messages.length} messages for room ${room_id}`);
+            const decryptedMessages = await Promise.all(
+                messages.map(async (message) => {
+                    const decryptedMessage = await E2EEService.decryptMessage(room_id, message.message);
+                    return {
+                        ...message,
+                        message: decryptedMessage
+                    };
+                })
+            );
+            return decryptedMessages;
+        }
+
         return messages;
     }
-    
+
     countMessagesByRoomId = async (room_id) => {
         const cacheKey = `room:messages:count:${room_id}`;
         let cachedCount = await RedisService.get(cacheKey);
@@ -152,6 +182,12 @@ class ChatRepository {
         const count = await ChatModel.countDocuments({ room_id });
         await RedisService.set(cacheKey, count.toString(), 3600);
         return count;
+    }
+
+    clearMessages = async (room_id) => {
+        console.log('Clearing messages for room:'+room_id);
+        const messages = await ChatModel.deleteMany({ room_id });
+        return messages;
     }
 
     async updateMessageGiftStatus(gift_id, is_gift) {

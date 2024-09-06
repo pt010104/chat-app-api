@@ -31,6 +31,18 @@ const roomSchema = new Schema({
     is_group: {
         type: Boolean,
         default: false
+    },
+    type_group:{
+        type: String,
+        default: '',
+    },
+    public_Key_1: {
+        type: String,
+        default: null
+    },
+    public_Key_2: {
+        type: String,
+        default: null
     }
 }, {
     timestamps: true,

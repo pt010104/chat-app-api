@@ -16,6 +16,10 @@ router.get('/page2', (req, res) => {
     res.sendFile(path.join(__dirname, '../public', 'index2.html'));
 });
 
+router.get('/page3', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public', 'index3.html'));
+});
+
 router.use("/v1/api/auth", require ("./auth"))
 router.use("/v1/api/profile", require ("./profile"))
 router.use("/v1/api/upload", require ("./upload"))
@@ -23,6 +27,7 @@ router.use("/v1/api/email", require ("./email"))
 router.use("/v1/api/user", require ("./user"))
 router.use("/v1/api/friends", require ("./friends"))
 router.use("/v1/api/room", require ("./chat"))
-
+router.use("/v1/api/e2ee", require ("./E2EE"))
+// user profile
 module.exports = router
 
