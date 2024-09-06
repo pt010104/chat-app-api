@@ -55,6 +55,7 @@ class PrivateChatService {
         }
         if (room.user_ids[0].toString() !== userId.toString() && room.user_ids[1].toString() !== userId.toString()) {
             throw new BadRequestError("You are not in this room")
+            
         }
         if (await this.lastUpdate(room) === true) {
             console.log('room updated not today')
@@ -119,24 +120,20 @@ class PrivateChatService {
         }
 
         //Chỉ có trường hợp one-to-one chat mới check exist room, check xem đã có room private chua
-        if (params.user_ids.length == 2) {
+        if (params.user_ids.length === 2) {
             const checkExistRoom = await RoomRepository.getRoomByUserIDsPrivate(params.user_ids)
-            if (checkExistRoom) {
-                return RoomRepository.transformForClient(checkExistRoom, params.userId)
-            }
+            if (checkExistRoom) return RoomRepository.transformForClient(checkExistRoom, params.userId)
         }
 
         //Tên group:
         //Trường hợp user_ids.length = 2 thì tên group là tên của user còn lại, room_avt không cần set, trong transform xử sau
-        if (params.user_ids.length == 2) {
+        if (params.user_ids.length === 2) {
             const friend_user_id = params.user_ids.filter(id => id !== params.userId)[0];
 
             const user = await findUserById(friend_user_id);
             params.name = user.name
             params.auto_name = true
         }
-
-        // 
 
         params.type_group = 'private';
         params.created_by = params.userId

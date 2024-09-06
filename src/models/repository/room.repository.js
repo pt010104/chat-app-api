@@ -438,16 +438,14 @@ class RoomRepository {
                 
                 await RedisService.delete(`room:${id}`); // Remove the old list
                 if (filteredRooms.length > 0) {
-                    console.log("filteredRooms", filteredRooms);
                     await RedisService.rPush(`room:${id}`, ...filteredRooms.map(roomPush => JSON.stringify(roomPush))); // Push updated list
                 }}
+                
                 const roomsKey = 'room:' + id;
                 console.log("roomsKey", roomsKey);
                 await RedisService.rPush(roomsKey, JSON.stringify(room)); // Push updated list       
                 console.log("push success");
-            })); 
-            
-           
+            }));           
             return room;
         }
         catch (error) {

@@ -178,14 +178,7 @@ class ChatService {
         const messagePromises = rooms.map(room =>
             RedisService.get('newMessage:' + room._id).then(async message => {
                 if (message) {
-                    if(room.type === 'private') {
-                        console.log('decrypting message')
-                        const messageDecrypted = await E2EE.decryptMessage(room._id, message);
-                        const transformedData = await ChatRepository.transformForClient(JSON.parse(messageDecrypted));
-                        return { message: transformedData };
-                    }
-                    console.log('normal message')
-                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message));
+                    const transformedData = await ChatRepository.transformForClient(JSON.parse(message), userId);
                     return { message: transformedData };
                 }
                 return null;
@@ -199,6 +192,7 @@ class ChatService {
             newMessage: messageResults[index]?.message
         }));
     }
+
 
     static async updateNewMessagesInRoom(roomId, message) {
         const key = 'newMessage:' + roomId;
