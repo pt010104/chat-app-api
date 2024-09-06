@@ -195,41 +195,49 @@ class ChatRepository {
         return updatedRecord;
     }
     editMessageInRoom = async (editMessage) => {
-        const updatedMessage = await ChatModel.findByIdAndUpdate({
-            _id : editMessage.message_id,
-            delete_at : null
-        }, {
-            message : editMessage.message,
-            isEdited : true,
-            updatedAt : new Date()
-        }, {new : true}
-    ).lean()
-    if (!updatedMessage) {
-        throw new BadRequestError('Message not allowed to edit');
-    }
-        await this.updateRedisCache(editMessage.room_id);
+        const updatedMessage = await ChatModel.findByIdAndUpdate(
+            {
+                _id : editMessage.message_id,
+                delete_at : null
+            }, 
+            {
+                message : editMessage.message,
+                is_Edited : true,
+                updatedAt : new Date()
+            }, 
+            {
+                new : true
+            }
+        ).lean()
+        
+        if (!updatedMessage) {
+            throw new BadRequestError('Message not allowed to edit');
+        }
+        
+        this.updateRedisCache(editMessage.room_id);
+
         return updatedMessage;
     }
 
     deleteMessagesInRoom = async (deleteMessage)  => {
-        const deletedMessage = await ChatModel.findByIdAndUpdate({
-            _id : deleteMessage.message_id,
-            delete_at : null
-        }, {
-            updatedAt: new Date(),
-            delete_at : new Date()
-        }
-    ).lean()
+        const deletedMessage = await ChatModel.findByIdAndUpdate(
+            {
+                _id : deleteMessage.message_id,
+                delete_at : null
+            }, 
+            {
+                updatedAt: new Date(),
+                delete_at : new Date()
+            }
+        ).lean()
     
-    if (!deletedMessage) {
-        throw new BadRequestError('Message not allowed to delete');
-    }
+        if (!deletedMessage) {
+            throw new BadRequestError('Message not allowed to delete');
+        }
 
-        await this.updateRedisCache(deleteMessage.room_id);
+        this.updateRedisCache(deleteMessage.room_id);
         return deletedMessage;
-    }
-
-           
+    }      
 }
 
 module.exports = new ChatRepository();

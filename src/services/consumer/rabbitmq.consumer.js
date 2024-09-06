@@ -54,7 +54,7 @@ class RabbitMQConsumer {
             }
         });
 
-        channel.consume(QueueNames.Gift_MESSAGES, async (msg) => {
+        channel.consume(QueueNames.GIFT_MESSAGES, async (msg) => {
             if (msg) {
                 try {
                     const message = JSON.parse(msg.content.toString());
