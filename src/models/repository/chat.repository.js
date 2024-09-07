@@ -64,9 +64,9 @@ class ChatRepository {
             if (chatData.liked_by && chatData.liked_by.length > 0) {
                 transformedData.liked_by = chatData.liked_by;
             }
-            if (chatData.liked_by && chatData.liked_by.includes(userId)) {
+            if (chatData.liked_by && chatData.liked_by.toString().includes(userId.toString())) {
                 transformedData.is_liked = true;
-            }
+            }            
             
             return transformedData;
         } catch (error) {
