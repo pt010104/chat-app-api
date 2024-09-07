@@ -12,7 +12,7 @@ const MESSAGES_PER_PAGE = 12;
 class ChatRepository {
     transform(chatData) {
         return {
-            user_id: chatData.user_id.toString(), 
+            user_id: chatData.user_id.toString(),
             message: chatData.message,
             updated_at: chatData.updatedAt,
             created_at: chatData.createdAt,
@@ -21,7 +21,7 @@ class ChatRepository {
         };
     }
 
-    transformForClient = async(chatData, userId) => {
+    transformForClient = async (chatData, userId) => {
         try {
             const user = await findUserById(chatData.user_id);
             const user_name = user.name;
@@ -53,7 +53,7 @@ class ChatRepository {
                 transformedData.is_gift = chatData.is_gift;
             }
             if (chatData.release_time) {
-                transformedData.release_time = chatData.release_time;   
+                transformedData.release_time = chatData.release_time;
             }
             if (chatData._id) {
                 transformedData.id = chatData._id;
@@ -67,10 +67,10 @@ class ChatRepository {
             if (chatData.liked_by && chatData.liked_by.includes(userId)) {
                 transformedData.is_liked = true;
             }
-            
+
             return transformedData;
         } catch (error) {
-            return 
+            return
         }
     }
 
@@ -82,18 +82,18 @@ class ChatRepository {
     updateRedisCache = async (room_id) => {
         const messageKeyPattern = `room:messages:${room_id}:*`;
         const countKey = `room:messages:count:${room_id}`;
-        
+
         const messageKeys = await RedisService.keys(messageKeyPattern);
         const keysToDelete = [...messageKeys, countKey];
-        
+
         if (keysToDelete.length > 0) {
             return RedisService.delete(keysToDelete);
         }
 
-        return Promise.resolve(); 
+        return Promise.resolve();
     }
 
-    saveMessage = async ({user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id}) => {
+    saveMessage = async ({ user_id, room_id, message, image_url = null, created_at, updated_at, is_gift, release_time, gift_id }) => {
         try {
             const newMessage = new ChatModel({
                 user_id,
@@ -107,41 +107,41 @@ class ChatRepository {
                 gift_id: gift_id || null,
                 likes: 0
             });
-    
+
             const [savedMessage] = await Promise.all([
                 newMessage.save(),
                 this.updateRedisCache(room_id)
             ]);
-    
+
             return savedMessage;
         } catch (error) {
             throw new BadRequestError(error.message || error);
         }
     }
-    
+
 
     getMessagesByRoomId = async (room_id, skip = 0, limit = MESSAGES_PER_PAGE) => {
         const key = `room:messages:${room_id}:${skip}:${limit}`;
-    
+
         let cachedMessages = await RedisService.get(key);
-    
+
         if (cachedMessages) {
             return JSON.parse(cachedMessages);
         }
-    
+
         const messages = await ChatModel.find({ room_id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
-        
+
         if (messages.length > 0) {
-            await RedisService.set(key, JSON.stringify(messages)); 
+            await RedisService.set(key, JSON.stringify(messages));
         }
-    
+
         return messages;
     }
-    
+
     countMessagesByRoomId = async (room_id) => {
         const cacheKey = `room:messages:count:${room_id}`;
         let cachedCount = await RedisService.get(cacheKey);
@@ -160,14 +160,14 @@ class ChatRepository {
         const updatedRecord = await ChatModel.findOneAndUpdate(
             { gift_id },
             { is_gift, updatedAt },
-            { new: true } 
+            { new: true }
         );
         return updatedRecord;
     }
     async updateLikeMessage(messageId, roomId, userId, type = 'like') {
         const updatedAt = new Date();
         let updatedRecord;
-    
+
         if (type === 'like') {
             updatedRecord = await ChatModel.findOneAndUpdate(
                 { _id: messageId },
@@ -189,55 +189,56 @@ class ChatRepository {
                 { new: true }
             );
         }
-    
+
         this.updateRedisCache(roomId);
-    
+
         return updatedRecord;
     }
     editMessageInRoom = async (editMessage) => {
         const updatedMessage = await ChatModel.findByIdAndUpdate(
             {
-                _id : editMessage.message_id,
-                delete_at : null
-            }, 
+                _id: editMessage.message_id,
+                delete_at: null
+            },
             {
-                message : editMessage.message,
-                is_Edited : true,
-                updatedAt : new Date()
-            }, 
+                message: editMessage.message,
+                is_Edited: true,
+                updatedAt: new Date()
+            },
             {
-                new : true
+                new: true
             }
         ).lean()
-        
+
         if (!updatedMessage) {
             throw new BadRequestError('Message not allowed to edit');
         }
-        
+
         this.updateRedisCache(editMessage.room_id);
 
         return updatedMessage;
     }
 
-    deleteMessagesInRoom = async (deleteMessage)  => {
-        const deletedMessage = await ChatModel.findByIdAndUpdate(
+    deleteMessagesInRoom = async (deleteMessage) => {
+        const deletedMessage = await ChatModel.findOneAndUpdate(
             {
-                _id : deleteMessage.message_id,
-                delete_at : null
-            }, 
+                _id: deleteMessage.message_id,
+            },
             {
                 updatedAt: new Date(),
-                delete_at : new Date()
-            }
-        ).lean()
-    
+                deleted_at: new Date()
+            },
+            { new: true } // return the updated document
+        ).lean();
+        console.log("ket qua" + JSON.stringify(deletedMessage))
+        console.log("cu" + JSON.stringify(deletedMessage.deleted_at))
         if (!deletedMessage) {
             throw new BadRequestError('Message not allowed to delete');
         }
 
         this.updateRedisCache(deleteMessage.room_id);
         return deletedMessage;
-    }      
+    }
 }
 
 module.exports = new ChatRepository();

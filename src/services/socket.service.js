@@ -28,9 +28,7 @@ class SocketServices {
     registerEventHandlers(socket, user_id) {
         socket.on('chat message', msg => this.handleChatMessage(socket, user_id, msg))
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
-        socket.on('edit message', msg => this.handleEditMessage(socket, user_id, msg))
         socket.on('edited message', msg => this.handleEditedMessage(socket, user_id, msg))
-        socket.on('delete message', msg => this.handleDeleteMessage(socket, user_id, msg))
         socket.on('deleted message', msg => this.handleDeletedMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
@@ -56,34 +54,12 @@ class SocketServices {
         }
     }
 
-    async handleEditMessage(socket, user_id, msg) {
-        try {
-            let params = msg;
-            params.user_id = user_id;
-            const editedMessage = await ChatService.editMessageInRoom(params.user_id, params.room_id, params.message_id, params.message);
-        } catch (error) {
-            this.log(`Error handling edit message for ${user_id}: ${error}`, true);
-        }
-    }
-
-
     async handleEditedMessage(socket, user_id, msg) {
         try { }
         catch (error) {
             this.log(`Error handling new edited message for ${user_id}: ${error}`, true);
         }
     }
-
-    async handleDeleteMessage(socket, user_id, msg) {
-        try {
-            let params = msg;
-            params.user_id = user_id;
-            const deletedMessage = await ChatService.deleteMessagesInRoom(params.user_id, params.room_id, params.message_id);
-        } catch (error) {
-            this.log(`Error handling delete message for ${user_id}: ${error}`, true);
-        }
-    }
-
 
     async handleDeletedMessage(socket, user_id, msg) {
         try {
