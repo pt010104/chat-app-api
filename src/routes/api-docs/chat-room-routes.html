@@ -18,25 +18,26 @@
                 <li><a href="profile-routes.html">Profile Routes</a></li>
                 <li><a href="friendship-routes.html">Friendship Routes</a></li>
                 <li><a href="chat-room-routes.html">Chat Room Routes</a></li>
+                <li><a href="comment-routes.html">Comment Routes</a></li>
             </ul>
         </div>
         <div class="content">
             <h1>Chat Room Routes</h1>
 
             <h3>POST /v1/api/room/search</h3>
-<div class="indent">
-    <p><strong>Description:</strong> Search for chat rooms based on a filter.</p>
-    <p><strong>URL:</strong> <code>/v1/api/room/search</code></p>
-    <p><strong>Method:</strong> POST</p>
-    <p><strong>Headers:</strong></p>
-    <pre><code>authorization: &lt;token&gt;
+            <div class="indent">
+                <p><strong>Description:</strong> Search for chat rooms based on a filter.</p>
+                <p><strong>URL:</strong> <code>/v1/api/room/search</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
 x-client-id: &lt;client_id&gt;</code></pre>
-    <p><strong>Request Body:</strong></p>
-    <pre><code>{
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
     "filter": "string (required)"
 }</code></pre>
-    <p><strong>Response:</strong></p>
-    <pre><code>200 OK:
+                <p><strong>Response:</strong></p>
+                <pre><code>200 OK:
 {
     "message": "Room searched successfully",
     "metadata": [
@@ -49,7 +50,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
         }
     ]
 }</code></pre>
-</div>
+            </div>
 
             <h3>GET /v1/api/room/:room_id</h3>
             <div class="indent">
@@ -72,7 +73,7 @@ x-client-id: &lt;client_id&gt;</code></pre>
             "6697de6d3786fe3f2bc2c125",
             "668a4c9c1174c565154564c6"
         ],
-        "room_avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/6697de6d3786fe3f2bc2c125/6697de6d3786fe3f2bc2c125_1722718769419.jpg?_a=BAMADKZU0"
+        "room_avatar": ""
     }
 }</code></pre>
             </div>
@@ -103,9 +104,10 @@ x-client-id: &lt;client_id&gt;</code></pre>
             "6697de6d3786fe3f2bc2c125",
             "668a4c9c1174c565154564c6"
         ],
-        "room_avatar": "https://res.cloudinary.com/dha0su2r2/image/upload/c_fill,h_250,w_250/v1/avatar/6697de6d3786fe3f2bc2c125/6697de6d3786fe3f2bc2c125_1722718769419.jpg?_a=BAMADKZU0"
+        "room_avatar": ""
     }
 }</code></pre>
+            </div>
 
             <h3>POST /v1/api/room/create</h3>
             <div class="indent">
