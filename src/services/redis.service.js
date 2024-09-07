@@ -72,6 +72,9 @@ class RedisService {
         return this.executeCommand('lRem', key, count, value);
     }
     
+    lLen(key) {
+        return this.executeCommand('lLen', key);
+    }
     async storeOrUpdateMessage(type, id, message, field = '') {
         const key = `${type}:${id}`;
         

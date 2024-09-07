@@ -30,6 +30,8 @@ class SocketServices {
         socket.on('new message', msg => this.handleNewMessage(socket, user_id, msg))
         socket.on('edited message', msg => this.handleEditedMessage(socket, user_id, msg))
         socket.on('deleted message', msg => this.handleDeletedMessage(socket, user_id, msg))
+        socket.on('pinned message', msg => this.handlePinMessage(socket, user_id, msg))
+        socket.on('unpinned message', msg => this.handleUnpinMessage(socket, user_id, msg))
         socket.on('disconnect', () => this.handleDisconnect(socket, user_id))
         socket.on('join room', roomId => this.handleJoinRoom(socket, roomId))
         socket.on('join user', userId => this.handleJoinUser(socket, userId))
@@ -65,6 +67,20 @@ class SocketServices {
         try {
         } catch (error) {
             this.log(`Error handling delete message for ${user_id}: ${error}`, true);
+        }
+    }
+
+    async handlePinMessage(socket, user_id, msg) {
+        try {
+        } catch (error) {
+            this.log(`Error handling pin message for ${user_id}: ${error}`, true);
+        }
+    }
+
+    async handleUnpinMessage(socket, user_id, msg) {
+        try {
+        } catch (error) {
+            this.log(`Error handling unpin message for ${user_id}: ${error}`, true);
         }
     }
 

@@ -11,23 +11,22 @@ const pinMessageModel = require('../pinMessage.model');
 class pinMessageRepository {
     pinMessage = async (room_id, message_id) => {
 
-        let message = await pinMessageModel.findById(room_id);
+        let message = await pinMessageModel.findOne({ room_id: room_id });
 
         if (!message) {
-
             message = await pinMessageModel.create({
                 room_id: room_id,
                 message_id: [message_id]
             });
         } else {
             // If a pin exists, update the existing entry to add the new message ID
-            message = await pinMessageModel.findByIdAndUpdate(
-                room_id,
+            message = await pinMessageModel.findOneAndUpdate(   
+                { room_id: room_id }, 
                 { $addToSet: { message_id } },
                 { new: true, runValidators: true }
             );
         }
-
+console.log(message);
         if (!message) {
             throw new NotFoundError('Room not found');
         }
@@ -36,18 +35,18 @@ class pinMessageRepository {
         const key = `pinMessage:${room_id}`;
         await RedisService.rPush(key, message_id);
 
-        return message;
+        return message_id;
     }
 
 
     unpinMessage = async (room_id, message_id) => {
-        const message = await pinMessageModel.findByIdAndUpdate(
-            room_id,
+        const message = await pinMessageModel.findOneAndUpdate(
+            { room_id: room_id }, 
             { $pull: { message_id } },
             { new: true, runValidators: true }
         );
         if (!message) {
-            throw new NotFoundError('Room not found');
+            throw new NotFoundError('Room not found or no pinned messages');
         }
         const key = 'pinMessage:' + room_id;
         await RedisService.lRem(key, 0, message_id);
@@ -55,7 +54,23 @@ class pinMessageRepository {
         if (listLength === 0) {
             await RedisService.del(key); // Delete the key if the list is empty
         }
-        return message;
+        return ;
+    }
+
+    getListPinMessage = async (room_id) => {//call when redis is empty
+        const key = 'pinMessage:' + room_id;
+       
+        const message = await pinMessageModel.find({ room_id: room_id });   
+
+        if (!message) {
+            throw new NotFoundError('Room not found or no pinned messages');
+        }
+
+        const message_id = message.message_id;
+        await Promise.all(message_id.map(async (id) => {
+            await RedisService.rPush(key, id);
+        }));
+        return message_id;
     }
 }
 module.exports = new pinMessageRepository();

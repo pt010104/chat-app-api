@@ -67,4 +67,7 @@ chatSchema.pre('findOneAndUpdate', function() {
 chatSchema.pre('countDocuments', function() {
     this.where({ deleted_at: null });
 });
+chatSchema.pre('findById', function() {
+    this.where({ deleted_at: null });
+});
 module.exports = model(DOCUMENT_NAME, chatSchema)
