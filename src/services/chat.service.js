@@ -85,7 +85,7 @@ class ChatService {
         console.log(message.liked_by)
 
         if (message.liked_by) {
-            if (message.liked_by.includes(userId)) {
+            if (message.liked_by.toString().includes(userId)) {
                 type = 'unlike';
                 console.log('unlike')
             }
@@ -98,7 +98,7 @@ class ChatService {
         const io = global._io;
         io.to(roomId).emit("like message", { "data": transformedMessage });
     
-        return;
+        return transformedMessage;
     }
     
 
