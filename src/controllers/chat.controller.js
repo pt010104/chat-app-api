@@ -15,28 +15,28 @@ class ChatController {
         const { error } = roomValidate.validate(req.body);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
         let params = req.body;
         params.userId = req.user.userId;
-        
-        new CREATED ({
+
+        new CREATED({
             message: "Message sent successfully",
             metadata: await ChatService.createRoom(params)
         }).send(res)
     }
 
     detailRoom = async (req, res, next) => {
-        const RoomValidat = Joi.object({
+        const RoomValidate = Joi.object({
             room_id: Joi.string().required()
         })
 
-        const { error } = RoomValidat.validate(req.params);
+        const { error } = RoomValidate.validate(req.params);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -81,7 +81,7 @@ class ChatController {
         const { error } = addUsersToRoomValidate.validate(req.body);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -101,7 +101,7 @@ class ChatController {
         const { error } = updateRoomValidate.validate(req.body);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -115,6 +115,100 @@ class ChatController {
         }).send(res)
     }
 
+    deleteMessagesInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const deleteMessagesInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = deleteMessagesInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Messages deleted successfully",
+            metadata: await ChatService.deleteMessagesInRoom(userId, room_id, message_id)
+        }).send(res)
+    }
+
+    editMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const content = req.body.content;
+        const userId = req.user.userId;
+        const editMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required(),
+            content: Joi.string().required()
+        });
+
+        const { error } = editMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message edited successfully",
+            metadata: await ChatService.editMessageInRoom(userId, room_id, message_id, content)
+        }).send(res)
+    }
+
+    pinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const pinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = pinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message pinned successfully",
+            metadata: await ChatService.pinMessageInRoom(room_id, userId, message_id)
+        }).send(res)
+    }
+
+    unpinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const unpinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = unpinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message unpinned successfully",
+            metadata: await ChatService.unpinMessageInRoom(room_id, userId, message_id)
+        }).send(res)
+    }
+
+    listPinnedMessages = async (req, res, next) => {
+        const room_id = req.params.room_id;
+
+        new SuccessResponse({
+            message: "Pinned messages retrieved successfully",
+            metadata: await ChatService.listPinnedMessages(room_id)
+        }).send(res)
+    }
     searchRoom = async (req, res, next) => {
         const searchRoomValidate = Joi.object({
             filter: Joi.string().required()
@@ -122,7 +216,7 @@ class ChatController {
         const { error } = searchRoomValidate.validate(req.query);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -158,24 +252,24 @@ class ChatController {
     updateLikeMessage = async (req, res, next) => {
         const updateLikeMessageValidate = Joi.object({
             room_id: Joi.string().required(),
-            message_id: Joi.string().required(),                                                                                                                        
+            message_id: Joi.string().required(),
         });
         const { error } = updateLikeMessageValidate.validate(req.body);
         if (error) {
-            return res.status(400).json({                                                                                                   
-              message: error.details[0].message,                                                                                                            
-            });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
         }
 
-        const messageId = req.body.message_id;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+        const messageId = req.body.message_id;
         const roomId = req.body.room_id;
-        const userId = req.user.userId;                                                                                                                                                                                                                                                                                                                             
+        const userId = req.user.userId;
 
-        new SuccessResponse({                                                                                                                                                                                                                                                                                                                                                                                                               
-            message: "Message liked successfully",                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+        new SuccessResponse({
+            message: "Message liked successfully",
             metadata: await ChatService.updateLikeMessage(messageId, roomId, userId)
-        }).send(res)                                                                                                                                                                            
+        }).send(res)
     }
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+}
 
 module.exports = new ChatController()

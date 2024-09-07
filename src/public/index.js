@@ -15,7 +15,7 @@ document.getElementById('connectButton').addEventListener('click', () => {
     const roomId = roomIdInput.value.trim();
 
     if (userId && roomId) {
-        socket = io('https://chat-app-api2-25ff8770302e.herokuapp.com', {
+        socket = io('localhost:5050', {
             query: {
                 user_id: userId
             }
@@ -31,6 +31,10 @@ document.getElementById('connectButton').addEventListener('click', () => {
             socket.emit('join room', roomId);
         });
 
+        socket.on('ready', () => {
+            socket.emit('join room', roomId);
+        });
+
         socket.on('joined room', (roomId) => {
             log(`Successfully joined room: ${roomId}`);
         });
@@ -41,6 +45,20 @@ document.getElementById('connectButton').addEventListener('click', () => {
 
         socket.on('new message', (data) => {
             log(`Received new message:`);
+            if (data && data.data && data.data.message) {
+                log(JSON.stringify(data.data));
+            }
+        });
+        
+        socket.on('edited message', (data) => {
+            log(`Received edited message:`);
+            if (data && data.data && data.data.message) {
+                log(JSON.stringify(data.data));
+            }
+        });
+
+        socket.on('deleted message', (data) => {
+            log(`Received deleted message:`);
             if (data && data.data && data.data.message) {
                 log(JSON.stringify(data.data));
             }
@@ -84,6 +102,29 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
     }
 });
 
+document.getElementById('editMessageButton').addEventListener('click', () => {
+    const roomId = document.getElementById('roomIdInput').value.trim();
+    const messageId = document.getElementById('editMessageIdInput').value.trim();
+    const newMessage = document.getElementById('newMessageInput').value.trim();
+
+    if (roomId && messageId && newMessage) {
+        editMessage(roomId, messageId, newMessage);
+    } else {
+        log('Room ID, Message ID, and new message content cannot be empty');
+    }
+});
+
+document.getElementById('deleteMessageButton').addEventListener('click', () => {
+    const roomId = document.getElementById('roomIdInput').value.trim();
+    const messageId = document.getElementById('deleteMessageIdInput').value.trim();
+
+    if (roomId && messageId) {
+        deleteMessage(roomId, messageId);
+    } else {
+        log('Room ID and Message ID cannot be empty');
+    }
+});
+
 function sendMessage(room_id, message, imageData) {
     const messageData = { room_id, message };
     if (imageData) {
@@ -91,4 +132,16 @@ function sendMessage(room_id, message, imageData) {
     }
     log('Sending message: ' + JSON.stringify(messageData));
     socket.emit('chat message', messageData);
+}
+
+function editMessage(room_id, message_id, new_message) {
+    const messageData = { room_id, message_id, message: new_message };
+    log('Editing message: ' + JSON.stringify(messageData));
+    socket.emit('edit message', messageData);
+}
+
+function deleteMessage(room_id, message_id) {
+    const messageData = { room_id, message_id };
+    log('Deleting message: ' + JSON.stringify(messageData));
+    socket.emit('delete message', messageData);
 }
