@@ -374,7 +374,7 @@ class ChatService {
             }
             else{
                 console.log(message.message)
-                return message
+                return ChatRepository.transformForClient(message, message.user_id);
             } 
         }));
 
