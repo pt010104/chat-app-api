@@ -67,6 +67,9 @@ class ChatRepository {
             if (chatData.liked_by && chatData.liked_by.toString().includes(userId.toString())) {
                 transformedData.is_liked = true;
             }            
+            if (chatData.comments) {
+                transformedData.comments = chatData.comments;
+            }
             
             return transformedData;
         } catch (error) {
@@ -238,6 +241,17 @@ class ChatRepository {
 
         this.updateRedisCache(deleteMessage.room_id);
         return deletedMessage;
+    }
+
+    addCommentToPost = async (postId) => {
+        return await ChatModel.findByIdAndUpdate(
+            {
+                _id: postId
+            }, 
+            {
+                $inc: { comments: 1 }
+            }
+        )
     }
 }
 
