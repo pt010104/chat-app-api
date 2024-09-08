@@ -11,7 +11,6 @@ const { removeVietNamese } = require("../utils")
 const pinMessageRepository = require("../models/repository/pinMessage.repository")
 const QueueNames = require("../utils/queueNames")
 const { v4: uuidv4 } = require('uuid');
-const RabbitMQConsumer = require("../services/consumer/rabbitmq.consumer")
 
 class ChatService {
     static async sendMessage(params) {
@@ -329,40 +328,40 @@ class ChatService {
         return message;
     }
 
-    static async pinMessageInRoom(room_id,user_id, message_id) {
+    // static async pinMessageInRoom(room_id,user_id, message_id) {
 
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
+    //     const room = await RoomRepository.getRoomByID(room_id);
+    //     if (!room) {
+    //         throw new NotFoundError("Room not found");
+    //     }
 
-        const infoMessage = await ChatRepository.getMessageById(message_id);
-        if (!infoMessage) {
-            throw new NotFoundError("Message not found");
-        }
+    //     const infoMessage = await ChatRepository.getMessageById(message_id);
+    //     if (!infoMessage) {
+    //         throw new NotFoundError("Message not found");
+    //     }
         
-        await pinMessageRepository.pinMessage(room_id, message_id);
-        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        await RabbitMQConsumer.notifyAndBroadcastPinMessage(room_id,filteredUserIDs ,infoMessage);
-        return ChatRepository.transformForClient(infoMessage);
-    }
+    //     await pinMessageRepository.pinMessage(room_id, message_id);
+    //     const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
+    //     await RabbitMQConsumer.notifyAndBroadcastPinMessage(room_id,filteredUserIDs ,infoMessage);
+    //     return ChatRepository.transformForClient(infoMessage);
+    // }
 
-    static async unpinMessageInRoom(room_id,user_id ,message_id) {
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
+    // static async unpinMessageInRoom(room_id,user_id ,message_id) {
+    //     const room = await RoomRepository.getRoomByID(room_id);
+    //     if (!room) {
+    //         throw new NotFoundError("Room not found");
+    //     }
 
-        const infoMessage = await ChatRepository.getMessageById(message_id);
-        if (!infoMessage) {
-            throw new NotFoundError("Message not found");
-        }
+    //     const infoMessage = await ChatRepository.getMessageById(message_id);
+    //     if (!infoMessage) {
+    //         throw new NotFoundError("Message not found");
+    //     }
 
-        await pinMessageRepository.unpinMessage(room_id, message_id);
-        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        RabbitMQConsumer.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
-        return message_id;
-    }
+    //     await pinMessageRepository.unpinMessage(room_id, message_id);
+    //     const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
+    //     RabbitMQConsumer.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
+    //     return message_id;
+    // }
 
     static async listPinnedMessages(room_id) {
         const key = 'pinMessage:' + room_id;
@@ -427,4 +426,4 @@ class ChatService {
     }
 }
 
-module.exports = ChatService
+module.exports = ChatService;
