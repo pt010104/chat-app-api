@@ -253,7 +253,7 @@ class ChatRepository {
             }
         )
 
-        this.updateRedisCache(roomId);
+        await this.updateRedisCache(roomId);
     }
 }
 
