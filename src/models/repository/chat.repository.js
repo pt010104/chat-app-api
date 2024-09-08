@@ -75,7 +75,7 @@ class ChatRepository {
     }
 
     getMessageById = async (id) => {
-        const message = await ChatModel.findById(id);
+        const message = await ChatModel.findById(id).lean();
         return message;
     }
 

@@ -137,9 +137,6 @@ class UploadService {
             if (type === "room") {
                 const generateUrls = () => {
                     const room_url = cloudinary.url(uploadImage.public_id, {
-                        width: CONSTANT.WIDTH_AVATAR,
-                        height: CONSTANT.HEIGHT_AVATAR,
-                        crop: "fill",
                         format: 'jpg'
                     });
                     return { room_url };
@@ -153,9 +150,6 @@ class UploadService {
             if (type === "message") {
                 const generateUrls = () => {
                     const url = cloudinary.url(uploadImage.public_id, {
-                        width: CONSTANT.WIDTH_AVATAR,
-                        height: CONSTANT.HEIGHT_AVATAR,
-                        crop: "fill",
                         format: 'jpg'
                     });
                     return { url };

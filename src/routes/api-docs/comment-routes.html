@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Service Routes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="quick-menu">
+            <h2>Quick Menu</h2>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="auth-routes.html">Auth Routes</a></li>
+                <li><a href="user-routes.html">User Routes</a></li>
+                <li><a href="upload-routes.html">Upload Routes</a></li>
+                <li><a href="profile-routes.html">Profile Routes</a></li>
+                <li><a href="friendship-routes.html">Friendship Routes</a></li>
+                <li><a href="chat-room-routes.html">Chat Room Routes</a></li>
+                <li><a href="comment-routes.html">Comment Routes</a></li>
+            </ul>
+        </div>
+        <div class="content">
+            <h1>Comment Routes</h1>
+
+            <h3>POST /v1/api/comment/:postId</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Post a comment on a specific post.</p>
+                <p><strong>URL:</strong> <code>/v1/api/comment/{postId}</code></p>
+                <p><strong>Method:</strong> POST</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>authorization: &lt;token&gt;
+x-client-id: &lt;client_id&gt;</code></pre>
+                <p><strong>Request Body:</strong></p>
+                <pre><code>{
+    "room_id": "string (required)",
+    "comment": "string (required)"
+}</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Comment posted successfully",
+    "status": 200,
+    "metadata": {
+        "user_id": "string",
+        "comment": "string",
+        "post_id": "string",
+        "room_id": "string",
+        "created_at": "timestamp",
+        "user_name": "string",
+        "user_avatar": "string (url)"
+    }
+}</code></pre>
+            </div>
+
+            <h3>GET /v1/api/comment/:postId</h3>
+            <div class="indent">
+                <p><strong>Description:</strong> Retrieve a list of comments for a specific post.</p>
+                <p><strong>URL:</strong> <code>/v1/api/comment/{postId}</code></p>
+                <p><strong>Method:</strong> GET</p>
+                <p><strong>Headers:</strong></p>
+                <pre><code>x-client-id: &lt;client_id&gt;
+authorization: &lt;token&gt;</code></pre>
+                <p><strong>Responses:</strong></p>
+                <pre><code>200 OK:
+{
+    "message": "Comment listed successfully",
+    "status": 200,
+    "metadata": [
+        {
+            "user_id": "string",
+            "comment": "string",
+            "post_id": "string",
+            "room_id": "string",
+            "created_at": "timestamp",
+            "user_name": "string",
+            "user_avatar": "string (url)"
+        }
+    ]
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
