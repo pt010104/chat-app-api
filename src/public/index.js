@@ -49,16 +49,15 @@ document.getElementById('connectButton').addEventListener('click', () => {
                 log(JSON.stringify(data.data));
             }
         });
-        
-        socket.on('edited message', (data) => {
-            log(`Received edited message:`);
+        socket.on('pinned message', (data) => {
+            log(`Received pinned message:`);
             if (data && data.data && data.data.message) {
                 log(JSON.stringify(data.data));
             }
         });
 
-        socket.on('deleted message', (data) => {
-            log(`Received deleted message:`);
+        socket.on('unpinned message', (data) => {
+            log(`Received unpinned message:`);
             if (data && data.data && data.data.message) {
                 log(JSON.stringify(data.data));
             }
@@ -102,7 +101,7 @@ document.getElementById('sendMessageButton').addEventListener('click', () => {
     }
 });
 
-document.getElementById('editMessageButton').addEventListener('click', () => {
+document.getElementById('PinMessageButton').addEventListener('click', () => {
     const roomId = document.getElementById('roomIdInput').value.trim();
     const messageId = document.getElementById('editMessageIdInput').value.trim();
     const newMessage = document.getElementById('newMessageInput').value.trim();

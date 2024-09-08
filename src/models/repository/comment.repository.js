@@ -5,6 +5,7 @@ const { findUserById } = require("./user.repository");
 class CommentRepository {
     async transform(commentData) {
         const transformed_msg = {
+            id: commentData._id,
             user_id: commentData.user_id,
             comment: commentData.comment,
             post_id: commentData.post_id,

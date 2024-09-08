@@ -248,31 +248,6 @@ class RabbitMQConsumer {
         await Promise.all(onlineUserPromises);
     }
 
-    static async notifyAndBroadcastPinMessage(roomId, userIDs, message) {
-        const io = global._io;
-        io.to(roomId).emit("pinned message", { "data": message });
-        console.log("Pinned message: ", message);
-        const onlineUserPromises = userIDs.map(async (userId) => {
-            const userStatus = await RedisService.getUserStatus(userId);
-            if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("pinned message", { "data": message });
-            }
-        });
-        await Promise.all(onlineUserPromises);
-    }
-
-    static async notifyAndBroadcastUnpinMessage(roomId, userIDs, message) {
-        const io = global._io;
-        io.to(roomId).emit("unpinned message", { "data": message });
-        console.log("Unpinned message: ", message);
-        const onlineUserPromises = userIDs.map(async (userId) => {
-            const userStatus = await RedisService.getUserStatus(userId);
-            if (userStatus === 'online') {
-                io.to(`user_${userId}`).emit("unpinned message", { "data": message });
-            }
-        });
-        await Promise.all(onlineUserPromises);
-    }
 }
 
 module.exports = RabbitMQConsumer;

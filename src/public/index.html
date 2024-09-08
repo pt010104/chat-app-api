@@ -7,12 +7,12 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/index.js" defer></script>
     <style>
-        #userIdInput, #roomIdInput, #messageInput, #editMessageIdInput, #newMessageInput, #deleteMessageIdInput {
+        #userIdInput, #roomIdInput, #messageInput, #PinMessageIdInput, #newMessageInput, #UnpinMessageIdInput {
             width: calc(100% - 120px);
             padding: 5px;
             font-size: 1em;
         }
-        #connectButton, #sendMessageButton, #editMessageButton, #deleteMessageButton {
+        #connectButton, #sendMessageButton, #PinMessageButton, #UnpinMessageButton {
             padding: 5px 10px;
             font-size: 1em;
             margin-top: 10px;
@@ -49,13 +49,12 @@
     <input type="file" id="imageInput" accept="image/*" />
     <button id="sendMessageButton" disabled>Send Message</button>
 
-    <input type="text" id="editMessageIdInput" placeholder="Enter Message ID to Edit" />
-    <input type="text" id="newMessageInput" placeholder="Enter New Message" />
-    <button id="editMessageButton">Edit Message</button>
+    <input type="text" id="PinMessageIdInput" placeholder="Enter Message ID to Pin" />
+    <button id="PinMessageButton">Pin Message</button>
 
     <!-- New input for deleting a message -->
-    <input type="text" id="deleteMessageIdInput" placeholder="Enter Message ID to Delete" />
-    <button id="deleteMessageButton">Delete Message</button>
+    <input type="text" id="#UnpinMessageIdInput" placeholder="Enter Message ID to Unpin" />
+    <button id="#UnpinMessageButton">Unpin Message</button>
 
     <label id="messageLabel">No messages yet</label>
     <div id="logArea"></div>

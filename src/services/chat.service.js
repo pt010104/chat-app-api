@@ -11,7 +11,7 @@ const { removeVietNamese } = require("../utils")
 const pinMessageRepository = require("../models/repository/pinMessage.repository")
 const QueueNames = require("../utils/queueNames")
 const { v4: uuidv4 } = require('uuid');
-const RabbitMQConsumer = require("../services/consumer/rabbitmq.consumer")
+
 
 class ChatService {
     static async sendMessage(params) {
@@ -333,8 +333,8 @@ class ChatService {
         
         await pinMessageRepository.pinMessage(room_id, message_id);
         const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        await RabbitMQConsumer.notifyAndBroadcastPinMessage(room_id,filteredUserIDs ,infoMessage);
-        return ChatRepository.transformForClient(infoMessage);
+        this.notifyAndBroadcastPinMessage(room_id,filteredUserIDs ,infoMessage);
+        return ChatRepository.transformForClient(infoMessage,infoMessage.user_id);
     }
 
     static async unpinMessageInRoom(room_id,user_id ,message_id) {
@@ -350,10 +350,10 @@ class ChatService {
 
         await pinMessageRepository.unpinMessage(room_id, message_id);
         const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        RabbitMQConsumer.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
+        this.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
         return message_id;
     }
-
+    
     static async listPinnedMessages(room_id) {
         const key = 'pinMessage:' + room_id;
         let message_ids = await RedisService.lRange(key, 0, -1);
@@ -386,6 +386,31 @@ class ChatService {
         return listMessage;
     }
 
+    static async notifyAndBroadcastPinMessage(roomId, userIDs, message) {
+        const io = global._io;
+        io.to(roomId).emit("pinned message", { "data": message });
+        console.log("Pinned message: ", message);
+        const onlineUserPromises = userIDs.map(async (userId) => {
+            const userStatus = await RedisService.getUserStatus(userId);
+            if (userStatus === 'online') {
+                io.to(`user_${userId}`).emit("pinned message", { "data": message });
+            }
+        });
+        await Promise.all(onlineUserPromises);
+    }
+
+    static async notifyAndBroadcastUnpinMessage(roomId, userIDs, message) {
+        const io = global._io;
+        io.to(roomId).emit("unpinned message", { "data": message });
+        console.log("Unpinned message: ", message);
+        const onlineUserPromises = userIDs.map(async (userId) => {
+            const userStatus = await RedisService.getUserStatus(userId);
+            if (userStatus === 'online') {
+                io.to(`user_${userId}`).emit("unpinned message", { "data": message });
+            }
+        });
+        await Promise.all(onlineUserPromises);
+    }
 
     static async searchRoom(userId, filter) {
         const rooms = await RoomRepository.getRoomsByUserID(userId);
@@ -417,4 +442,4 @@ class ChatService {
     }
 }
 
-module.exports = ChatService
+module.exports = ChatService;
