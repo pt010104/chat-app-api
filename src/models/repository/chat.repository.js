@@ -243,8 +243,8 @@ class ChatRepository {
         return deletedMessage;
     }
 
-    addCommentToPost = async (postId) => {
-        return await ChatModel.findByIdAndUpdate(
+    addCommentToPost = async (postId, roomId) => {
+        await ChatModel.findByIdAndUpdate(
             {
                 _id: postId
             }, 
@@ -252,6 +252,8 @@ class ChatRepository {
                 $inc: { comments: 1 }
             }
         )
+
+        this.updateRedisCache(roomId);
     }
 }
 

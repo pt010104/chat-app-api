@@ -19,7 +19,8 @@ class CommentService {
         }
 
         const comment = await CommentRepository.createComment(params);
-        ChatRepository.addCommentToPost(postId);
+
+        ChatRepository.addCommentToPost(postId, params.room_id);
 
         const transformedComment = await CommentRepository.transform(comment);
 
