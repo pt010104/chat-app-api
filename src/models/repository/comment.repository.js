@@ -54,9 +54,9 @@ class CommentRepository {
             return null;
         }
 
-        comments.map(async (comment) => {
-            RedisService.storeOrUpdateMessage(type, postId, comment);
-        });
+        await Promise.all(comments.map(async (comment) => {
+            await RedisService.storeOrUpdateMessage(type, postId, comment);
+        }));
 
         return comments;
     }

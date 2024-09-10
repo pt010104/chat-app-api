@@ -13,17 +13,22 @@ const { removeVietNamese } = require("../utils")
 class CommentService {
     static async PostComment(params) {
         const postId = params.postId;
+        
         const postFound = await ChatRepository.getMessageById(postId);
         if (!postFound) {
             throw new NotFoundError("Post not found");
         }
-
-        const comment = await CommentRepository.createComment(params);
-
+    
+        const [comment, _] = await Promise.all([
+            CommentRepository.createComment(params),                
+            ChatRepository.addCommentToPost(postId, params.room_id) 
+        ]);
+    
         const transformedComment = await CommentRepository.transform(comment);
-
+    
         return transformedComment;
     }
+    
 
     static async ListComment(postId) {
         const comments = await CommentRepository.listComment(postId);

@@ -43,6 +43,10 @@ const chatSchema = new Schema({
         type: Number,
         default: 0
     },
+    comments:{
+        type: Number,
+        default: 0
+    },
     liked_by: {
         type: [Types.ObjectId],
         default: []
