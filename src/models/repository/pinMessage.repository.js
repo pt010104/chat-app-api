@@ -12,31 +12,40 @@ class pinMessageRepository {
     pinMessage = async (room_id, message_id) => {
 
         let message = await pinMessageModel.findOne({ room_id: room_id });
-
+    
         if (!message) {
             message = await pinMessageModel.create({
                 room_id: room_id,
                 message_id: [message_id]
             });
+            
+            const key = `pinMessage:${room_id}`;
+            await RedisService.rPush(key, message_id);
         } else {
-            // If a pin exists, update the existing entry to add the new message ID
-            message = await pinMessageModel.findOneAndUpdate(   
-                { room_id: room_id }, 
-                { $addToSet: { message_id } },
-                { new: true, runValidators: true }
-            );
+
+            const alreadyPinned = message.message_id.includes(message_id);
+    
+            if (!alreadyPinned) {
+
+                message = await pinMessageModel.findOneAndUpdate(   
+                    { room_id: room_id }, 
+                    { $addToSet: { message_id } },
+                    { new: true, runValidators: true }
+                );
+    
+
+                const key = `pinMessage:${room_id}`;
+                await RedisService.rPush(key, message_id);
+            }
         }
-console.log(message);
+    
         if (!message) {
             throw new NotFoundError('Room not found');
         }
-
-        // Push the message ID to Redis
-        const key = `pinMessage:${room_id}`;
-        await RedisService.rPush(key, message_id);
-
+    
         return message_id;
-    }
+    };
+    
 
 
     unpinMessage = async (room_id, message_id) => {
