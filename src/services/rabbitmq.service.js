@@ -112,7 +112,7 @@ class RabbitMQService {
             const channel = await this.getChannel();
             await channel.assertQueue(queue, { durable: true });
     
-            await channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
+            channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
                 persistent: true,
                 expiration: delay.toString() 
             });

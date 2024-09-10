@@ -35,6 +35,7 @@ class ChatRepository {
                 created_at: chatData.createdAt,
                 status: chatData.status,
                 deleted_at: chatData.deleted_at,
+                is_Edited: chatData.is_Edited,
             };
 
             if (user_name) {

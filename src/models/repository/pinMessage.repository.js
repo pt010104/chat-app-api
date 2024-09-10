@@ -52,7 +52,7 @@ console.log(message);
         await RedisService.lRem(key, 0, message_id);
         const listLength = await RedisService.lLen(key); // Gets the length of the list
         if (listLength === 0) {
-            await RedisService.del(key); // Delete the key if the list is empty
+            await RedisService.delete(key); // Delete the key if the list is empty
         }
         return ;
     }
