@@ -399,10 +399,9 @@ class RoomRepository {
     deleteListRoomRemoveUser = async (roomUser, user_ids) => {
         for (const removedUserId of user_ids) {
             const key = `room:${removedUserId}`;
-            await RedisService.lRem(key, 0, roomUser);
+            await RedisService.lRem(key, 0, JSON.stringify(roomUser));
         }
     }
-
 }
 
 
