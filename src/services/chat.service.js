@@ -377,16 +377,9 @@ class ChatService {
             return;
         }
 
-
         return updatedRoom;
     }
 
-    // static async listRooms(userId, page, limit) {
-    //     const offset = (page - 1) * limit;
-    //     const rooms = await RoomRepository.getListRoomsByUserID(userId, offset, limit);
-    //     const roomsTransformed = await RoomRepository.transformForClient(rooms);
-    //     return roomsTransformed;
-    // }
 
     static async deleteRoom(room_id, userId) {
         const room = await RoomRepository.getRoomByID(room_id);
