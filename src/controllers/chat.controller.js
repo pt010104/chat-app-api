@@ -15,28 +15,28 @@ class ChatController {
         const { error } = roomValidate.validate(req.body);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
         let params = req.body;
         params.userId = req.user.userId;
-        
-        new CREATED ({
+
+        new CREATED({
             message: "Message sent successfully",
             metadata: await ChatService.createRoom(params)
         }).send(res)
     }
 
     detailRoom = async (req, res, next) => {
-        const RoomValidat = Joi.object({
+        const RoomValidate = Joi.object({
             room_id: Joi.string().required()
         })
 
-        const { error } = RoomValidat.validate(req.params);
+        const { error } = RoomValidate.validate(req.params);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -53,10 +53,11 @@ class ChatController {
         const room_id = req.params.room_id;
         const page = req.query.page;
         const limit = req.query.limit;
+        const userId = req.user.userId;
 
         new SuccessResponse({
             message: "Messages retrieved successfully",
-            metadata: await ChatService.getMessagesInRoom(room_id, page, limit)
+            metadata: await ChatService.getMessagesInRoom(room_id, page, limit, userId)
         }).send(res)
     }
 
@@ -82,7 +83,7 @@ class ChatController {
         const { error } = addUsersToRoomValidate.validate(req.body);
         if (error) {
             return res.status(400).json({
-              message: error.details[0].message,
+                message: error.details[0].message,
             });
         }
 
@@ -137,7 +138,7 @@ updateRoom = async (req, res, next) => {
     const { error } = updateRoomValidate.validate(req.body);
     if (error) {
         return res.status(400).json({
-          message: error.details[0].message,
+            message: error.details[0].message,
         });
     }
         let params = req.body;
@@ -157,6 +158,162 @@ updateRoom = async (req, res, next) => {
         new OK ({
             message: "Room deleted successfully",
             metadata: await ChatService.deleteRoom(room_id, userId)
+        }).send(res)
+    }
+
+    deleteMessagesInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const deleteMessagesInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = deleteMessagesInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Messages deleted successfully",
+            metadata: await ChatService.deleteMessagesInRoom(userId, room_id, message_id)
+        }).send(res)
+    }
+
+    editMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const content = req.body.content;
+        const userId = req.user.userId;
+        const editMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required(),
+            content: Joi.string().required()
+        });
+
+        const { error } = editMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message edited successfully",
+            metadata: await ChatService.editMessageInRoom(userId, room_id, message_id, content)
+        }).send(res)
+    }
+
+    pinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const pinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = pinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message pinned successfully",
+            metadata: await ChatService.pinMessageInRoom(room_id, userId, message_id)
+        }).send(res)
+    }
+
+    unpinMessageInRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const message_id = req.body.message_id;
+        const userId = req.user.userId;
+        const unpinMessageInRoomValidate = Joi.object({
+            message_id: Joi.string().required()
+        });
+
+        const { error } = unpinMessageInRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new SuccessResponse({
+            message: "Message unpinned successfully",
+            metadata: await ChatService.unpinMessageInRoom(room_id, userId, message_id)
+        }).send(res)
+    }
+
+    listPinnedMessages = async (req, res, next) => {
+        const room_id = req.params.room_id;
+
+        new SuccessResponse({
+            message: "Pinned messages retrieved successfully",
+            metadata: await ChatService.listPinnedMessages(room_id)
+        }).send(res)
+    }
+    searchRoom = async (req, res, next) => {
+        const searchRoomValidate = Joi.object({
+            filter: Joi.string().required()
+        });
+        const { error } = searchRoomValidate.validate(req.query);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        const userId = req.user.userId;
+        const { filter } = req.query;
+
+        new SuccessResponse({
+            message: "Room searched successfully",
+            metadata: await ChatService.searchRoom(userId, filter)
+        }).send(res)
+    }
+
+    sendMessage = async (req, res, next) => {
+        //
+        const userId = req.user.userId;
+        let params = req.body;
+        params.user_id = userId;
+        if (!params.message) {
+            if (!params.buffer) {
+                return res.status(400).json({
+                    message: "Message or buffer is required",
+                });
+            }
+            params.message = " ";
+        }
+
+        new SuccessResponse({
+            message: "Message sent successfully",
+            metadata: await ChatService.sendMessage(params)
+        }).send(res)
+    }
+
+    updateLikeMessage = async (req, res, next) => {
+        const updateLikeMessageValidate = Joi.object({
+            room_id: Joi.string().required(),
+            message_id: Joi.string().required(),
+        });
+        const { error } = updateLikeMessageValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        const messageId = req.body.message_id;
+        const roomId = req.body.room_id;
+        const userId = req.user.userId;
+
+        new SuccessResponse({
+            message: "Message liked successfully",
+            metadata: await ChatService.updateLikeMessage(messageId, roomId, userId)
         }).send(res)
     }
 }

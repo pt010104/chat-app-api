@@ -17,7 +17,7 @@ const findUserById = async (id) => {
             throw new NotFoundError("User not found");
         }
 
-        await RedisService.set(key, JSON.stringify(userFound), 3600);
+        await RedisService.set(key, JSON.stringify(userFound), 7200);
 
         return userFound;
     } catch (error) {
@@ -34,7 +34,22 @@ const findUserByEmail = async (email) => {
     return userFound;
 };
 
+const transformUser = (users) => {
+    return users.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        is_friend: user.is_friend,
+        is_sent_request: user.is_sent_request,
+        is_received_request: user.is_received_request,
+        mutual_friends: user.mutual_friends,
+    }));
+};
+
 module.exports = {
     findUserById,
-    findUserByEmail
+    findUserByEmail,
+    transformUser,
 };

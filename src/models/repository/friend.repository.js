@@ -19,11 +19,15 @@ class FriendRepository {
             id: user._id,
             user_name: user.name,
             user_email: user.email,
+            user_name_remove_sign: user.name_remove_sign,
             user_phone: user.phone,
             avatar: user.avatar,
         };
         return user_info;
     }
+
+    
+
 }
 
 module.exports = FriendRepository;

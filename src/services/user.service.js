@@ -8,6 +8,9 @@ const UserModel = require("../models/user.model");
 const { sendEmailOTP } = require("./email.service");
 const { verifyOTP } = require("./otp.service");
 const RedisService = require("./redis.service");
+const { transformUser } = require("../models/repository/user.repository");
+const FriendShipService = require("./friendship.service");
+const { removeVietNamese } = require("../utils");
 
 class UserService {
   static sendOTP = async (email, type) => {
@@ -34,24 +37,40 @@ class UserService {
     return result;
   };
 
-  static SearchForUser = async (filter) => {
-    const cachedResult = await RedisService.get(`userSearch:${filter}`);
-    if (cachedResult) {
-      return JSON.parse(cachedResult);
-    }
+  static async SearchForUser(filter, userID) {
+    filter = removeVietNamese(filter);
+    let users = await UserModel.find({
+        $and: [
+            { _id: { $ne: userID } },
+            {
+                $or: [
+                    { name_remove_sign: { $regex: filter, $options: "i" } },
+                    { email: filter },
+                    { phone: filter },
+                ],
+            },
+        ],
+    }).select("-password").lean();    
 
-    const users = await UserModel.find({
-      $or: [
-        { name: { $regex: filter, $options: "i" } },
-        { email: filter },
-        { phone: filter },
-      ],
-    }).select("-password");
+    const userChecks = await Promise.all(users.map(async (user) => {
+        const is_friend = await FriendShipService.checkIsFriend(userID, user._id);
+        const is_sent_request = await FriendShipService.CheckSentRequest(userID, user._id);
+        const is_received_request = await FriendShipService.CheckReceivedRequest(userID, user._id);
+        const mutual_friends = await FriendShipService.countMutualFriends(userID, user._id);
+        return {
+            ...user,
+            is_friend,
+            is_sent_request,
+            is_received_request,
+            mutual_friends
+        };
+    }));
 
-    await RedisService.set(`userSearch:${filter}`, JSON.stringify(users), 1800); 
+    const transformedUsers = transformUser(userChecks);
 
-    return users;
+    return transformedUsers;
   }
+
 }
 
 
