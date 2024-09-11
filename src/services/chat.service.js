@@ -363,26 +363,27 @@ class ChatService {
         }
     
         if (message_ids.length === 0) {
-            return []; // No messages to process
+            return []; 
         }
 
-         let listNotExists = []; // Correctly declare the array
-        const listMessage = await Promise.all(message_ids.map(async message_id => {
+        let listNotExists = [];
+        const listMessage = (await Promise.all(message_ids.map(async message_id => {
             const message = await ChatRepository.getMessageById(message_id);
             if (!message) {
                 listNotExists.push(message_id);
-            }
-            else{
-                console.log(message.message)
+                return null;  
+            } else {
+                console.log(message.message);
                 return ChatRepository.transformForClient(message, message.user_id);
-            } 
-        }));
-
-        if (listNotExists>0)
-          await Promise.all(listNotExists.map(async message_id => {
-            await pinMessageRepository.unpinMessage(room_id, message_id);
-          }));
-        console.log(listMessage)
+            }
+        }))).filter(message => message !== null);  
+        
+        console.log(listNotExists)
+        if (listNotExists.length > 0) {
+            await Promise.all(listNotExists.map(async message_id => {
+                await pinMessageRepository.unpinMessage(room_id, message_id);
+            }));
+        }
         return listMessage;
     }
 
