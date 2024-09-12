@@ -4,6 +4,7 @@ const RoomModel = require('../room.model');
 const RedisService = require('../../services/redis.service');
 const { findById } = require('../keytoken.model');
 const { findUserById } = require('./user.repository');
+const { BadRequestError } = require('../../core/error.response');
 
 class RoomRepository {
     transformForClient = async (rooms, userID) => {
@@ -43,7 +44,7 @@ class RoomRepository {
                 data.push(dataTransformed);
             }
             return data;
-        }  else {
+        } else {
             let room_avatar = null;
             let room_name = "";
             if (!rooms.is_group || rooms.avt_url == "") {
@@ -189,9 +190,9 @@ class RoomRepository {
     // Return: Array of room_id
     getAllRooms = async () => {
         const cacheKey = 'all_rooms';
-        
+
         let rooms = await RedisService.get(cacheKey);
-        
+
         if (rooms) {
             return JSON.parse(rooms);
         }
@@ -222,7 +223,7 @@ class RoomRepository {
         if (avt_url && newRoom.is_group) {
             newRoom.avt_url = avt_url;
             await newRoom.save();
-        }   
+        }
 
         const redisOperations = [];
 
@@ -258,7 +259,24 @@ class RoomRepository {
             await RedisService.storeOrUpdateMessage(type, user_id, room);
         });
 
-    
+
+        return rooms;
+    }
+
+    getListRoomsByUserID = async (user_id, offset, limit) => {
+        const cacheKey = `rooms`;
+        let rooms = await RedisService.get(cacheKey, user_id);
+        if (rooms) {
+            return JSON.parse(rooms);
+        }
+        rooms = await RoomModel.find({
+            user_ids: { $all: user_id },
+            is_group: true
+        }).skip(offset).limit(limit).lean();
+
+
+
+        await RedisService.set(cacheKey, JSON.stringify(rooms), 3600);
         return rooms;
     }
 
@@ -268,25 +286,49 @@ class RoomRepository {
         if (room) {
             return JSON.parse(room).user_ids;
         }
-    
+
         room = await RoomModel.findById(room_id).lean();
         await RedisService.set(key, JSON.stringify(room));
         return room.user_ids;
     }
 
     updateRedisCacheForRoom = async (room) => {
-        
         const redisOperations = [];
-      
         redisOperations.push(RedisService.delete(`room:${room._id}`));
         redisOperations.push(RedisService.set(`room:${room._id}`, JSON.stringify(room), 3600));
-      
+
         room.user_ids.forEach(id => {
-          redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
+            redisOperations.push(RedisService.storeOrUpdateMessage('room', id, room, '_id'));
         });
-      
+
         await Promise.all(redisOperations);
-      };
+    };
+
+    updateRedisCacheForListRoom = async (room_id, userId) => {
+        try {
+            const roomListKey = `room:${userId}`;
+            const roomList = await RedisService.get(roomListKey);
+
+            if (roomList) {
+                const parsedRoomList = JSON.parse(roomList);
+                if (Array.isArray(parsedRoomList)) {
+                    const updatedRoomList = parsedRoomList.filter(_id => id !== room_id);
+                    if (updatedRoomList.length > 0) {
+                        await RedisService.set(roomListKey, JSON.stringify(updatedRoomList));
+                    } else {
+                        await RedisService.delete(roomListKey);
+                    }
+                } else {
+                    throw new BadRequestError(`Expected room list to be an array, but got ${typeof parsedRoomList}`);
+                }
+            }
+        }
+
+        catch (error) {
+            throw new BadRequestError(error);
+        }
+    }
+
 
     addUsersToRoom = async (room_id, newUserIds) => {
         const updatedRoom = await RoomModel.findByIdAndUpdate(
@@ -294,18 +336,18 @@ class RoomRepository {
             { $addToSet: { user_ids: { $each: newUserIds } } },
             { new: true, runValidators: true }
         );
-    
+
         if (!updatedRoom) {
             throw new Error('Room not found');
         }
-    
+
         return updatedRoom;
     };
-    
+
     findRoomsByUserId = async (userId) => {
         return RoomModel.find({ user_ids: userId }, null, { lean: true });
     };
-    
+
     updateRoom = async (room) => {
         const updatedRoom = await RoomModel.findByIdAndUpdate(room._id, room, {
             new: true,
@@ -320,7 +362,7 @@ class RoomRepository {
         if (room) {
             return JSON.parse(room);
         }
-        
+
         const roomFromDB = await RoomModel.findById(room_id).lean();
         if (roomFromDB) {
             RedisService.set(key, JSON.stringify(roomFromDB), 3600);
@@ -328,6 +370,39 @@ class RoomRepository {
 
         return roomFromDB;
     }
+
+    removeUsersFromRoom = async (room_id, user_ids) => {
+        const updatedRoom = await RoomModel.findByIdAndUpdate(
+            room_id,
+            { $pull: { user_ids: { $in: user_ids } } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedRoom) {
+            throw new Error('Room not found');
+        }
+
+        return updatedRoom;
+    };
+
+
+    deleteRoomDb = async (room_id) => {
+        await RoomModel.findByIdAndDelete(room_id);
+        await RedisService.delete('room:' + room_id);
+    }
+
+    deleteRoomRedis = async (room_id) => {
+        const key = `room:${room_id}`;
+        await RedisService.delete(key);
+    }
+
+    deleteListRoomRemoveUser = async (roomUser, user_ids) => {
+        for (const removedUserId of user_ids) {
+            const key = `room:${removedUserId}`;
+            await RedisService.lRem(key, 0, JSON.stringify(roomUser));
+        }
+    }
 }
+
 
 module.exports = new RoomRepository();
