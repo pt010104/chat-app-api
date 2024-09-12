@@ -59,7 +59,7 @@ class pinMessageRepository {
         }
         const key = 'pinMessage:' + room_id;
         await RedisService.lRem(key, 0, message_id);
-        const listLength = await RedisService.lLen(key); // Gets the length of the list
+        const listLength = await RedisService.lLen(key); 
         if (listLength === 0) {
             await RedisService.delete(key); // Delete the key if the list is empty
         }

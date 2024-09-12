@@ -15,6 +15,7 @@ const ChatModel = require("../models/chat.model")
 const { filter } = require("compression")
 
 
+
 class ChatService {
     static async sendMessage(params) {
         const chatMessage = {
@@ -302,6 +303,105 @@ class ChatService {
         return RoomRepository.transformForClient(updatedRoom, params);
     }
 
+    static async deleteMessagesInRoom(userId, room_id, message_ids) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const deleteMessages = {
+            user_id: userId,
+            message_id: message_ids,
+            room_id: room_id
+        }
+        RabbitMQService.deleteMessage(QueueNames.DELETE_MESSAGES, deleteMessages);
+        return deleteMessages;
+    }
+
+    static async editMessageInRoom(user_id, room_id, message_id, message) {
+        console.log(user_id, room_id, message_id, message)
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+        const editMessage = {
+            user_id,
+            message,
+            room_id,
+            message_id
+        }
+        await RabbitMQService.editMessage(QueueNames.EDIT_MESSAGES, editMessage);
+        return message;
+    }
+
+    static async pinMessageInRoom(room_id,user_id, message_id) {
+
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const infoMessage = await ChatRepository.getMessageById(message_id);
+        if (!infoMessage) {
+            throw new NotFoundError("Message not found");
+        }
+        
+        await pinMessageRepository.pinMessage(room_id, message_id);
+        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
+        this.notifyAndBroadcastPinMessage(room_id,filteredUserIDs ,infoMessage);
+        return ChatRepository.transformForClient(infoMessage,infoMessage.user_id);
+    }
+
+    static async unpinMessageInRoom(room_id,user_id ,message_id) {
+        const room = await RoomRepository.getRoomByID(room_id);
+        if (!room) {
+            throw new NotFoundError("Room not found");
+        }
+
+        const infoMessage = await ChatRepository.getMessageById(message_id);
+        if (!infoMessage) {
+            throw new NotFoundError("Message not found");
+        }
+
+        await pinMessageRepository.unpinMessage(room_id, message_id);
+        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
+        this.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
+        return message_id;
+    }
+    
+    static async listPinnedMessages(room_id) {
+        const key = 'pinMessage:' + room_id;
+        let message_ids = await RedisService.lRange(key, 0, -1);
+
+        if (!message_ids || message_ids.length === 0) {
+            message_ids = await pinMessageRepository.getListPinMessage(room_id);
+        }
+    
+        if (message_ids.length === 0) {
+            return []; 
+        }
+
+        let listNotExists = [];
+        const listMessage = (await Promise.all(message_ids.map(async message_id => {
+            const message = await ChatRepository.getMessageById(message_id);
+            if (!message) {
+                listNotExists.push(message_id);
+                return null;  
+            } else {
+                console.log(message.message);
+                return ChatRepository.transformForClient(message, message.user_id);
+            }
+        }))).filter(message => message !== null);  
+        
+        console.log(listNotExists)
+        if (listNotExists.length > 0) {
+            await Promise.all(listNotExists.map(async message_id => {
+                await pinMessageRepository.unpinMessage(room_id, message_id);
+            }));
+        }
+        return listMessage;
+    }
+
     static async removeUsersFromRoom(room_id, user_ids, userId) {
         const room = await RoomRepository.getRoomByID(room_id);
         if (!room) {
@@ -410,103 +510,7 @@ class ChatService {
         return true;
     }
 
-    static async deleteMessagesInRoom(userId, room_id, message_ids) {
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
 
-        const deleteMessages = {
-            user_id: userId,
-            message_id: message_ids,
-            room_id: room_id
-        }
-        RabbitMQService.deleteMessage(QueueNames.DELETE_MESSAGES, deleteMessages);
-        return deleteMessages;
-    }
-
-    static async editMessageInRoom(user_id, room_id, message_id, message) {
-        console.log(user_id, room_id, message_id, message)
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
-        const editMessage = {
-            user_id,
-            message,
-            room_id,
-            message_id
-        }
-        await RabbitMQService.editMessage(QueueNames.EDIT_MESSAGES, editMessage);
-        return message;
-    }
-
-    static async pinMessageInRoom(room_id, user_id, message_id) {
-
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
-
-        const infoMessage = await ChatRepository.getMessageById(message_id);
-        if (!infoMessage) {
-            throw new NotFoundError("Message not found");
-        }
-
-        await pinMessageRepository.pinMessage(room_id, message_id);
-        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        this.notifyAndBroadcastPinMessage(room_id, filteredUserIDs, infoMessage);
-        return ChatRepository.transformForClient(infoMessage, infoMessage.user_id);
-    }
-
-    static async unpinMessageInRoom(room_id, user_id, message_id) {
-        const room = await RoomRepository.getRoomByID(room_id);
-        if (!room) {
-            throw new NotFoundError("Room not found");
-        }
-
-        const infoMessage = await ChatRepository.getMessageById(message_id);
-        if (!infoMessage) {
-            throw new NotFoundError("Message not found");
-        }
-
-        await pinMessageRepository.unpinMessage(room_id, message_id);
-        const filteredUserIDs = room.user_ids.filter(userId => userId.toString() !== user_id.toString());
-        this.notifyAndBroadcastUnpinMessage(room_id, filteredUserIDs, infoMessage);
-        return message_id;
-    }
-
-    static async listPinnedMessages(room_id) {
-        const key = 'pinMessage:' + room_id;
-        let message_ids = await RedisService.lRange(key, 0, -1);
-
-        if (!message_ids || message_ids.length === 0) {
-            message_ids = await pinMessageRepository.getListPinMessage(room_id);
-        }
-
-        if (message_ids.length === 0) {
-            return []; // No messages to process
-        }
-
-        let listNotExists = []; // Correctly declare the array
-        const listMessage = await Promise.all(message_ids.map(async message_id => {
-            const message = await ChatRepository.getMessageById(message_id);
-            if (!message) {
-                listNotExists.push(message_id);
-            }
-            else {
-                console.log(message.message)
-                return ChatRepository.transformForClient(message, message.user_id);
-            }
-        }));
-
-        if (listNotExists > 0)
-            await Promise.all(listNotExists.map(async message_id => {
-                await pinMessageRepository.unpinMessage(room_id, message_id);
-            }));
-        console.log(listMessage)
-        return listMessage;
-    }
 
     static async notifyAndBroadcastPinMessage(roomId, userIDs, message) {
         const io = global._io;
