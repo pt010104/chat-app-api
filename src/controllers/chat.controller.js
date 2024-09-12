@@ -70,6 +70,8 @@ class ChatController {
         }).send(res)
     }
 
+
+
     addUsersToRoom = async (req, res, next) => {
         const room_id = req.params.room_id;
         const user_ids = req.body.user_ids;
@@ -93,6 +95,47 @@ class ChatController {
         }).send(res)
     }
 
+    removeUsersFromRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const user_ids = req.body.user_ids;
+        const userId = req.user.userId;
+
+        const removeUsersFromRoomValidate = Joi.object({
+            user_ids: Joi.array().required(),
+        });
+     
+        const { error } = removeUsersFromRoomValidate.validate(req.body);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+        
+        new OK({
+            message: "Users removed from room successfully",
+            metadata: await ChatService.removeUsersFromRoom(room_id, user_ids, userId)
+        }).send(res)
+    }
+
+    leaveRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const userId = req.user.userId;
+        const leaveRoomValidate = Joi.object({
+            room_id: Joi.string().required()
+        });
+        const { error } = leaveRoomValidate.validate(req.params);
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+        new OK({
+            message: "User left room successfully",
+            metadata: await ChatService.leaveRoom(room_id, userId)
+        }).send(res)
+    }
+
+
     updateRoom = async (req, res, next) => {
         const updateRoomValidate = Joi.object({
             name: Joi.string().optional(),
@@ -104,7 +147,6 @@ class ChatController {
                 message: error.details[0].message,
             });
         }
-
         let params = req.body;
         params.userId = req.user.userId;
         params.room_id = req.params.room_id;
@@ -270,6 +312,28 @@ class ChatController {
             metadata: await ChatService.updateLikeMessage(messageId, roomId, userId)
         }).send(res)
     }
+
+    deleteRoom = async (req, res, next) => {
+        const room_id = req.params.room_id;
+        const userId = req.user.userId;
+        const deleteRoomValidate = Joi.object({
+            room_id: Joi.string().required()
+        });
+        
+        const { error } = deleteRoomValidate.validate(req.params);
+        
+        if (error) {
+            return res.status(400).json({
+                message: error.details[0].message,
+            });
+        }
+
+        new OK({
+            message: "Room deleted successfully",
+            metadata: await ChatService.deleteRoom(room_id, userId)
+        }).send(res)
+    }
+
 }
 
 module.exports = new ChatController()
