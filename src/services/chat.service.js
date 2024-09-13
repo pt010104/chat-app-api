@@ -437,7 +437,7 @@ class ChatService {
 
             await RoomRepository.updateRedisCacheForRoom(updatedRoom);
 
-            await RoomRepository.deleteListRoomRemoveUser(room_id, user_ids);
+            await RoomRepository.deleteListRoomRemoveUser(room, user_ids);
 
             updatedRoom = await RoomRepository.transformForClient(updatedRoom);
 
