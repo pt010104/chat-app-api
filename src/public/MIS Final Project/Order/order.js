@@ -72,13 +72,20 @@ function calculateTotals() {
     const totalField = document.getElementById('total');
 
     let totalPrice = Array.from(cart.values()).reduce((total, item) => total + (item.price * item.quantity), 0);
-    totalPrice = totalPrice * 1000;
-    let shipping = totalPrice > 300000 ? 0 : 20000;
+    totalPrice = totalPrice * 1000; // Assuming this multiplication is to adjust the unit
 
-    priceField.value = `${formatPrice(totalPrice)} VND`;
-    shippingField.value = `${formatPrice(shipping)} VND`;
-    totalField.value = `${formatPrice(totalPrice + shipping)} VND`;
+    let shipping = 0; // Initialize shipping as 0 by default
+    const deliveryOption = document.querySelector('input[name="order_option"][value="delivery"]:checked');
+    if (deliveryOption) {
+        shipping = totalPrice > 300000 ? 0 : 20000; // Apply shipping fee only if 'delivery' is selected and under a certain amount
+    }
+
+    priceField.value = formatPrice(totalPrice) + ' VND';
+    shippingField.value = formatPrice(shipping) + ' VND';
+    totalField.value = formatPrice(totalPrice + shipping) + ' VND';
 }
+
+
 
 function formatPrice(price) {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -89,18 +96,25 @@ document.querySelectorAll('input[name="order_option"]').forEach(radio => {
         const branchInput = document.querySelector('.branch-address');
         const addressInputs = document.querySelector('.address');
         const datetimeInput = document.querySelector('.datetime');
+        const shippingInputContainer = document.querySelector('.totals label:nth-child(2)'); // Assuming the second label in `.totals` is the shipping container
 
         if (this.value === 'pickup') {
             branchInput.style.display = 'block';
             addressInputs.style.display = 'none';
-            datetimeInput.style.display = 'block';  // Show date and time picker for pickup
+            datetimeInput.style.display = 'block';
+            shippingInputContainer.style.display = 'none'; // Hide the shipping container
         } else if (this.value === 'delivery') {
             branchInput.style.display = 'none';
             addressInputs.style.display = 'block';
-            datetimeInput.style.display = 'block';  // Show date and time picker for delivery
+            datetimeInput.style.display = 'block';
+            shippingInputContainer.style.display = 'block'; // Show the shipping container
         }
+        calculateTotals();  // Recalculate totals any time the delivery/pickup option changes
     });
 });
+
+
+
 
 window.addEventListener('load', function() {
     loadCart();
