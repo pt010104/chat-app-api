@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select a Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <header class="header">
+                <div class="menu-icon">&#9776;</div>
+                <div class="dropdown-menu">
+                    <a href="../index.html">Home</a>
+                    <a href="../Order/index.html">Order</a>
+                    <a href="../Locations/index.html">Locations</a>
+                    <a href="../Our Story/index.html">Our Story</a>
+                </div>
+            </header>
+            <br><br>
+            <div class="logo"> <img src="../Image/logo.png" alt="Logo"></div>
+            <div class="store-list">
+                <div class="store" onclick="changeMap('store1')">59C Nguyen Dinh Chieu, District 3, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store2')">279 Nguyen Tri Phuong, District 10, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store3')">91 3/2 Street, District 10, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store4')">196 Tran Quang Khai, District 1, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store5')">54 Nguyen Van Thu, District 1, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store6')">1A Hoang Dieu, Phu Nhuan District, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store7')">17 Pham Ngoc Thach, District 3, Ho Chi Minh City</div>
+                <div class="store" onclick="changeMap('store8')">Functional Area No. 15, New Urban South City, Binh Chanh District</div>
+            </div>
+        </div>
+        <div class="map-display">
+            <p id="mapMessage">Find Our Stores on Map!</p>
+            <iframe id="mapFrame" style="display:none;" frameborder="0"></iframe>
+        </div>
+        
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
